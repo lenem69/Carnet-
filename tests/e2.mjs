@@ -5,6 +5,7 @@ let mode='ok', n=0;
 const G=o=>({json:{candidates:[{content:{parts:[{text:JSON.stringify(o)}]}}]}});
 const ai=async c=>{
   const isG=c.url.includes('googleapis');
+  if(mode==='gem429'&&isG)return {status:429,json:{error:{message:'Resource exhausted'}}};
   if(mode==='429')return {status:429,json:{error:{message:'Resource exhausted'}}};
   if(mode==='429once'){mode='ok';return {status:429,json:{error:{message:'Resource exhausted'}}}}
   if(mode==='badkey')return {status:400,json:{error:{message:'API key not valid. Please pass a valid API key.'}}};
@@ -111,5 +112,27 @@ await H.setAI(page,'anthropic','sk-ant-TEST',{model:'claude-haiku-5-5'});await p
 const ca=calls[calls.length-1];T('Claude : en-têtes et corps conformes',ca.url==='https://api.anthropic.com/v1/messages'&&ca.headers['x-api-key']==='sk-ant-TEST'&&ca.headers['anthropic-dangerous-direct-browser-access']==='true'&&ca.headers['anthropic-version']&&ca.body.model==='claude-haiku-5-5'&&ca.body.max_tokens>0,JSON.stringify(ca.headers));
 await H.setAI(page,'openai','sk-TEST',{model:'gpt-x',base:'https://api.example-ai.com/v1'});const ok=await page.evaluate(async()=>{const m=await import('./ai.js');return m.testKey()});
 const co=calls[calls.length-1];T('Compatible OpenAI : adresse, jeton, format JSON',ok&&co.url==='https://api.example-ai.com/v1/chat/completions'&&co.headers.Authorization==='Bearer sk-TEST'&&co.body.response_format.type==='json_object');
+// plusieurs IA : choix automatique et relais
+const MULTI={v:2,provider:'gemini',list:{gemini:{key:'AIzaTEST'},openai:{key:'sk-TEST',model:'gpt-x',base:'https://api.example-ai.com/v1'}}};
+await page.evaluate(v=>{localStorage.removeItem('cave-ai-cool');localStorage.setItem('cave-ai',JSON.stringify(v))},MULTI);
+mode='gem429';const c0n=calls.length;const t0=Date.now();
+const okm=await page.evaluate(async()=>{const m=await import('./ai.js');return m.testKey()});
+T('2 IA : Gemini épuisé → ChatGPT prend le relais aussitôt',okm&&calls.length-c0n===2&&calls[c0n].url.includes('googleapis')&&calls[c0n+1].url.includes('example-ai')&&Date.now()-t0<8000,String(calls.length-c0n));
+T('2 IA : message de relais affiché',(await H.txt(page,'#toasts')).includes('prend le relais'),await H.txt(page,'#toasts'));
+const c1n=calls.length;await page.evaluate(async()=>{const m=await import('./ai.js');return m.testKey()});
+T('2 IA : Gemini mis de côté, appel direct à ChatGPT',calls.length-c1n===1&&calls[c1n].url.includes('example-ai'));
+mode='ok';await page.evaluate(()=>localStorage.removeItem('cave-ai-cool'));
+const c2n=calls.length;await page.evaluate(async()=>{const m=await import('./ai.js');return m.testKey()});
+T('2 IA : ordre normal, Gemini d’abord',calls[c2n].url.includes('googleapis'));
+await page.evaluate(()=>document.querySelector('#bSet').click());await H.sl(400);
+const auto=await page.$eval('#ai-auto',e=>e.textContent);
+T('réglages : phrase du choix automatique',auto.includes('Gemini')&&auto.includes('ChatGPT')&&auto.includes('→'),auto);
+T('réglages : ✓ sur les IA configurées',(await page.$eval('#ai-prov',e=>e.textContent)).split('✓').length===3);
+await page.select('#ai-prov','openai');await H.sl(200);
+T('réglages : la configuration de chaque IA est conservée',(await page.$eval('#ai-model',e=>e.value))==='gpt-x'&&(await page.$eval('#ai-key',e=>e.value))==='sk-TEST');
+await page.$eval('#ai-model',e=>{e.value='Chat gtp'});await page.evaluate(()=>document.querySelector('#ai-save').click());await H.sl(300);
+T('réglages : nom de modèle avec espace refusé',(await H.txt(page,'#toasts')).includes('Nom de modèle invalide'),await H.txt(page,'#toasts'));
+T('réglages : refus sans modification',JSON.parse(await page.evaluate(()=>localStorage.getItem('cave-ai'))).list.openai.model==='gpt-x');
+await page.evaluate(()=>document.querySelector('#sSet .close').click());await H.sl(200);
 T('aucune erreur navigateur',errs.length===0,errs.join(' | '));
 console.log(out.join('\n'));await b.close();srv.close();

@@ -5,7 +5,7 @@ const {page,errs}=await H.newPage(b);
 await page.goto(H.URL0);await H.sl(1200);
 T('démarrage : cave vide affichée',(await H.txt(page,'#list')).includes('Votre cave est vide'));
 {const t=await H.txt(page,'#list');T('cave vide : toutes les fonctions proposées (photos, tableur, restauration, guide)',['Scanner une étiquette','Importer des photos','Importer un tableur','Saisie manuelle','Restaurer une sauvegarde','Guide'].every(x=>t.includes(x)),t)}
-T('version affichée côté page',await page.evaluate(()=>self.APP_VERSION)==='1.4.0');
+T('version affichée côté page',await page.evaluate(()=>self.APP_VERSION)==='1.5.0');
 {const q1=await H.txt(page,'#quoteText');const Q=await page.evaluate(async()=>(await import('./quotes.js')).QUOTES);
 T('citation : affichée et issue de la liste (300)',Q.length===300&&Q.includes(q1)&&q1.length>10,q1);
 T('citation : bloc visible sous l’en-tête',await page.$eval('.quote',e=>e.getBoundingClientRect().height>40)&&await page.evaluate(()=>document.querySelector('header.top').compareDocumentPosition(document.querySelector('.quote'))&4));

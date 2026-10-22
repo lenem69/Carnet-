@@ -607,23 +607,31 @@ async function downloadTemplate() {
 }
 
 /* ============ Réglages ============ */
-function fillAiFields(provider, keep) {
+function fillAiFields(provider) {
   const p = AI.PROVIDERS[provider];
-  const s = AI.getSettings();
-  const same = keep && s.provider === provider;
+  const c = AI.getConfig(provider);
   $('#ai-help').textContent = p.help;
-  $('#ai-key').value = same ? s.key : (keep ? '' : $('#ai-key').value);
-  $('#ai-model').value = same ? s.model : p.model;
+  $('#ai-key').value = c.key;
+  $('#ai-model').value = c.model;
   $('#ai-model').placeholder = p.model || 'nom du modèle';
   $('#ai-base-w').hidden = provider !== 'openai';
-  $('#ai-base').value = same ? s.base : (p.base || '');
+  $('#ai-base').value = c.base;
+}
+// Liste des fournisseurs (✓ = clé enregistrée) et phrase expliquant le choix automatique.
+function renderAiChoices(selected) {
+  const on = AI.configured();
+  $('#ai-prov').innerHTML = AI.ORDER.map(k => `<option value="${k}">${esc(AI.PROVIDERS[k].label)}${on.includes(k) ? ' ✓' : ''}</option>`).join('');
+  $('#ai-prov').value = selected;
+  $('#ai-auto').textContent = on.length > 1
+    ? `L’appli choisit seule l’IA, dans cet ordre : ${on.map(k => AI.PROVIDERS[k].label.split(' ')[0]).join(' → ')}. Si l’une est épuisée ou en panne, elle passe à la suivante.`
+    : on.length === 1 ? 'Une seule IA configurée. Ajoutez-en une autre (choisissez-la dans la liste) : l’appli passera seule de l’une à l’autre si crédits ou limites sont épuisés.'
+    : 'Aucune IA configurée.';
 }
 async function openSettings() {
   closeSheet('sMenu');
   const s = AI.getSettings();
-  $('#ai-prov').innerHTML = Object.entries(AI.PROVIDERS).map(([k, p]) => `<option value="${k}">${esc(p.label)}</option>`).join('');
-  $('#ai-prov').value = s.provider;
-  fillAiFields(s.provider, true);
+  renderAiChoices(s.provider);
+  fillAiFields(s.provider);
   $('#ai-key').type = 'password'; $('#ai-show').textContent = 'Voir';
   $('#ai-guide').hidden = AI.ready();
   $('#st-ver').textContent = VERSION;
@@ -641,15 +649,19 @@ function readAiFields() {
 function saveAi(silent) {
   const v = readAiFields();
   if (v.provider === 'openai' && v.key && !/^https:\/\//.test(v.base.trim())) { errToast(AI.ERR.bad_base); return false; }
+  if (v.key && /\s/.test(v.model.trim())) { errToast('Nom de modèle invalide : il ne contient jamais d’espace (exemple : ' + (AI.PROVIDERS[v.provider].model || 'gpt-4o-mini') + ').'); return false; }
   try { AI.setSettings(v); } catch (e) { errToast('Enregistrement des réglages impossible (stockage du navigateur bloqué).'); return false; }
-  if (!silent) toast(v.key ? '✅ Réglages IA enregistrés.' : 'Réglages enregistrés (aucune clé : IA désactivée).');
+  renderAiChoices(v.provider);
+  $('#ai-guide').hidden = AI.ready();
+  if (!silent) toast(v.key ? '✅ Réglages IA enregistrés.' : 'Clé retirée pour ce fournisseur.');
   return true;
 }
 async function testAi() {
   if (!saveAi(true)) return;
-  if (!AI.ready()) { errToast('Saisissez d’abord une clé.'); return; }
+  const prov = $('#ai-prov').value;
+  if (!AI.configured().includes(prov)) { errToast('Saisissez d’abord une clé pour ce fournisseur.'); return; }
   const b = $('#ai-test'); b.disabled = true; b.textContent = 'Test en cours…';
-  try { const ok = await AI.testKey(); ok ? toast('✅ Connexion à l’IA réussie.') : errToast('Réponse inattendue de l’IA. Vérifiez le modèle.'); }
+  try { const ok = await AI.testKey({ only: prov }); ok ? toast('✅ Connexion à l’IA réussie.') : errToast('Réponse inattendue de l’IA. Vérifiez le modèle.'); }
   catch (e) { errToast(AI.errText(e)); }
   b.disabled = false; b.textContent = 'Tester la connexion';
 }
@@ -761,7 +773,8 @@ function bind() {
   $('#lgX').onclick = () => closeSheet('sLog');
   $('#lgMan').onclick = () => { hideSheet('sLog'); openForm(null); };
 
-  $('#ai-prov').onchange = () => fillAiFields($('#ai-prov').value, true);
+  $('#ai-prov').onchange = () => fillAiFields($('#ai-prov').value);
+  AI.hooks.onSwitch = (from, to, e) => toast(`${AI.PROVIDERS[from].label.split(' ')[0]} indisponible (${AI.errText(e).replace(/\.$/, '').slice(0, 60)}) : ${AI.PROVIDERS[to].label.split(' ')[0]} prend le relais.`);
   $('#ai-show').onclick = () => { const k = $('#ai-key'); const show = k.type === 'password'; k.type = show ? 'text' : 'password'; $('#ai-show').textContent = show ? 'Masquer' : 'Voir'; };
   $('#ai-open').onclick = () => { try { window.open('https://aistudio.google.com/apikey', '_blank', 'noopener,noreferrer'); } catch (e) { errToast('Ouvrez aistudio.google.com dans votre navigateur.'); } };
   $('#ai-paste').onclick = async () => {

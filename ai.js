@@ -6,22 +6,65 @@ import { normColor } from './logic.js';
 export const PROVIDERS = {
   gemini: { label: 'Gemini (Google)', model: 'gemini-3.5-flash-lite', help: 'Clé gratuite sur aistudio.google.com → « Get API key ». Pour mieux lire les étiquettes difficiles : gemini-3.8-flash.' },
   anthropic: { label: 'Claude (Anthropic)', model: 'claude-haiku-5-5', help: 'Clé API payante sur console.anthropic.com (différente d’un abonnement Claude.ai).' },
-  openai: { label: 'Compatible OpenAI (avancé)', model: '', base: 'https://api.openai.com/v1', help: 'OpenAI, Mistral, Groq, OpenRouter… Renseignez l’adresse de l’API et le modèle (avec lecture d’images pour le scan).' },
+  openai: { label: 'ChatGPT / compatible OpenAI', model: 'gpt-4o-mini', base: 'https://api.openai.com/v1', help: 'Clé API prépayée sur platform.openai.com (différente d’un abonnement ChatGPT). Modèle conseillé : gpt-4o-mini (un nom sans espace). Marche aussi avec Mistral, Groq, OpenRouter… : changez l’adresse et le modèle.' },
 };
 
 export const cfg = { retryDelay: 20000, retries: 2, timeout: 90000 };
 
 const KEY = 'cave-ai';
+const COOL = 'cave-ai-cool';
+// Ordre de préférence : le gratuit d’abord, puis le moins cher.
+export const ORDER = ['gemini', 'openai', 'anthropic'];
+export const hooks = { onSwitch: null };
+
+// Réglages : une configuration par fournisseur. Ancien format (un seul fournisseur) migré à la lecture.
+function readRaw() {
+  let r = {};
+  try { r = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { r = {}; }
+  let list = {};
+  if (r.list && typeof r.list === 'object') list = { ...r.list };
+  else if (PROVIDERS[r.provider] && r.key) list[r.provider] = { key: r.key, model: r.model, base: r.base };
+  return { provider: PROVIDERS[r.provider] ? r.provider : '', list };
+}
+export function getConfig(provider) {
+  const c = (readRaw().list[provider]) || {};
+  const d = PROVIDERS[provider];
+  return { key: String(c.key || '').trim(), model: c.model || d.model, base: c.base || d.base || '' };
+}
+export const configured = () => ORDER.filter(p => getConfig(p).key);
 export function getSettings() {
-  let s = {};
-  try { s = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { s = {}; }
-  const provider = PROVIDERS[s.provider] ? s.provider : 'gemini';
-  return { provider, key: s.key || '', model: s.model || PROVIDERS[provider].model, base: s.base || PROVIDERS[provider].base || '' };
+  const r = readRaw();
+  const provider = r.provider || configured()[0] || 'gemini';
+  return { provider, ...getConfig(provider) };
 }
 export function setSettings(s) {
-  localStorage.setItem(KEY, JSON.stringify({ provider: s.provider, key: (s.key || '').trim(), model: (s.model || '').trim(), base: (s.base || '').trim().replace(/\/+$/, '') }));
+  const r = readRaw();
+  const key = (s.key || '').trim();
+  if (key) r.list[s.provider] = { key, model: (s.model || '').trim(), base: (s.base || '').trim().replace(/\/+$/, '') };
+  else delete r.list[s.provider];
+  localStorage.setItem(KEY, JSON.stringify({ v: 2, provider: s.provider, list: r.list }));
+  try { localStorage.removeItem(COOL); } catch (e) { /* sans effet */ }
 }
-export const ready = () => !!getSettings().key;
+export const ready = () => configured().length > 0;
+
+// Fournisseurs mis de côté un moment (crédits épuisés, clé refusée…), pour ne pas les réessayer à chaque demande.
+function cooled() {
+  try { const c = JSON.parse(localStorage.getItem(COOL) || '{}') || {}; const now = Date.now(); return Object.keys(c).filter(k => c[k] > now); } catch (e) { return []; }
+}
+function cool(provider, e) {
+  const min = { rate_limited: 60, bad_key: 1440, bad_model: 1440, bad_base: 1440, server: 5 }[e && e.code];
+  if (!min) return;
+  try { const c = JSON.parse(localStorage.getItem(COOL) || '{}') || {}; c[provider] = Date.now() + min * 60000; localStorage.setItem(COOL, JSON.stringify(c)); } catch (x) { /* sans effet */ }
+}
+function uncool(provider) {
+  try { const c = JSON.parse(localStorage.getItem(COOL) || '{}') || {}; if (c[provider]) { delete c[provider]; localStorage.setItem(COOL, JSON.stringify(c)); } } catch (x) { /* sans effet */ }
+}
+// Fournisseurs à essayer, dans l’ordre. Si tous sont mis de côté, on les réessaie quand même.
+export function usable() {
+  const all = configured(); const off = cooled();
+  const ok = all.filter(p => !off.includes(p));
+  return ok.length ? ok : all;
+}
 
 export const ERR = {
   no_key: 'Aucune IA configurée. Ajoutez une clé dans Réglages (⚙).',
@@ -104,8 +147,7 @@ export function webSources(cand) {
   return res;
 }
 
-async function callOnce(prompt, images, signal, out) {
-  const s = getSettings();
+async function callOnce(s, prompt, images, signal, out) {
   if (!s.key) throw { code: 'no_key' };
   const b64 = [];
   for (const im of images) b64.push(await toB64(im));
@@ -133,17 +175,25 @@ async function callOnce(prompt, images, signal, out) {
     if (!t) throw { code: 'invalid_json' };
     return parseJsonLoose(t);
   }
-  // Gemini (par défaut) ; avec `search`, Gemini consulte le web (Google Search) avant de répondre.
-  const search = !!(out && out.search && s.provider === 'gemini');
-  if (out) out.searched = search;
+  // Gemini ; avec `wantSearch`, il consulte le web (Google Search) avant de répondre.
   const parts = [{ text: prompt }, ...b64.map(d => ({ inline_data: { mime_type: 'image/jpeg', data: d } }))];
-  const j = await httpJson('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(s.model) + ':generateContent', {
+  const call = search => httpJson('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(s.model) + ':generateContent', {
     method: 'POST', signal,
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': s.key },
     body: JSON.stringify(search
       ? { contents: [{ role: 'user', parts }], tools: [{ google_search: {} }], generationConfig: { temperature: 0.2 } }
       : { contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', temperature: 0.2 } }),
   });
+  let search = !!(out && out.wantSearch);
+  let j;
+  try { j = await call(search); }
+  catch (e) {
+    // La recherche web est un plus : si le service la refuse, on refait la demande sans elle.
+    if (!(search && e && e.code === 'server')) throw e;
+    search = false; if (out) out.fallback = true;
+    j = await call(false);
+  }
+  if (out) { out.searched = search; out.sources = []; }
   const c = j.candidates && j.candidates[0];
   if (search && out) out.sources = webSources(c);
   const t = c && c.content && c.content.parts ? c.content.parts.map(p => p.text || '').join('') : '';
@@ -151,18 +201,18 @@ async function callOnce(prompt, images, signal, out) {
   return parseJsonLoose(t);
 }
 
-// Appel avec délai maximal, arrêt possible, et nouvelle tentative automatique si la limite par minute est atteinte.
-export async function callJson(prompt, { images = [], signal, onWait, out } = {}) {
+// Une tentative chez un fournisseur donné, avec délai maximal, arrêt possible et nouvel essai si la limite par minute est atteinte.
+async function callProvider(s, prompt, { images = [], signal, onWait, out } = {}, retries) {
   for (let attempt = 0; ; attempt++) {
     const ac = new AbortController();
     const stop = () => ac.abort();
     if (signal) { if (signal.aborted) throw Object.assign(new Error('abort'), { name: 'AbortError' }); signal.addEventListener('abort', stop, { once: true }); }
     const timer = setTimeout(() => { ac.timedOut = true; ac.abort(); }, cfg.timeout);
     try {
-      return await callOnce(prompt, images, ac.signal, out);
+      return await callOnce(s, typeof prompt === 'function' ? prompt(s) : prompt, images, ac.signal, out);
     } catch (e) {
       if (e && e.name === 'AbortError') { if (ac.timedOut) throw { code: 'timeout' }; throw e; }
-      if (e && e.code === 'rate_limited' && attempt < cfg.retries) {
+      if (e && e.code === 'rate_limited' && attempt < retries) {
         if (onWait) onWait(Math.round(cfg.retryDelay / 1000));
         await sleep(cfg.retryDelay, signal);
         continue;
@@ -173,6 +223,34 @@ export async function callJson(prompt, { images = [], signal, onWait, out } = {}
       if (signal) signal.removeEventListener('abort', stop);
     }
   }
+}
+
+// Choix automatique de l’IA : on prend la première disponible (gratuit d’abord) ; si elle est épuisée ou en panne,
+// on passe tout de suite à la suivante. Le délai d’attente n’est utilisé que s’il ne reste plus d’autre choix.
+// `only` force un fournisseur (test de connexion).
+export async function callJson(prompt, opts = {}) {
+  const list = opts.only ? configured().filter(p => p === opts.only) : usable();
+  if (!list.length) throw { code: 'no_key' };
+  let lastErr;
+  for (let i = 0; i < list.length; i++) {
+    const prov = list[i]; const last = i === list.length - 1;
+    const s = { provider: prov, ...getConfig(prov) };
+    try {
+      const r = await callProvider(s, prompt, opts, last ? cfg.retries : 0);
+      uncool(prov);
+      if (opts.out) opts.out.provider = prov;
+      return r;
+    } catch (e) {
+      if (e && e.name === 'AbortError') throw e;
+      lastErr = e;
+      const code = e && e.code;
+      const sticky = !['bad_image', 'not_label', 'blocked'].includes(code);
+      if (!opts.only && sticky) cool(prov, e);
+      if (last || !sticky) throw e;
+      if (hooks.onSwitch) hooks.onSwitch(prov, list[i + 1], e);
+    }
+  }
+  throw lastErr;
 }
 
 /* ---------- Demandes métier ---------- */
@@ -189,18 +267,10 @@ export async function scanLabel(file, opts) {
 
 export async function makeFiche(w, opts = {}) {
   const year = new Date().getFullYear();
-  const ask = web => `${EXPERT} ${web ? 'Utilise la recherche web et croise plusieurs sources fiables : site du domaine, guides et revues (RVF, Bettane+Desseauve, Parker, Decanter), forums spécialisés (La Passion du Vin, CellarTracker…), sites de vente en ligne avec fiches produit (Vinatis, V and B, Millésima, Idealwine…), cavistes et notes de dégustation. Compare les fenêtres de garde données par ces sources puis complète la fiche' : 'Complète la fiche de ce vin avec tes connaissances (estime si la cuvée t’est inconnue, sans inventer de faits précis)'} : ${JSON.stringify({ name: w.name, dom: w.dom, year: w.year, color: w.color, region: w.region })}. Nous sommes en ${year}. Ne donne jamais une date de garde précise sans base : en cas de doute, élargis la fourchette et mets conf à « estimée » ; ne retiens « vérifiée » que si au moins deux sources concordent ou si la source est le domaine lui-même. Réponds uniquement par un objet JSON de ce format : ${SCHEMA_FICHE}.`;
-  let out = { search: getSettings().provider === 'gemini' };
-  let d;
-  try {
-    d = await callJson(ask(out.search), { ...opts, out });
-  } catch (e) {
-    // La recherche web est un plus : si elle est refusée par le service, on refait sans elle.
-    if (!(out.search && e && e.code === 'server')) throw e;
-    out = { search: false };
-    d = await callJson(ask(false), { ...opts, out });
-    out.fallback = true;
-  }
+  // Recherche web seulement chez Gemini ; chez un autre fournisseur, la fiche reste une estimation.
+  const ask = s => { const web = s.provider === 'gemini'; return `${EXPERT} ${web ? 'Utilise la recherche web et croise plusieurs sources fiables : site du domaine, guides et revues (RVF, Bettane+Desseauve, Parker, Decanter), forums spécialisés (La Passion du Vin, CellarTracker…), sites de vente en ligne avec fiches produit (Vinatis, V and B, Millésima, Idealwine…), cavistes et notes de dégustation. Compare les fenêtres de garde données par ces sources puis complète la fiche' : 'Complète la fiche de ce vin avec tes connaissances (estime si la cuvée t’est inconnue, sans inventer de faits précis)'} : ${JSON.stringify({ name: w.name, dom: w.dom, year: w.year, color: w.color, region: w.region })}. Nous sommes en ${year}. Ne donne jamais une date de garde précise sans base : en cas de doute, élargis la fourchette et mets conf à « estimée » ; ne retiens « vérifiée » que si au moins deux sources concordent ou si la source est le domaine lui-même. Réponds uniquement par un objet JSON de ce format : ${SCHEMA_FICHE}.`; };
+  const out = { wantSearch: true };
+  const d = await callJson(ask, { ...opts, out });
   if (!d || typeof d !== 'object' || Array.isArray(d)) throw { code: 'invalid_json' };
   const f = ficheFrom(d);
   const sources = out.searched ? (out.sources || []) : [];
