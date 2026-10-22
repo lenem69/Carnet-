@@ -61,6 +61,11 @@ const rs=[{Domaine:'Lapierre',Cuvée:'Morgon',Millésime:2023,Quantité:1},{Doma
 const a=I.rowsToWines(rs,ex);T('import mode somme : doublon additionné, 1 ligne existante comptée',a.added.length===1&&a.updated.length===1&&a.updated[0].qty===3&&a.existing===1);
 const b=I.rowsToWines(rs,ex,'skip');T('import mode « seulement les nouveaux » : existant intact',b.added.length===1&&b.updated.length===0&&b.existing===1&&ex[0].qty===2);
 const c=I.rowsToWines([...rs,rs[1]],ex,'skip');T('mode skip : doublon interne au fichier toujours additionné',c.added.length===1&&c.added[0].qty===6);}
+{const n=c=>L.normalizeWine({name:'A',conf:c});
+T('fiabilité : « connue » (ancien format) → estimée',n('connue').conf==='estimée'&&n('estimée').conf==='estimée'&&n('vérifiée').conf==='vérifiée'&&n('x').conf==='');
+const w=L.normalizeWine({name:'A',sources:[{t:'ok',u:'https://a.fr/x'},{t:'mauvais',u:'http://a.fr'},{t:'js',u:'javascript:alert(1)'},null,...Array(8).fill({t:'z',u:'https://z.fr'})]});
+T('sources : https seulement, 5 au maximum',w.sources.length===5&&w.sources.every(x=>x.u.startsWith('https://')));
+T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({name:'B'}).sources.length===0);}
 console.log(out.join('\n'));
 const mw=L.normalizeWine({name:'Chassagne-Montrachet',dom:'Paul Jouard',year:2012,loc:'Casier B'});
 console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz',false],['',true]].map(([q,e])=>(L.matchesQuery(mw,q)===e?'PASS':'FAIL')+' recherche « '+q+' »').join('\n'));

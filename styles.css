@@ -148,3 +148,6 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 .quote .qm { position: absolute; top: -14px; left: 10px; font: 700 96px/1 Georgia, "Times New Roman", serif; opacity: .22; pointer-events: none; }
 .quote p { position: relative; margin: 0; font: italic 19px/1.45 Georgia, "Times New Roman", serif; text-wrap: pretty; }
 .credit { text-align: center; color: var(--mu); font-size: 13px; margin: 30px 0 6px; }
+
+.src { font-size: 13px; color: var(--mu, inherit); overflow-wrap: anywhere; }
+.src a { color: var(--ac); }

@@ -89,7 +89,22 @@ async function httpJson(url, init) {
   return j || {};
 }
 
-async function callOnce(prompt, images, signal) {
+// Sites réellement consultés par Gemini (https uniquement, 5 au maximum, sans doublon).
+export function webSources(cand) {
+  const ch = (cand && cand.groundingMetadata && cand.groundingMetadata.groundingChunks) || [];
+  const seen = new Set(); const res = [];
+  for (const x of ch) {
+    const w = x && x.web; if (!w || typeof w.uri !== 'string' || !/^https:\/\//i.test(w.uri)) continue;
+    const t = String(w.title || '').trim().slice(0, 80) || 'Source';
+    const k = t.toLowerCase();
+    if (seen.has(k)) continue; seen.add(k);
+    res.push({ t, u: w.uri });
+    if (res.length >= 5) break;
+  }
+  return res;
+}
+
+async function callOnce(prompt, images, signal, out) {
   const s = getSettings();
   if (!s.key) throw { code: 'no_key' };
   const b64 = [];
@@ -118,28 +133,33 @@ async function callOnce(prompt, images, signal) {
     if (!t) throw { code: 'invalid_json' };
     return parseJsonLoose(t);
   }
-  // Gemini (par défaut)
+  // Gemini (par défaut) ; avec `search`, Gemini consulte le web (Google Search) avant de répondre.
+  const search = !!(out && out.search && s.provider === 'gemini');
+  if (out) out.searched = search;
   const parts = [{ text: prompt }, ...b64.map(d => ({ inline_data: { mime_type: 'image/jpeg', data: d } }))];
   const j = await httpJson('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(s.model) + ':generateContent', {
     method: 'POST', signal,
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': s.key },
-    body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', temperature: 0.2 } }),
+    body: JSON.stringify(search
+      ? { contents: [{ role: 'user', parts }], tools: [{ google_search: {} }], generationConfig: { temperature: 0.2 } }
+      : { contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', temperature: 0.2 } }),
   });
   const c = j.candidates && j.candidates[0];
+  if (search && out) out.sources = webSources(c);
   const t = c && c.content && c.content.parts ? c.content.parts.map(p => p.text || '').join('') : '';
   if (!t) throw { code: j.promptFeedback && j.promptFeedback.blockReason ? 'blocked' : 'invalid_json' };
   return parseJsonLoose(t);
 }
 
 // Appel avec délai maximal, arrêt possible, et nouvelle tentative automatique si la limite par minute est atteinte.
-export async function callJson(prompt, { images = [], signal, onWait } = {}) {
+export async function callJson(prompt, { images = [], signal, onWait, out } = {}) {
   for (let attempt = 0; ; attempt++) {
     const ac = new AbortController();
     const stop = () => ac.abort();
     if (signal) { if (signal.aborted) throw Object.assign(new Error('abort'), { name: 'AbortError' }); signal.addEventListener('abort', stop, { once: true }); }
     const timer = setTimeout(() => { ac.timedOut = true; ac.abort(); }, cfg.timeout);
     try {
-      return await callOnce(prompt, images, ac.signal);
+      return await callOnce(prompt, images, ac.signal, out);
     } catch (e) {
       if (e && e.name === 'AbortError') { if (ac.timedOut) throw { code: 'timeout' }; throw e; }
       if (e && e.code === 'rate_limited' && attempt < cfg.retries) {
@@ -157,7 +177,7 @@ export async function callJson(prompt, { images = [], signal, onWait } = {}) {
 
 /* ---------- Demandes métier ---------- */
 const SCHEMA_LABEL = '{"name":"cuvée","dom":"domaine/château","year":2019,"color":"Rouge|Blanc|Rosé|Pétillant|Autre","region":"appellation","grape":"cépages","lecture":"haute si tout est lisible, moyenne si tu as dû deviner une partie, faible sinon"}';
-const SCHEMA_FICHE = '{"grape":"cépages","story":"2-3 phrases sur la cuvée, le domaine et le millésime","from":année de début de garde,"to":année de fin de garde,"pairings":["4 à 6 plats précis"],"conf":"connue si tu connais précisément cette cuvée et ce millésime, sinon estimée"}';
+const SCHEMA_FICHE = '{"grape":"cépages","story":"2-3 phrases sur la cuvée, le domaine et le millésime","from":année de début de garde,"to":année de fin de garde,"pairings":["4 à 6 plats précis"],"conf":"vérifiée si les pages web consultées confirment cette cuvée, ce millésime et la fenêtre de garde, sinon estimée"}';
 const EXPERT = 'Tu es un sommelier expert de 30 ans d’expérience, qui connaît les grands guides (RVF, Bettane+Desseauve, Parker, Decanter).';
 
 export async function scanLabel(file, opts) {
@@ -167,11 +187,29 @@ export async function scanLabel(file, opts) {
   return { name: d.name || d.dom, dom: d.dom || '', year: d.year, color: normColor(d.color), region: d.region || '', grape: d.grape || '', lecture: String(d.lecture || '').toLowerCase().startsWith('haute') ? 'haute' : 'douteuse' };
 }
 
-export async function makeFiche(w, opts) {
+export async function makeFiche(w, opts = {}) {
   const year = new Date().getFullYear();
-  const d = await callJson(`${EXPERT} Complète la fiche de ce vin avec tes connaissances (estime si la cuvée t’est inconnue, sans inventer de faits précis) : ${JSON.stringify({ name: w.name, dom: w.dom, year: w.year, color: w.color, region: w.region })}. Nous sommes en ${year}. Réponds uniquement par un objet JSON de ce format : ${SCHEMA_FICHE}.`, opts);
+  const ask = web => `${EXPERT} ${web ? 'Utilise la recherche web et croise plusieurs sources fiables : site du domaine, guides et revues (RVF, Bettane+Desseauve, Parker, Decanter), forums spécialisés (La Passion du Vin, CellarTracker…), sites de vente en ligne avec fiches produit (Vinatis, V and B, Millésima, Idealwine…), cavistes et notes de dégustation. Compare les fenêtres de garde données par ces sources puis complète la fiche' : 'Complète la fiche de ce vin avec tes connaissances (estime si la cuvée t’est inconnue, sans inventer de faits précis)'} : ${JSON.stringify({ name: w.name, dom: w.dom, year: w.year, color: w.color, region: w.region })}. Nous sommes en ${year}. Ne donne jamais une date de garde précise sans base : en cas de doute, élargis la fourchette et mets conf à « estimée » ; ne retiens « vérifiée » que si au moins deux sources concordent ou si la source est le domaine lui-même. Réponds uniquement par un objet JSON de ce format : ${SCHEMA_FICHE}.`;
+  let out = { search: getSettings().provider === 'gemini' };
+  let d;
+  try {
+    d = await callJson(ask(out.search), { ...opts, out });
+  } catch (e) {
+    // La recherche web est un plus : si elle est refusée par le service, on refait sans elle.
+    if (!(out.search && e && e.code === 'server')) throw e;
+    out = { search: false };
+    d = await callJson(ask(false), { ...opts, out });
+    out.fallback = true;
+  }
   if (!d || typeof d !== 'object' || Array.isArray(d)) throw { code: 'invalid_json' };
-  return ficheFrom(d);
+  const f = ficheFrom(d);
+  const sources = out.searched ? (out.sources || []) : [];
+  // « vérifiée » seulement si le modèle l’affirme ET que des pages web ont réellement été consultées.
+  f.conf = sources.length && /^v[ée]rifi/i.test(String(d.conf || d.c || '')) ? 'vérifiée' : 'estimée';
+  f.sources = sources;
+  f.searched = !!out.searched;
+  f.fallback = !!out.fallback;
+  return f;
 }
 
 function ficheFrom(d) {
@@ -180,14 +218,15 @@ function ficheFrom(d) {
     story: String(d.story || d.s || ''),
     from: d.from ?? d.f, to: d.to ?? d.t,
     pairings: Array.isArray(d.pairings || d.p) ? (d.pairings || d.p).map(String) : [],
-    conf: /^connue/i.test(String(d.conf || d.c || '')) ? 'connue' : 'estimée',
+    conf: 'estimée', // sans recherche web, une fiche n’est jamais « vérifiée »
+    sources: [],
   };
 }
 
 // 10 vins par appel : 10 fois moins d'appels que vin par vin.
 export async function makeFiches(list, opts) {
   const year = new Date().getFullYear();
-  const d = await callJson(`${EXPERT} Pour chaque vin de la liste, complète : g=cépages, s=histoire de la cuvée et du millésime en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ${year}), p=4 accords mets courts, c="connue" si tu connais précisément cette cuvée sinon "estimée". Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region })))}. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"c":"estimée"}]} avec une entrée par vin.`, opts);
+  const d = await callJson(`${EXPERT} Pour chaque vin de la liste, complète : g=cépages, s=histoire de la cuvée et du millésime en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ${year}), p=4 accords mets courts, c="estimée". Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region })))}. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"c":"estimée"}]} avec une entrée par vin.`, opts);
   const items = Array.isArray(d) ? d : d && Array.isArray(d.items) ? d.items : null;
   if (!items) throw { code: 'invalid_json' };
   const out = new Map();

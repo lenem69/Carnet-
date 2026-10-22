@@ -2,7 +2,7 @@
 import { norm, num, price, uid } from './util.js';
 
 export const COLORS = ['Rouge', 'Blanc', 'Rosé', 'Pétillant', 'Autre'];
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export function normColor(v) {
   const s = norm(v);
@@ -47,13 +47,20 @@ export function normalizeWine(raw) {
     pairings: toList(raw.pairings),
     note: str(raw.note),
     check: raw.check === true,
-    conf: raw.conf === 'connue' || raw.conf === 'estimée' ? raw.conf : '',
+    // v3 : « connue » (auto-déclaré par le modèle, non vérifié) devient « estimée » ; « vérifiée » exige des sources web.
+    conf: raw.conf === 'vérifiée' ? 'vérifiée' : raw.conf === 'connue' || raw.conf === 'estimée' ? 'estimée' : '',
+    sources: toSources(raw.sources),
     created: Number(raw.created) || now,
     updated: Number(raw.updated) || now,
   };
 }
 
 // Clé de doublon : même cuvée, même domaine, même millésime.
+function toSources(v) {
+  if (!Array.isArray(v)) return [];
+  return v.filter(x => x && typeof x.u === 'string' && /^https:\/\//i.test(x.u)).slice(0, 5).map(x => ({ t: str(x.t).slice(0, 80) || 'Source', u: x.u }));
+}
+
 export const keyOf = w => norm([w.name, w.dom, w.year].join('|'));
 
 export function status(w, year) {

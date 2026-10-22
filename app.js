@@ -121,10 +121,11 @@ function card(w, mode, why) {
   const tags = [
     w.check ? '<span class="tag bad">à vérifier</span>' : '',
     w.conf === 'estimée' ? '<span class="tag wa">fiche estimée</span>' : '',
+    w.conf === 'vérifiée' ? '<span class="tag ok">fiche vérifiée</span>' : '',
     st ? `<span class="tag ${st.cls}">${st.label}${w.from || w.to ? ' (' + (w.from || '…') + '–' + (w.to || '…') + ')' : ''}</span>` : '',
     w.qty <= 0 ? '<span class="tag">plus en cave</span>' : '',
   ].filter(Boolean).join(' · ');
-  const hasFiche = w.story || w.pairings.length || w.note;
+  const hasFiche = w.story || w.pairings.length || w.note || w.sources.length;
   const qty = mode === 'cave'
     ? `<div class="q"><button data-a="m" aria-label="Retirer une bouteille">−</button><b>${w.qty}</b><button data-a="p" aria-label="Ajouter une bouteille">+</button></div>`
     : `<b style="font-size:18px">${w.qty}×</b>`;
@@ -132,7 +133,7 @@ function card(w, mode, why) {
   ${why ? `<p class="why">💡 ${esc(why)}</p>` : ''}
   <div class="row"><div><h4>${esc(w.name)}${w.year ? ' ' + esc(w.year) : ''}</h4><p>${esc([w.dom, w.region].filter(Boolean).join(' · '))}</p></div>${qty}</div>
   ${meta ? `<p>${meta}</p>` : ''}${tags ? `<p>${tags}</p>` : ''}
-  ${hasFiche ? `<details><summary>Fiche et accords</summary>${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}</details>` : ''}
+  ${hasFiche ? `<details><summary>Fiche et accords</summary>${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}</details>` : ''}
   <div class="acts">${!w.story && !w.pairings.length ? '<button class="lnk" data-a="gen">✨ Fiche (IA)</button>' : ''}<button class="lnk" data-a="e">Modifier</button>${mode === 'cave' ? '<button class="lnk" data-a="d">Supprimer</button>' : ''}</div>
 </div>`;
 }
@@ -213,7 +214,7 @@ function render() {
 const F = id => $('#f-' + id);
 function openForm(w, title) {
   S.editId = w && w.id && S.wines.some(x => x.id === w.id) ? w.id : null;
-  S.formExtra = { conf: (w && w.conf) || '' };
+  S.formExtra = { conf: (w && w.conf) || '', sources: (w && w.sources) || [] };
   $('#fT').textContent = title || (S.editId ? 'Modifier le vin' : 'Ajouter un vin');
   const v = w || {};
   F('name').value = v.name || ''; F('dom').value = v.dom || ''; F('year').value = v.year || '';
@@ -258,13 +259,13 @@ async function saveForm() {
   if (S.editId) {
     const old = S.wines.find(w => w.id === S.editId);
     if (!old) { errToast('Ce vin n’existe plus.'); closeSheet('sForm'); return; }
-    const nw = L.normalizeWine({ ...old, ...f, check: false, conf: S.formExtra.conf || old.conf, updated: now });
+    const nw = L.normalizeWine({ ...old, ...f, check: false, conf: S.formExtra.conf || old.conf, sources: S.formExtra.sources, updated: now });
     Object.assign(old, nw);
     const ok = await persist(() => store.putWines([old]));
     finishSave(old, ok, '« ' + old.name + ' » modifié.');
     return;
   }
-  const nw = L.normalizeWine({ ...f, id: uid(), conf: S.formExtra.conf, check: false, created: now, updated: now });
+  const nw = L.normalizeWine({ ...f, id: uid(), conf: S.formExtra.conf, sources: S.formExtra.sources, check: false, created: now, updated: now });
   const dup = S.wines.find(w => L.keyOf(w) === L.keyOf(nw));
   if (dup) {
     const c = await ask('Déjà dans votre cave', `« ${dup.name}${dup.year ? ' ' + dup.year : ''} » existe déjà (${dup.qty} bouteille(s)).`, [
@@ -308,8 +309,8 @@ async function genInForm() {
     F('grape').value = d.grape; F('story').value = d.story;
     F('from').value = num(d.from); F('to').value = num(d.to);
     F('pairings').value = d.pairings.join(', ');
-    S.formExtra.conf = d.conf;
-    toast(d.conf === 'estimée' ? 'Fiche générée (estimée : à vérifier).' : 'Fiche générée.');
+    S.formExtra.conf = d.conf; S.formExtra.sources = d.sources;
+    toast(ficheMsg(d));
   } catch (e) { if (!(e && e.name === 'AbortError')) errToast(AI.errText(e)); }
   b.disabled = false; b.textContent = '✨ Générer la fiche (IA)';
 }
@@ -356,6 +357,13 @@ async function onCardAction(e) {
   }
 }
 
+function ficheMsg(d) {
+  if (d.conf === 'vérifiée') return `Fiche vérifiée sur le web (${d.sources.length} source${d.sources.length > 1 ? 's' : ''}).`;
+  if (d.fallback) return 'Recherche web indisponible : fiche estimée, à vérifier.';
+  if (d.searched) return 'Rien de sûr trouvé sur le web : fiche estimée, à vérifier.';
+  return 'Fiche estimée (sans recherche web) : à vérifier.';
+}
+
 // Complète sans écraser ce que l'utilisateur a déjà saisi.
 function applyFiche(w, d) {
   if (!w.grape && d.grape) w.grape = d.grape;
@@ -364,7 +372,8 @@ function applyFiche(w, d) {
   if (!w.to && num(d.to) !== '') w.to = num(d.to);
   if (w.from && w.to && w.from > w.to) [w.from, w.to] = [w.to, w.from];
   if (!w.pairings.length && d.pairings.length) w.pairings = d.pairings.map(String).filter(Boolean);
-  w.conf = w.conf === 'connue' ? 'connue' : d.conf;
+  w.conf = w.conf === 'vérifiée' ? 'vérifiée' : d.conf;
+  if (d.sources && d.sources.length) w.sources = d.sources;
   w.updated = Date.now();
 }
 

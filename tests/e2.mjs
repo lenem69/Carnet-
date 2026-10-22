@@ -19,7 +19,14 @@ const ai=async c=>{
     return G(L[(n-1)%2]);}
   if(t.includes('Pour chaque vin')){const ids=JSON.parse(t.slice(t.indexOf('Vins : ')+7,t.indexOf('. Réponds'))).map(x=>x.id);return G({items:ids.map(id=>({id,g:'Syrah',s:'Histoire courte.',f:2024,t:2030,p:['Gigot','Fromages'],c:'estimée'}))})}
   if(t.includes('Plat prévu')){const i=t.indexOf('accords) : ');const cat=JSON.parse(t.slice(i+11,t.indexOf('. Choisis')));return G({items:[{id:cat[0].id,why:'Accord classique et à boire maintenant.'}],_n:cat.length})}
-  if(t.includes('Complète la fiche'))return G({grape:'Gamay',story:'Cuvée emblématique.',from:2025,to:2031,pairings:['Poulet rôti','Andouillette'],conf:'connue'});
+  if(t.includes('omplète la fiche')){
+    const fiche={grape:'Gamay',story:'Cuvée emblématique.',from:2025,to:2031,pairings:['Poulet rôti','Andouillette'],conf:'vérifiée'};
+    if(c.body.tools){
+      if(mode==='notools')return {status:400,json:{error:{message:'Search grounding is not supported'}}};
+      const ch=mode==='nosrc'?[]:[{web:{uri:'https://www.vinatis.com/x',title:'vinatis.com'}},{web:{uri:'https://www.vinatis.com/y',title:'vinatis.com'}},{web:{uri:'https://forum.example.fr/morgon',title:'forum.example.fr'}},{web:{uri:'http://non-securise.fr',title:'mauvais'}}];
+      return {json:{candidates:[{content:{parts:[{text:'```json\n'+JSON.stringify(fiche)+'\n```'}]},groundingMetadata:{groundingChunks:ch}}]}};
+    }
+    return G({...fiche,conf:'connue'});}
   return G({});
 };
 const {page,errs,calls}=await H.newPage(b,{ai});
@@ -46,8 +53,21 @@ T('scan : JSON demandé',last.body.generationConfig.responseMimeType==='applicat
 T('scan : champs + couleur normalisée',(await page.$eval('#f-name',e=>e.value))==='Morgon'&&(await page.$eval('#f-color',e=>e.value))==='Rouge'&&(await page.$eval('#f-grape',e=>e.value))==='Gamay');
 await H.click(page,'#f-gen');await H.sl(500);
 T('fiche générée dans le formulaire',(await page.$eval('#f-story',e=>e.value)).includes('emblématique')&&(await page.$eval('#f-to',e=>e.value))==='2031');
+const cg=calls[calls.length-1];
+T('fiche : recherche web Gemini demandée (outil de recherche, forums et vente en ligne cités)',!!cg.body.tools&&JSON.stringify(cg.body.tools).includes('google_search')&&cg.body.contents[0].parts[0].text.includes('Vinatis')&&cg.body.contents[0].parts[0].text.includes('forums'),JSON.stringify(cg.body.tools));
+T('fiche : message « vérifiée » avec 2 sources',(await H.txt(page,'#toasts')).includes('Fiche vérifiée sur le web (2 sources)'),await H.txt(page,'#toasts'));
 await H.click(page,'#f-save');await H.sl(400);
 T('scan : enregistré',(await H.txt(page,'#list')).includes('Morgon 2023'));
+T('carte : étiquette « fiche vérifiée »',(await H.txt(page,'#list')).includes('fiche vérifiée'));
+const lk=await page.$$eval('#list .src a',a=>a.map(x=>x.href+'|'+x.rel+'|'+x.target));
+T('carte : sources cliquables (https, sans doublon, sans http)',lk.length===2&&lk.every(x=>x.startsWith('https://')&&x.includes('noopener')&&x.endsWith('_blank')),JSON.stringify(lk));
+mode='nosrc';await page.evaluate(()=>document.querySelector('#list .w [data-a="e"]').click());await H.sl(300);
+await page.evaluate(()=>{const f=document.querySelector('#f-story');f.value='';const p=document.querySelector('#f-pairings');p.value=''});
+await H.click(page,'#f-gen');await H.sl(500);
+T('fiche sans source web : estimée (jamais vérifiée sans sources)',(await H.txt(page,'#toasts')).includes('fiche estimée'),await H.txt(page,'#toasts'));
+mode='notools';await H.click(page,'#f-gen');await H.sl(600);
+T('recherche refusée par le service : repli sans recherche + message',(await H.txt(page,'#toasts')).includes('Recherche web indisponible'),await H.txt(page,'#toasts'));
+mode='ok';await page.evaluate(()=>document.querySelector('#f-cancel').click());await H.sl(300);
 // lot de 3 photos : nouveau douteux, doublon, nouveau
 n=1;await scan(['fixtures/lab.png','fixtures/lab.png','fixtures/lab.png'],'Importer des photos');await H.sl(800);
 const lg=await H.txt(page,'#lg');
