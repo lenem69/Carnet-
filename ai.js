@@ -15,7 +15,9 @@ const KEY = 'cave-ai';
 const COOL = 'cave-ai-cool';
 // Ordre de préférence : le gratuit d’abord, puis le moins cher.
 export const ORDER = ['gemini', 'openai', 'anthropic'];
-export const hooks = { onSwitch: null };
+export const hooks = { onSwitch: null, onStat: null };
+const stat = k => { try { if (hooks.onStat) hooks.onStat(k); } catch (e) { /* les statistiques ne doivent jamais gêner */ } };
+const STAT_OF = { rate_limited: 'ia_limite', bad_key: 'ia_cle', bad_model: 'ia_cle', bad_base: 'ia_cle', no_key: 'ia_cle', network: 'ia_reseau', timeout: 'ia_reseau', server: 'ia_reseau' };
 
 // Réglages : une configuration par fournisseur. Ancien format (un seul fournisseur) migré à la lecture.
 function readRaw() {
@@ -237,16 +239,18 @@ export async function callJson(prompt, opts = {}) {
     const s = { provider: prov, ...getConfig(prov) };
     try {
       const r = await callProvider(s, prompt, opts, last ? cfg.retries : 0);
-      uncool(prov);
+      uncool(prov); stat('ia_ok');
       if (opts.out) opts.out.provider = prov;
       return r;
     } catch (e) {
       if (e && e.name === 'AbortError') throw e;
       lastErr = e;
       const code = e && e.code;
+      if (STAT_OF[code]) stat(STAT_OF[code]);
       const sticky = !['bad_image', 'not_label', 'blocked'].includes(code);
       if (!opts.only && sticky) cool(prov, e);
       if (last || !sticky) throw e;
+      stat('ia_relais');
       if (hooks.onSwitch) hooks.onSwitch(prov, list[i + 1], e);
     }
   }

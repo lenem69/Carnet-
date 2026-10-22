@@ -6,10 +6,14 @@ import * as AI from './ai.js';
 import * as IMP from './importer.js';
 import { QUOTES } from './quotes.js';
 import { saveFile, readText } from './files.js';
+import * as Stats from './stats.js';
 
 const VERSION = self.APP_VERSION || '?';
 // Formulaire Google de retours (aucune adresse mail n’est publiée dans le code).
 const FEEDBACK_POST = 'https://docs.google.com/forms/d/e/1FAIpQLSfOirVg2Xykiv6DvPS1jNM5NQJSpnW0ajhbdP1gD3bKap1QDw/formResponse';
+// Statistiques anonymes (facultatives) : formulaire Google dédié, à renseigner une fois créé.
+const STATS_POST = '';
+const STATS_ENTRY = '';
 const FEEDBACK_ENTRY = 'entry.1804718778'; // identifiant du champ « Votre message » du formulaire (entry.NNN)
 const YEAR = new Date().getFullYear();
 const PAGE = 100;
@@ -50,7 +54,7 @@ window.addEventListener('unhandledrejection', e => {
 const SAVE_FAIL = 'Enregistrement impossible : la mémoire du téléphone est pleine ou bloquée. Ces modifications ne sont PAS conservées. Faites vite « Sauvegarder ma cave ».';
 async function persist(op) {
   try { await op(); return true; }
-  catch (e) { console.error(e); errToast(SAVE_FAIL); return false; }
+  catch (e) { console.error(e); Stats.track('err_enreg'); errToast(SAVE_FAIL); return false; }
 }
 
 /* ============ Feuilles (fenêtres du bas) et bouton retour Android ============ */
@@ -287,6 +291,7 @@ async function saveForm() {
   }
   S.wines.push(nw);
   const ok = await persist(() => store.putWines([nw]));
+  if (ok) { if ($('#fT').textContent === 'Ajouter un vin') Stats.track('add_manuel'); Stats.noteWines(S.wines.length); }
   finishSave(nw, ok, '« ' + nw.name + ' » enregistré dans votre cave.');
 }
 
@@ -314,6 +319,7 @@ async function genInForm() {
     F('from').value = num(d.from); F('to').value = num(d.to);
     F('pairings').value = d.pairings.join(', ');
     S.formExtra.conf = d.conf; S.formExtra.sources = d.sources;
+    Stats.track('fiches_ia'); if (d.conf === 'vérifiée') Stats.track('fiches_verif');
     toast(ficheMsg(d));
   } catch (e) { if (!(e && e.name === 'AbortError')) errToast(AI.errText(e)); }
   b.disabled = false; b.textContent = '✨ Générer la fiche (IA)';
@@ -332,6 +338,7 @@ async function onCardAction(e) {
     const before = w.qty;
     w.qty = Math.max(0, w.qty + (a === 'p' ? 1 : -1));
     if (w.qty === before) return;
+    if (a === 'm') Stats.track('conso');
     w.updated = Date.now();
     render();
     await persist(() => store.putWines([w]));
@@ -354,6 +361,7 @@ async function onCardAction(e) {
     btn.disabled = true; btn.textContent = 'Génération…';
     try {
       const d = await AI.makeFiche(w);
+      Stats.track('fiches_ia'); if (d.conf === 'vérifiée') Stats.track('fiches_verif');
       applyFiche(w, d);
       await persist(() => store.putWines([w]));
       render();
@@ -445,6 +453,8 @@ async function scanFiles(files) {
       }
     }
   }
+  if (files.length > 1) Stats.track('add_photos', added); else if (single) Stats.track('add_scan');
+  Stats.noteWines(S.wines.length + (single ? 1 : 0));
   log.manual = fails > 0;
   log.finish(single ? 'Étiquette reconnue' : `Terminé : ${added} ajouté(s), ${dups} doublon(s), ${fails} échec(s)`);
   if (single) { hideSheet('sLog'); openForm(single, 'Vérifier la fiche scannée'); }
@@ -469,6 +479,7 @@ async function enrichAll() {
       const res = await AI.makeFiches(groups[i], { signal: log.signal, onWait: s => log.set(i, 'run', `Limite de l’IA atteinte, nouvel essai dans ${s} s…`) });
       const changed = [];
       for (const w of groups[i]) { const d = res.get(String(w.id)); if (d) { applyFiche(w, d); changed.push(w); } }
+      Stats.track('fiches_ia', changed.length);
       const ok = await persist(() => store.putWines(changed));
       done += changed.length;
       log.set(i, ok ? 'ok' : 'err', ok ? `${changed.length} fiche(s) complétée(s)` : 'Non enregistré (mémoire pleine)');
@@ -488,6 +499,7 @@ async function findForDish() {
   if (!dish) { errToast('Décrivez le plat prévu.'); $('#dish').focus(); return; }
   const stock = S.wines.filter(w => w.qty > 0);
   if (!stock.length) { $('#blist').innerHTML = '<p class="empty">Aucune bouteille en cave.</p>'; return; }
+  Stats.track('plat');
   const local = L.localPairing(dish, S.wines, YEAR, 5);
   const showLocal = note => {
     $('#blist').innerHTML = `<p class="mu small">${note}</p>` + (local.length ? local.map(r => card(r.w, 'boire', r.why)).join('')
@@ -523,12 +535,13 @@ async function importSheet(file) {
   const t = toast('Lecture du fichier…');
   let rows;
   try { rows = await IMP.readRows(file); }
-  catch (e) { t.remove(); errToast('Lecture du fichier impossible : ' + (e.message || 'format non reconnu') + '. Utilisez un fichier .xlsx ou .csv avec une ligne d’en-têtes.'); return; }
+  catch (e) { t.remove(); Stats.track('err_import'); errToast('Lecture du fichier impossible : ' + (e.message || 'format non reconnu') + '. Utilisez un fichier .xlsx ou .csv avec une ligne d’en-têtes.'); return; }
   t.remove();
   if (!rows.length) { errToast('Fichier vide ou sans ligne d’en-têtes.'); return; }
   let r = IMP.rowsToWines(rows, S.wines);
   let ignored = 0;
   if (!r.added.length && !r.updated.length) {
+    Stats.track('err_import');
     errToast(`Aucun vin importé. Colonnes trouvées : ${Object.keys(rows[0]).join(', ') || 'aucune'}. Il faut au moins une colonne « Cuvée » ou « Domaine ».`);
     return;
   }
@@ -550,6 +563,7 @@ async function importSheet(file) {
   S.wines = S.wines.map(w => byId.get(w.id) || w).concat(r.added);
   S.tab = 'cave'; S.filt = 'Tous'; S.sort = 'recent'; $('#sort').value = 'recent'; S.limit = PAGE;
   render();
+  Stats.track('add_tableur', r.added.length); Stats.noteWines(S.wines.length);
   const chk = r.added.filter(w => w.check).length;
   toast(`✅ ${r.added.length} vin(s) ajouté(s)${r.merged ? ', ' + r.merged + ' doublon(s) additionné(s)' : ''}${ignored ? ', ' + ignored + ' déjà en cave (inchangé' + (ignored > 1 ? 's' : '') + ')' : ''}${r.skipped ? ', ' + r.skipped + ' ligne(s) ignorée(s)' : ''}${chk ? '. ' + chk + ' à vérifier (filtre « À vérifier »)' : ''}.`);
 }
@@ -639,6 +653,8 @@ async function openSettings() {
   $('#ai-key').type = 'password'; $('#ai-show').textContent = 'Voir';
   $('#ai-guide').hidden = AI.ready();
   $('#st-ver').textContent = VERSION;
+  $('#st-stats-w').hidden = !Stats.configured();
+  $('#st-stats').checked = Stats.consentState() === 'oui';
   $('#st-info').textContent = 'Lecture…';
   openSheet('sSet');
   const i = await store.info();
@@ -736,6 +752,8 @@ function bind() {
   $('#bSet').onclick = openSettings;
   $('#bTitle').onclick = openTitle;
   $('#bContact').onclick = openContact;
+  $('#st-stats').onchange = async () => { await Stats.setConsent($('#st-stats').checked); toast($('#st-stats').checked ? 'Statistiques anonymes activées.' : 'Statistiques arrêtées : rien ne sera envoyé.'); };
+  $('#st-stats-show').onclick = showStatsPreview;
   $('#st-help').onclick = openContact;
   $('#ct-share').onclick = sendContact;
   $('#ct-pub').onclick = publishContact;
@@ -762,7 +780,7 @@ function bind() {
     closeSheet(id);
   });
 
-  $$('.tab').forEach(b => { b.onclick = () => { S.tab = b.dataset.t; render(); }; });
+  $$('.tab').forEach(b => { b.onclick = () => { S.tab = b.dataset.t; if (S.tab === 'boire') Stats.track('quoiboire'); render(); }; });
   $('#chips').onclick = e => { const b = e.target.closest('[data-c]'); if (b) { S.filt = b.dataset.c; S.limit = PAGE; renderList(); } };
   $('#bchips').onclick = e => { const b = e.target.closest('[data-b]'); if (b) { S.bmode = b.dataset.b; $('#blist').innerHTML = ''; renderBoire(); } };
   let qt;
@@ -827,6 +845,7 @@ async function copyText(t) {
   try { await navigator.clipboard.writeText(t); return true; } catch (e) { return false; }
 }
 function openContact() {
+  Stats.track('aide');
   closeSheet('sSet');
   $('#ct-msg').value = '';
   openSheet('sContact');
@@ -882,6 +901,36 @@ function showQuote() {
   $('#quoteText').textContent = QUOTES[i];
 }
 
+/* ============ Statistiques anonymes (facultatives) ============ */
+const statsExtra = () => ({
+  wines: S.wines.length,
+  iaKeys: AI.configured().length,
+  daysSinceBackup: S.lastBackup ? Math.floor((Date.now() - S.lastBackup) / 864e5) : -1,
+});
+async function initStats() {
+  Stats.cfg.post = STATS_POST; Stats.cfg.entry = STATS_ENTRY; Stats.cfg.version = VERSION;
+  AI.hooks.onStat = k => Stats.track(k);
+  try {
+    await Stats.init(S.wines.length);
+    if (Stats.configured() && Stats.consentState() === null) await askStatsConsent();
+    Stats.track('ouvertures');
+    if (!store.persistent) Stats.track('err_stockage');
+    await Stats.flush(statsExtra());
+  } catch (e) { console.error('stats', e); }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) Stats.flush(statsExtra()).catch(() => {}); });
+}
+async function askStatsConsent() {
+  const c = await ask('Aider à améliorer l’appli ?',
+    'Une fois par semaine, l’appli peut envoyer à son auteur un petit récapitulatif anonyme : combien de fois vous l’avez ouverte, quelles fonctions vous utilisez, et les erreurs rencontrées. Jamais le nom de vos vins, jamais vos photos ni vos clés. Vous pouvez changer d’avis dans ⚙ Réglages et voir exactement ce qui est envoyé.',
+    [{ label: 'Oui, aider', value: 'oui' }, { label: 'Non merci', value: 'non', kind: 'o' }]);
+  await Stats.setConsent(c === 'oui');
+  toast(c === 'oui' ? 'Merci ! Vous pouvez arrêter à tout moment dans ⚙ Réglages.' : 'Rien ne sera envoyé.');
+}
+async function showStatsPreview() {
+  const t = await Stats.preview(statsExtra());
+  await ask('Ce qui est envoyé', t ? `Voici la ligne de cette semaine (elle part la semaine prochaine). Ce sont uniquement des nombres : 1) version 2) identifiant aléatoire de cette installation 3) semaines 4) compteurs d’usage.\n\n${t}` : 'Rien : les statistiques sont désactivées.', [{ label: 'Fermer', value: null, kind: 'o' }]);
+}
+
 /* ============ Démarrage ============ */
 async function boot() {
   fitViewport();
@@ -910,5 +959,6 @@ async function boot() {
   render();
   store.protect();
   initSW();
+  initStats();
 }
 boot();

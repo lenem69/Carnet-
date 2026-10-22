@@ -165,3 +165,6 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 #updBar .btn { background: var(--acx); color: var(--ac); border: 0; font-weight: 700; padding: 12px 16px; white-space: nowrap; animation: updpulse 1.6s ease-in-out infinite; }
 @keyframes updpulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, .55); } 50% { box-shadow: 0 0 0 9px rgba(255, 255, 255, 0); } }
 @media (prefers-reduced-motion: reduce) { #updBar .btn { animation: none; } }
+
+.chk { display: flex; align-items: center; gap: 10px; font-size: 16px; color: var(--tx); }
+.chk input { width: 22px; height: 22px; flex: 0 0 auto; }
