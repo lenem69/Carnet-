@@ -99,7 +99,7 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 .btn.sm { width: auto; min-height: 44px; padding: 8px 14px; flex: none; }
 .btn:disabled { opacity: .55; cursor: default; }
 .stack { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-.row2 { display: flex; gap: 8px; }
+.row2 { display: flex; gap: 8px; flex-wrap: wrap; }
 .row2 input { flex: 1; min-width: 0; }
 .close { margin-top: 10px; }
 
@@ -137,3 +137,5 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 .code pre { margin: 0; padding: 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12.5px/1.5 var(--mono); max-height: 260px; overflow: auto; }
 .code .cp { border-radius: 0; }
 .noscript { padding: 20px; }
+.guide { border: 1px solid var(--bd); border-radius: 12px; padding: 12px; margin: 10px 0; background: var(--card); }
+.guide p { margin: 0 0 4px; }

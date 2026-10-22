@@ -138,11 +138,21 @@
   <h2 id="stT">Réglages</h2>
   <h3>IA (optionnelle)</h3>
   <p class="mu small">Sert au scan d’étiquettes, aux fiches et aux accords affinés. Tout le reste fonctionne sans IA.</p>
+  <div id="ai-guide" class="guide" hidden>
+    <p><b>Obtenir une clé gratuite (2 minutes)</b></p>
+    <ol class="steps">
+      <li>Touchez « Ouvrir Google AI Studio » ci-dessous et connectez-vous avec votre compte Google.</li>
+      <li>Touchez « Get API key », puis « Create API key ».</li>
+      <li>Copiez la clé qui s’affiche (elle commence par « AIza »).</li>
+      <li>Revenez ici, touchez « Coller la clé », puis « Enregistrer » et « Tester la connexion ».</li>
+    </ol>
+    <div class="stack"><button class="btn o" id="ai-open" type="button">🔑 Ouvrir Google AI Studio</button></div>
+  </div>
   <label for="ai-prov">Fournisseur</label>
   <select id="ai-prov"></select>
   <p id="ai-help" class="mu small"></p>
   <label for="ai-key">Clé API</label>
-  <div class="row2"><input id="ai-key" type="password" autocomplete="off" spellcheck="false"><button class="btn o sm" id="ai-show" type="button">Voir</button></div>
+  <div class="row2"><input id="ai-key" type="password" autocomplete="off" spellcheck="false"><button class="btn o sm" id="ai-paste" type="button">Coller la clé</button><button class="btn o sm" id="ai-show" type="button">Voir</button></div>
   <label for="ai-model">Modèle</label><input id="ai-model" autocomplete="off" spellcheck="false">
   <div id="ai-base-w"><label for="ai-base">Adresse de l’API</label><input id="ai-base" autocomplete="off" spellcheck="false" placeholder="https://api.openai.com/v1"></div>
   <p class="mu small">La clé reste uniquement sur ce téléphone. Sur l’offre gratuite de Gemini, Google peut utiliser vos photos et données pour améliorer ses produits.</p>

@@ -165,8 +165,9 @@ function renderList() {
   if (!S.ready) { $('#list').innerHTML = '<p class="empty">Chargement de votre cave…</p>'; return; }
   if (!S.wines.length) {
     $('#list').innerHTML = `<div class="empty"><p><b>Votre cave est vide.</b></p><p>Ajoutez vos premières bouteilles.</p><div class="stack">
-      <button class="btn" data-m="cam">📷 Scanner une étiquette</button><button class="btn o" data-m="xls">📊 Importer un tableur</button>
-      <button class="btn o" data-m="man">✍️ Saisie manuelle</button><button class="btn o" data-m="help">❔ Guide : importer toute ma cave</button></div></div>`;
+      <button class="btn" data-m="cam">📷 Scanner une étiquette</button><button class="btn o" data-m="img">🖼️ Importer des photos (plusieurs)</button>
+      <button class="btn o" data-m="xls">📊 Importer un tableur (Excel, CSV)</button><button class="btn o" data-m="man">✍️ Saisie manuelle</button>
+      <button class="btn o" data-m="res">♻️ Restaurer une sauvegarde</button><button class="btn o" data-m="help">❔ Guide : importer toute ma cave</button></div></div>`;
     return;
   }
   const items = L.sortWines(filtered(), S.sort, YEAR);
@@ -600,6 +601,7 @@ async function openSettings() {
   $('#ai-prov').value = s.provider;
   fillAiFields(s.provider, true);
   $('#ai-key').type = 'password'; $('#ai-show').textContent = 'Voir';
+  $('#ai-guide').hidden = AI.ready();
   $('#st-ver').textContent = VERSION;
   $('#st-info').textContent = 'Lecture…';
   openSheet('sSet');
@@ -732,6 +734,14 @@ function bind() {
 
   $('#ai-prov').onchange = () => fillAiFields($('#ai-prov').value, true);
   $('#ai-show').onclick = () => { const k = $('#ai-key'); const show = k.type === 'password'; k.type = show ? 'text' : 'password'; $('#ai-show').textContent = show ? 'Masquer' : 'Voir'; };
+  $('#ai-open').onclick = () => { try { window.open('https://aistudio.google.com/apikey', '_blank', 'noopener,noreferrer'); } catch (e) { errToast('Ouvrez aistudio.google.com dans votre navigateur.'); } };
+  $('#ai-paste').onclick = async () => {
+    try {
+      const t = ((await navigator.clipboard.readText()) || '').trim();
+      if (!t) { errToast('Le presse-papiers est vide : copiez d’abord la clé dans Google AI Studio.'); return; }
+      $('#ai-key').value = t; toast('Clé collée. Touchez « Enregistrer » puis « Tester la connexion ».');
+    } catch (e) { errToast('Collage impossible : touchez le champ « Clé API », maintenez le doigt et choisissez « Coller ».'); }
+  };
   $('#ai-save').onclick = () => { if (saveAi()) closeSheet('sSet'); };
   $('#ai-test').onclick = testAi;
   $('#st-erase').onclick = eraseAll;

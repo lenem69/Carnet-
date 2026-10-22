@@ -29,11 +29,14 @@ const scan=async(files=['fixtures/lab.png'],btn='Scanner')=>{await H.click(page,
 await H.click(page,'#fab');await H.tapText(page,'#sMenu button','Scanner');await H.sl(300);
 T('sans clé : réglages ouverts + message',await H.shown(page,'#sSet')&&(await H.txt(page,'#toasts')).includes('Aucune IA'));
 T('sans clé : aucun appel réseau',calls.length===0);
+T('sans clé : guide d’obtention de la clé visible',await page.$eval('#ai-guide',e=>!e.hidden));
+T('sans clé : bouton Coller la clé présent',!!(await page.$('#ai-paste')));
 // réglages + test
 await page.type('#ai-key','AIzaTEST');await H.click(page,'#ai-test');await H.sl(500);
 T('test de connexion réussi',(await H.txt(page,'#toasts')).includes('réussie'),await H.txt(page,'#toasts'));
 const c0=calls[0];T('Gemini : clé en en-tête, pas dans l’URL, modèle par défaut',c0.headers['x-goog-api-key']==='AIzaTEST'&&!c0.url.includes('AIza')&&c0.url.includes('/models/gemini-3.5-flash-lite:generateContent'),c0.url);
 await H.click(page,'#ai-save');await H.sl(300);T('réglages fermés',!(await H.shown(page,'#sSet')));
+await page.evaluate(()=>document.querySelector('#bSet').click());await H.sl(400);T('avec clé : guide masqué',await page.$eval('#ai-guide',e=>e.hidden));await page.evaluate(()=>document.querySelector('#sSet [data-close]').click());await H.sl(300);
 await page.evaluate(async()=>{const m=await import('./ai.js');m.cfg.retryDelay=300;});
 // scan simple
 await scan();
