@@ -19,7 +19,8 @@
 - **Zone 6 Rhône nord** : blancs de Château-Grillet alignés sur Condrieu ; Hermitage 2009 (5) et blanc 2019 (5) ; Diois tranquille et effervescent (C) ; Saint-Péray effervescent (C) ; Collines Rhodaniennes dérivées de la région ; notes d'Hermitage, Cornas, Crozes issues de commentaires de producteurs.
 - **Zone 7 Rhône sud** : 37 % de lignes en C ; Luberon, Costières de Nîmes, Grignan-les-Adhémar = proxy régional ; Muscat de Beaumes-de-Venise en NC ; village nommés confidentiels (Puyméras, Roaix…) en C ; 2024 Gigondas, Vacqueyras, Ventoux (une seule voix) ; blancs de Châteauneuf avant 2021.
 - **Zone 12 Champagne** : styles et grandes zones ne sont pas des AOC distinctes (sous-catégories de l'AOC Champagne) ; différences entre zones déduites des cépages (chardonnay / pinot / meunier), pas de sources par zone ; Blanc de Blancs 2020 (5) et 2015 (3) ; Côte des Bar 2024 inconnue (C) ; Coteaux Champenois tous en C ; Rosé des Riceys sans série de millésimes (le validateur refuse la couleur Ro dans les millésimes : à décider) ; pas de liste fiable d'années déclarées ; contrôle à froid de 15 % non fait.
-- **Zones 8, 9, 10, 11, 13** : à compléter à la réception des rapports des agents.
+- **Zone 11 Alsace** (65 % A / 31 % B / 2 % C) : Crémant d'Alsace 2021, 2024, 2025 ; Pinot Noir 2021, 2024, 2025 ; Riesling, Gewurztraminer, Pinot Gris 2025 (provisoire) ; Vendanges Tardives et Sélection de Grains Nobles 2013, 2014, 2022, 2023 (divergences sur le botrytis) ; VT et SGN 2025 en NC ; pages vinsalsace.com 2016 et 2020-2025 illisibles ; Grand Cru traité en bloc (51 lieux-dits non distingués).
+- **Zones 8, 9, 10, 13** : à compléter à la réception des rapports des agents.
 
 ## 3. Questions de structure à trancher
 - Couverture de **Bourgogne régional, Aligoté, Passetoutgrain, Coteaux Bourguignons, Crémant de Bourgogne** (confiée à la zone 13 ; vérifier l'absence de doublons).
