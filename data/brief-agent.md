@@ -48,3 +48,10 @@ Pour valider ta zone seule, copie tes trois fichiers dans un dossier temporaire 
 
 ## Rapport final (en réponse, 250 mots maximum)
 Nombre de lignes par fichier, part A/B/C, liste des sites réellement lus avec succès et des sites illisibles, désaccords trouvés entre sources et comment tu les as tranchés, 10 lignes les plus douteuses, et indique que les fenêtres d'apogée sont modélisées là où tu les as modélisées. Aucune invention : mieux vaut NC avec fiabilité C.
+
+## Leçons de la vérification indépendante de la zone 1 (à appliquer)
+- Note la QUALITÉ du vin, jamais la quantité récoltée : une petite récolte de grande qualité (ex. Sauternes 2021, blancs de Pessac-Léognan 2013) n'est pas un millésime « difficile ». Mentionne la rareté dans `caractere`.
+- Différencie les appellations quand les sources le font (ex. en 2015 Margaux se distingue et Saint-Estèphe est en retrait ; en 2019 et 2022 Margaux est plus inégal que Pauillac). Ne recopie pas la même note et le même `caractere` sur toutes les sous-zones.
+- Les liquoreux ont leur propre logique (botrytis, rendement) : cherche des sources dédiées, car les moyennes de région sont trompeuses.
+- Évite « connaissance » comme unique source pour les lignes que tu peux sourcer ; cite le domaine réellement lu. Une ligne reste B si elle ne repose que sur ta connaissance, mais cherche à la sourcer.
+- Les critiques anglo-saxons (Decanter, Jancis Robinson, The Wine Cellar Insider, Wine Spectator) et les sites français (Hachette, Idealwine, Comptoir des Millésimes, LPV, interprofessions) peuvent diverger : signale-le et tranche par un troisième avis.
