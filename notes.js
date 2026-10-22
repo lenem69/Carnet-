@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.8.1': ['Les fenêtres d’information s’affichent l’une après l’autre, sans se superposer.'],
   '1.8.0': ['Les fiches incomplètes se complètent toutes seules en arrière-plan (réglable dans Réglages).', 'Statistiques anonymes facultatives pour améliorer l’appli (vous choisissez).'],
   '1.7.0': ['Aide et contact : « Publier ma requête » envoie votre retour directement.', 'Le bandeau de mise à jour est plus visible.'],
   '1.5.0': ['Choix automatique de l’IA : si l’une atteint sa limite, l’appli passe à une autre.'],

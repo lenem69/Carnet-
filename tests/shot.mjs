@@ -1,0 +1,16 @@
+import fs from 'fs';import path from 'path';
+import {start} from './server.mjs';import * as H from './h.mjs';
+H.deploy();
+const ap=path.join(path.dirname(new URL(import.meta.url).pathname),'.site','www','cave','app.js');
+fs.writeFileSync(ap,fs.readFileSync(ap,'utf8').replace(/const STATS_POST = '[^']*';/,"const STATS_POST = 'https://docs.google.com/forms/d/e/X/formResponse';"));
+const srv=await start(8123);const b=await H.browser();
+const {page}=await H.newPage(b);
+await page.goto(H.URL0);await H.sl(1500);
+await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('seenVersion','1.5.0');await s.setMeta('statsConsent',null)});
+await page.reload();await H.sl(1500);
+await page.screenshot({path:'.site/n1.png'});
+console.log(await page.evaluate(()=>[...document.querySelectorAll('.modal.show')].map(e=>e.id+':'+getComputedStyle(e).zIndex)));
+await H.tapText(page,'#dlgB button','Compris');await H.sl(800);
+await page.screenshot({path:'.site/n2.png'});
+console.log(await page.evaluate(()=>[...document.querySelectorAll('.modal.show')].map(e=>e.id+':'+document.querySelector('#dlgT').textContent)));
+await b.close();srv.close();

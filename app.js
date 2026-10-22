@@ -905,6 +905,8 @@ function showQuote() {
 }
 
 /* ============ Nouveautés après mise à jour ============ */
+// Les fenêtres d'accueil (nouveautés, statistiques) passent l'une après l'autre, jamais par-dessus une autre fenêtre ouverte.
+const whenFree = async () => { await new Promise(r => setTimeout(r, 450)); while (document.querySelector('.modal.show')) await new Promise(r => setTimeout(r, 500)); };
 async function showNews() {
   try {
     const seen = await store.getMeta('seenVersion');
@@ -913,6 +915,7 @@ async function showNews() {
     if (!seen) return; // première installation : rien à résumer
     const lines = Notes.since(seen, VERSION);
     if (!lines.length) return;
+    await whenFree();
     await ask(`Mise à jour ${VERSION} installée`, 'Ce qui change :\n\n' + lines.map(l => '• ' + l).join('\n'), [{ label: 'Compris', value: 'ok' }]);
   } catch (e) { console.error('nouveautés', e); }
 }
@@ -996,9 +999,11 @@ async function initStats() {
   document.addEventListener('visibilitychange', () => { if (!document.hidden) Stats.flush(statsExtra()).catch(() => {}); });
 }
 async function askStatsConsent() {
+  await whenFree();
   const c = await ask('Aider à améliorer l’appli ?',
     'Une fois par semaine, l’appli peut envoyer à son auteur un petit récapitulatif anonyme : combien de fois vous l’avez ouverte, quelles fonctions vous utilisez, et les erreurs rencontrées. Jamais le nom de vos vins, jamais vos photos ni vos clés. Vous pouvez changer d’avis dans ⚙ Réglages et voir exactement ce qui est envoyé.',
     [{ label: 'Oui, aider', value: 'oui' }, { label: 'Non merci', value: 'non', kind: 'o' }]);
+  if (c !== 'oui' && c !== 'non') return; // fenêtre remplacée par une autre : on redemandera à la prochaine ouverture
   await Stats.setConsent(c === 'oui');
   toast(c === 'oui' ? 'Merci ! Vous pouvez arrêter à tout moment dans ⚙ Réglages.' : 'Rien ne sera envoyé.');
 }
