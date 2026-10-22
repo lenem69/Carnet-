@@ -5,7 +5,10 @@ D = os.path.dirname(os.path.abspath(__file__))
 H1 = 'zone appellation couleurs cepages style familles_gout proches prix_indicatif_eur garde_ans notoriete fiabilite sources'.split()
 H2 = 'zone sous_zone couleur millesime qualite apogee_debut apogee_fin caractere fiabilite sources'.split()
 FAM = set('leger-fruite elegant-frais puissant-structure rond-gourmand epice-mediterraneen mineral-tendu riche-boise aromatique-floral moelleux-liquoreux effervescent'.split())
-GROUPES = {'Médoc et Haut-Médoc': ['Médoc', 'Haut-Médoc', 'Listrac-Médoc', 'Moulis-en-Médoc'], 'Sauternes-Barsac': ['Sauternes', 'Barsac']}
+GROUPES = {}
+if os.path.exists(os.path.join(D, 'regroupements.tsv')):
+    for l in open(os.path.join(D, 'regroupements.tsv'), encoding='utf-8').read().split('\n')[1:]:
+        if l.strip(): a, b = l.split('\t'); GROUPES[a] = b.split(';')
 err, warn = [], []
 def load(name, head):
     rows = []
@@ -50,11 +53,14 @@ for i, r in M:
     if r['fiabilite'] not in list('ABC'): err.append(f'mil l.{i}: fiabilite')
     if re.search(r'https?://|www\.|[«»“”]', ' '.join(r.values())): err.append(f'mil l.{i}: URL ou citation')
 for k, ys in series.items():
-    miss = sorted(set(range(2010, an + 1)) - ys)
+    miss = sorted(set(range(2005, an + 1)) - ys)
     if miss: err.append(f'série {k}: millésimes manquants {miss}')
 fi = collections.Counter(r['fiabilite'] for _, r in M)
 tot = sum(fi.values()) or 1
 print(f'référentiel : {len(R)} appellations ; millésimes : {len(M)} lignes ; fiabilité A/B/C = ' + '/'.join(f'{fi[x]*100//tot}%' for x in 'ABC'))
 for w in sorted(set(warn)): print('AVERTISSEMENT', w)
+for g, lst in GROUPES.items():
+    for a in lst:
+        if a not in names: err.append(f'regroupement {g}: appellation absente du référentiel {a}')
 for e in err: print('ERREUR', e)
 sys.exit(1 if err else 0)
