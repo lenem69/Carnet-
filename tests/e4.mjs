@@ -22,12 +22,13 @@ await page.setOfflineMode(false);
 // mise à jour : on publie la 1.0.1 (le serveur envoie Cache-Control max-age=600, comme GitHub Pages)
 H.deploy('1.0.1');
 await page.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration();await r.update()});await H.sl(2500);
-T('nouvelle version détectée : bandeau affiché',(await H.txt(page,'#banners')).includes('Nouvelle version'),await H.txt(page,'#banners'));
+T('nouvelle version détectée : bandeau affiché',(await H.txt(page,'#updBar')).includes('Nouvelle version'),await H.txt(page,'#updBar'));
+T('bandeau de mise à jour : collé en haut, pleine largeur, bouton visible',await page.evaluate(()=>{const u=document.querySelector('#updBar .upd').getBoundingClientRect(),b=document.querySelector('#updBar .btn').getBoundingClientRect();return u.top<=1&&u.width>=innerWidth-1&&b.height>=40&&getComputedStyle(document.querySelector('#updBar')).position==='sticky'}));
 T('ancienne version toujours active avant accord',await page.evaluate(()=>self.APP_VERSION)==='1.0.0');
-await page.evaluate(()=>document.querySelectorAll('.toast').forEach(t=>t.remove()));await H.click(page,'#banners [data-b="upd"]');await H.sl(3000);
+await page.evaluate(()=>document.querySelectorAll('.toast').forEach(t=>t.remove()));await H.click(page,'#updBar [data-b="upd"]');await H.sl(3000);
 T('après « Mettre à jour » : version 1.0.1 chargée',await page.evaluate(()=>self.APP_VERSION)==='1.0.1',await page.evaluate(()=>self.APP_VERSION));
 T('données intactes après mise à jour',(await H.txt(page,'#list')).includes('Vin de référence')&&(await H.txt(page,'#list')).includes('Ajout hors ligne'));
-T('bandeau de mise à jour disparu',!(await H.txt(page,'#banners')).includes('Nouvelle version'));
+T('bandeau de mise à jour disparu',!(await H.txt(page,'#updBar')).includes('Nouvelle version'));
 const caches=await page.evaluate(async()=>(await caches.keys()));T('ancien cache supprimé',caches.length===1&&caches[0]==='cave-1.0.1',JSON.stringify(caches));
 await H.click(page,'#bSet');await H.sl(300);T('version visible dans Réglages',(await H.txt(page,'#st-ver'))==='1.0.1');
 await H.click(page,'#st-upd');await H.sl(2500);T('« Vérifier les mises à jour » : à jour',(await H.txt(page,'#toasts')).includes('dernière version'),await H.txt(page,'#toasts'));

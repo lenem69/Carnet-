@@ -9,7 +9,8 @@ import { saveFile, readText } from './files.js';
 
 const VERSION = self.APP_VERSION || '?';
 // Formulaire Google de retours (aucune adresse mail n’est publiée dans le code).
-const FEEDBACK_FORM = 'https://docs.google.com/forms/d/e/1FAIpQLSfOirVg2Xykiv6DvPS1jNM5NQJSpnW0ajhbdP1gD3bKap1QDw/viewform';
+const FEEDBACK_POST = 'https://docs.google.com/forms/d/e/1FAIpQLSfOirVg2Xykiv6DvPS1jNM5NQJSpnW0ajhbdP1gD3bKap1QDw/formResponse';
+const FEEDBACK_ENTRY = ''; // identifiant du champ « Votre message » du formulaire (entry.NNN)
 const YEAR = new Date().getFullYear();
 const PAGE = 100;
 const BACKUP_DAYS = 60;
@@ -150,12 +151,13 @@ function renderStats() {
 function renderBanners() {
   const out = [];
   if (S.ready && !store.persistent) out.push(`<div class="banner err"><p>Stockage indisponible sur ce navigateur (navigation privée ?). Vos données ne seront pas conservées après fermeture.</p></div>`);
-  if (S.update) out.push(`<div class="banner info"><p>Nouvelle version disponible.</p><button class="btn sm" data-b="upd">Mettre à jour</button></div>`);
   if (S.ready && S.wines.length) {
     const days = S.lastBackup ? Math.floor((Date.now() - S.lastBackup) / 864e5) : null;
     if (days === null || days >= BACKUP_DAYS) out.push(`<div class="banner"><p>💾 ${days === null ? 'Aucune sauvegarde de votre cave.' : 'Dernière sauvegarde il y a ' + days + ' jours.'} Sauvegardez au moins tous les 2 mois.</p><button class="btn sm" data-b="bk">Sauvegarder</button></div>`);
   }
   $('#banners').innerHTML = out.join('');
+  // Mise à jour : bandeau plein écran, collé en haut, impossible à manquer.
+  $('#updBar').innerHTML = S.update ? `<div class="upd"><span class="ic" aria-hidden="true">⬆️</span><div class="tx"><b>Nouvelle version prête</b><span>Touchez le bouton pour l’installer</span></div><button class="btn" data-b="upd">Mettre à jour</button></div>` : '';
 }
 
 function filtered() {
@@ -736,7 +738,7 @@ function bind() {
   $('#bContact').onclick = openContact;
   $('#st-help').onclick = openContact;
   $('#ct-share').onclick = sendContact;
-  $('#ct-form').onclick = openForm2;
+  $('#ct-pub').onclick = publishContact;
   $('#ct-copy').onclick = async () => {
     if (!$('#ct-msg').value.trim()) { errToast('Écrivez d’abord votre message.'); return; }
     toast(await copyText(contactText()) ? 'Message copié.' : 'Copie impossible : sélectionnez le texte à la main.', {});
@@ -768,6 +770,7 @@ function bind() {
   $('#sort').onchange = () => { S.sort = $('#sort').value; S.limit = PAGE; renderList(); };
   $('#list').addEventListener('click', onCardAction);
   $('#blist').addEventListener('click', onCardAction);
+  $('#updBar').addEventListener('click', e => { const b = e.target.closest('[data-b="upd"]'); if (b) applyUpdate(); });
   $('#banners').addEventListener('click', e => { const b = e.target.closest('[data-b]'); if (!b) return; if (b.dataset.b === 'bk') doBackup(); else if (b.dataset.b === 'upd') applyUpdate(); });
   $('#go').onclick = findForDish;
 
@@ -826,7 +829,6 @@ async function copyText(t) {
 function openContact() {
   closeSheet('sSet');
   $('#ct-msg').value = '';
-  $('#ct-form').hidden = !FEEDBACK_FORM;
   openSheet('sContact');
 }
 async function sendContact() {
@@ -839,11 +841,21 @@ async function sendContact() {
   }
   toast(await copyText(text) ? 'Partage indisponible ici : le message est copié, collez-le dans votre messagerie.' : 'Partage et copie impossibles. Sélectionnez le texte du message et copiez-le à la main.', { kind: 'err' });
 }
-async function openForm2() {
+// Publie le message dans le formulaire Google, sans quitter l’appli. La réponse du service est opaque (pas de lecture possible) :
+// seule une absence de réseau est détectable, c’est pourquoi on la refuse explicitement.
+async function publishContact() {
   if (!$('#ct-msg').value.trim()) { errToast('Écrivez d’abord votre message.'); $('#ct-msg').focus(); return; }
-  const ok = await copyText(contactText());
-  toast(ok ? 'Message copié : collez-le dans le formulaire qui s’ouvre.' : 'Copie impossible : recopiez votre message dans le formulaire.');
-  window.open(FEEDBACK_FORM, '_blank', 'noopener,noreferrer');
+  if (!FEEDBACK_ENTRY) { errToast('L’envoi direct n’est pas encore configuré. Utilisez « Envoyer par message ».'); return; }
+  if (navigator.onLine === false) { errToast('Pas de connexion : votre message n’est pas parti. Il reste ici, réessayez avec du réseau.'); return; }
+  const b = $('#ct-pub'); b.disabled = true; b.textContent = 'Envoi en cours…';
+  try {
+    await fetch(FEEDBACK_POST, { method: 'POST', mode: 'no-cors', credentials: 'omit', referrerPolicy: 'no-referrer', body: new URLSearchParams({ [FEEDBACK_ENTRY]: contactText() }) });
+    toast('✅ Requête publiée. Merci !');
+    $('#ct-msg').value = ''; closeSheet('sContact');
+  } catch (e) {
+    errToast('Envoi impossible (réseau coupé ou bloqué). Votre message est conservé : réessayez, ou utilisez « Envoyer par message ».');
+  }
+  b.disabled = false; b.textContent = 'Publier ma requête';
 }
 
 function openTitle() {

@@ -17,6 +17,7 @@
 </head>
 <body>
 <div id="toasts" aria-live="polite"></div>
+<div id="updBar" role="status"></div>
 
 <header class="top">
   <div class="ttl">
@@ -199,14 +200,14 @@
 <!-- Aide et contact -->
 <div class="modal" id="sContact" role="dialog" aria-modal="true" aria-labelledby="ctT"><div class="sheet">
   <h2 id="ctT">Aide et contact</h2>
-  <p class="mu small">Un problème, une idée, une question ? Décrivez-le ici : votre message part avec la version de l’appli et le type de téléphone, pour m’aider à comprendre. Aucune donnée de votre cave n’est jointe.</p>
+  <p class="mu small">Un problème, une idée, une question ? Décrivez-le ici. « Publier ma requête » l’envoie directement à l’auteur de l’appli, avec la version et le type de téléphone. Aucune donnée de votre cave n’est jointe.</p>
   <label for="ct-type">Sujet</label>
   <select id="ct-type"><option>Bug (quelque chose ne marche pas)</option><option>Suggestion</option><option>Question</option></select>
   <label for="ct-msg">Votre message</label>
   <textarea id="ct-msg" rows="5" placeholder="Que s’est-il passé ? Sur quel écran ? Qu’attendiez-vous ?"></textarea>
   <div class="stack">
-    <button class="btn" id="ct-share" type="button">Envoyer mon message</button>
-    <button class="btn o" id="ct-form" type="button" hidden>Ouvrir le formulaire de retour</button>
+    <button class="btn" id="ct-pub" type="button">Publier ma requête</button>
+    <button class="btn o" id="ct-share" type="button">Envoyer par message (WhatsApp, SMS…)</button>
     <button class="btn o" id="ct-copy" type="button">Copier le message</button>
   </div>
   <button class="lnk close" data-close="sContact">Fermer</button>
