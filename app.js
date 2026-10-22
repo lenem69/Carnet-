@@ -7,13 +7,14 @@ import * as IMP from './importer.js';
 import { QUOTES } from './quotes.js';
 import { saveFile, readText } from './files.js';
 import * as Stats from './stats.js';
+import * as Notes from './notes.js';
 
 const VERSION = self.APP_VERSION || '?';
 // Formulaire Google de retours (aucune adresse mail n’est publiée dans le code).
 const FEEDBACK_POST = 'https://docs.google.com/forms/d/e/1FAIpQLSfOirVg2Xykiv6DvPS1jNM5NQJSpnW0ajhbdP1gD3bKap1QDw/formResponse';
 // Statistiques anonymes (facultatives) : formulaire Google dédié, à renseigner une fois créé.
-const STATS_POST = '';
-const STATS_ENTRY = '';
+const STATS_POST = 'https://docs.google.com/forms/d/e/1FAIpQLScChmXM2fHOgYVgWUAmyNOrbO26o7RonBQoJ8EgzHIfYh9RUA/formResponse';
+const STATS_ENTRY = 'entry.1453674659';
 const FEEDBACK_ENTRY = 'entry.1804718778'; // identifiant du champ « Votre message » du formulaire (entry.NNN)
 const YEAR = new Date().getFullYear();
 const PAGE = 100;
@@ -653,6 +654,7 @@ async function openSettings() {
   $('#ai-key').type = 'password'; $('#ai-show').textContent = 'Voir';
   $('#ai-guide').hidden = AI.ready();
   $('#st-ver').textContent = VERSION;
+  $('#st-auto').checked = auto.on; $('#st-auto-info').textContent = autoStatus();
   $('#st-stats-w').hidden = !Stats.configured();
   $('#st-stats').checked = Stats.consentState() === 'oui';
   $('#st-info').textContent = 'Lecture…';
@@ -754,6 +756,7 @@ function bind() {
   $('#bContact').onclick = openContact;
   $('#st-stats').onchange = async () => { await Stats.setConsent($('#st-stats').checked); toast($('#st-stats').checked ? 'Statistiques anonymes activées.' : 'Statistiques arrêtées : rien ne sera envoyé.'); };
   $('#st-stats-show').onclick = showStatsPreview;
+  $('#st-auto').onchange = () => { auto.on = $('#st-auto').checked; if (auto.on) auto.pauseUntil = 0; autoSave(); $('#st-auto-info').textContent = autoStatus(); if (auto.on) setTimeout(autoStep, 500); };
   $('#st-help').onclick = openContact;
   $('#ct-share').onclick = sendContact;
   $('#ct-pub').onclick = publishContact;
@@ -901,6 +904,79 @@ function showQuote() {
   $('#quoteText').textContent = QUOTES[i];
 }
 
+/* ============ Nouveautés après mise à jour ============ */
+async function showNews() {
+  try {
+    const seen = await store.getMeta('seenVersion');
+    if (VERSION === '?' || seen === VERSION) return;
+    await store.setMeta('seenVersion', VERSION);
+    if (!seen) return; // première installation : rien à résumer
+    const lines = Notes.since(seen, VERSION);
+    if (!lines.length) return;
+    await ask(`Mise à jour ${VERSION} installée`, 'Ce qui change :\n\n' + lines.map(l => '• ' + l).join('\n'), [{ label: 'Compris', value: 'ok' }]);
+  } catch (e) { console.error('nouveautés', e); }
+}
+
+/* ============ Fiches complétées automatiquement (en arrière-plan) ============ */
+// Économe : 1 appel = 10 vins, 4 appels par jour au plus, jamais pendant une saisie, pause jusqu'à la remise à zéro des quotas
+// (minuit heure du Pacifique ≈ 9 h UTC) dès que l'IA signale une limite. Le tout sans message : l'état se lit dans Réglages.
+const AUTO_MAX_CALLS = 4, AUTO_TRIES = 2;
+const AUTO_DELAY = self.__AUTO_DELAY ?? 20000, AUTO_EVERY = self.__AUTO_EVERY ?? 180000;
+let auto = { on: true, day: '', calls: 0, pauseUntil: 0, pauseWhy: '', tries: {} };
+let autoBusy = false;
+const needsFiche = w => (!w.from && !w.to) || !w.pairings.length || !w.story;
+const autoTodo = () => S.wines.filter(w => needsFiche(w) && (auto.tries[w.id] || 0) < AUTO_TRIES).sort((a, b) => (b.qty > 0) - (a.qty > 0));
+function nextQuotaReset(now = Date.now()) {
+  const d = new Date(now); d.setUTCHours(9, 0, 0, 0);
+  if (d.getTime() <= now) d.setUTCDate(d.getUTCDate() + 1);
+  return d.getTime();
+}
+const autoSave = () => store.setMeta('autoFill', auto).catch(() => {});
+async function initAuto() {
+  try { const m = await store.getMeta('autoFill'); if (m && typeof m === 'object') auto = { ...auto, ...m, tries: { ...(m.tries || {}) } }; } catch (e) { /* valeurs par défaut */ }
+  setTimeout(autoStep, AUTO_DELAY);
+  setInterval(autoStep, AUTO_EVERY);
+}
+function autoStatus() {
+  if (!AI.ready()) return 'Inactif : aucune IA configurée.';
+  if (!auto.on) return 'Désactivé.';
+  const n = autoTodo().length;
+  if (!n) return 'Toutes vos fiches sont complètes.';
+  if (auto.pauseUntil > Date.now()) return `${n} fiche(s) à compléter. En pause (${auto.pauseWhy || 'limite de l’IA'}), reprise ${new Date(auto.pauseUntil).toDateString() === new Date().toDateString() ? 'vers ' + new Date(auto.pauseUntil).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : 'demain'}.`;
+  return `${n} fiche(s) à compléter, traitées petit à petit en arrière-plan.`;
+}
+async function autoStep() {
+  if (autoBusy || !auto.on || !S.ready || !AI.ready() || document.hidden || navigator.onLine === false) return;
+  if (document.querySelector('.modal.show') || /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName)) return;
+  const now = Date.now(), day = new Date(now).toISOString().slice(0, 10);
+  if (auto.day !== day) { auto.day = day; auto.calls = 0; }
+  if (now < auto.pauseUntil || auto.calls >= AUTO_MAX_CALLS) return;
+  const group = autoTodo().slice(0, 10);
+  if (!group.length) return;
+  autoBusy = true; auto.calls++;
+  try {
+    const res = await AI.makeFiches(group, { noRetry: true });
+    const changed = [];
+    for (const w of group) {
+      const d = res.get(String(w.id));
+      if (d) { applyFiche(w, d); changed.push(w); }
+      if (!d || needsFiche(w)) auto.tries[w.id] = (auto.tries[w.id] || 0) + 1;
+    }
+    if (changed.length) {
+      Stats.track('fiches_ia', changed.length);
+      if (await persist(() => store.putWines(changed))) render();
+    }
+    auto.pauseUntil = 0;
+  } catch (e) {
+    const code = e && e.code;
+    if (code === 'rate_limited') { auto.pauseUntil = nextQuotaReset(); auto.pauseWhy = 'limite de l’IA atteinte'; }
+    else if (['bad_key', 'bad_model', 'bad_base', 'no_key'].includes(code)) {
+      auto.pauseUntil = now + 864e5; auto.pauseWhy = 'clé ou modèle d’IA à vérifier';
+      errToast('Fiches automatiques en pause : ' + AI.errText(e));
+    } else { auto.pauseUntil = now + 30 * 6e4; auto.pauseWhy = 'connexion ou serveur indisponible'; }
+  } finally { autoBusy = false; autoSave(); }
+}
+
 /* ============ Statistiques anonymes (facultatives) ============ */
 const statsExtra = () => ({
   wines: S.wines.length,
@@ -959,6 +1035,6 @@ async function boot() {
   render();
   store.protect();
   initSW();
-  initStats();
+  (async () => { await showNews(); await initStats(); initAuto(); })();
 }
 boot();

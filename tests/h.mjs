@@ -4,6 +4,7 @@ export const URL0='http://localhost:8123/cave/';
 // Copie uniquement les fichiers de l'appli (racine du dépôt, hors dossiers et fichiers de dev)
 export function deploy(version){fs.rmSync(SITE,{recursive:true,force:true});fs.mkdirSync(path.join(SITE,'cave'),{recursive:true});
   for(const f of fs.readdirSync(APP)){const p=path.join(APP,f);if(fs.statSync(p).isDirectory()||/^(CLAUDE\.md|\.gitignore|README.*)$/.test(f))continue;fs.copyFileSync(p,path.join(SITE,'cave',f))}
+  {const ap=path.join(SITE,'cave','app.js');fs.writeFileSync(ap,fs.readFileSync(ap,'utf8').replace(/const STATS_POST = '[^']*';/,"const STATS_POST = '';"))}
   if(version)fs.writeFileSync(path.join(SITE,'cave','version.js'),`self.APP_VERSION = '${version}';\n`)}
 async function exe(){if(process.env.CHROME_PATH)return {p:process.env.CHROME_PATH,args:[]};if(fs.existsSync('/opt/pw-browsers/chromium'))return {p:'/opt/pw-browsers/chromium',args:[]};const c=(await import('@sparticuz/chromium')).default;return {p:await c.executablePath(),args:c.args}}
 export async function browser(){const e=await exe();return puppeteer.launch({executablePath:e.p,args:[...e.args,'--no-sandbox'],headless:true})}
@@ -14,6 +15,7 @@ export async function newPage(b,{ai,width=390,height=780}={}){
   page.on('dialog',d=>{errs.push('NATIVE DIALOG '+d.message());d.dismiss()});
   const calls=[];
   await page.exposeFunction('__aiMock',async(url,headers,body)=>{const c={url,headers,body:body?JSON.parse(body):null};calls.push(c);const r=ai?await ai(c):{status:500,json:{}};return {status:r.status||200,body:JSON.stringify(r.json??{}),delay:r.delay||0}});
+  await page.evaluateOnNewDocument(()=>{window.__AUTO_DELAY=1e9;window.__AUTO_EVERY=1e9});
   await page.evaluateOnNewDocument(()=>{
     window.__dl=[];
     const of=window.fetch.bind(window);

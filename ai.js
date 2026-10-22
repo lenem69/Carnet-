@@ -238,7 +238,7 @@ export async function callJson(prompt, opts = {}) {
     const prov = list[i]; const last = i === list.length - 1;
     const s = { provider: prov, ...getConfig(prov) };
     try {
-      const r = await callProvider(s, prompt, opts, last ? cfg.retries : 0);
+      const r = await callProvider(s, prompt, opts, last && !opts.noRetry ? cfg.retries : 0);
       uncool(prov); stat('ia_ok');
       if (opts.out) opts.out.provider = prov;
       return r;

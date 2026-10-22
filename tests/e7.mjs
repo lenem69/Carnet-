@@ -4,7 +4,7 @@ H.deploy();
 // Version de test : formulaire de statistiques « configuré » (adresse fictive, jamais appelée pour de vrai)
 const ap=path.join(path.dirname(new URL(import.meta.url).pathname),'.site','www','cave','app.js');
 let src=fs.readFileSync(ap,'utf8');
-src=src.replace("const STATS_POST = '';","const STATS_POST = 'https://docs.google.com/forms/d/e/TESTFORM/formResponse';").replace("const STATS_ENTRY = '';","const STATS_ENTRY = 'entry.42';");
+src=src.replace(/const STATS_POST = '[^']*';/,"const STATS_POST = 'https://docs.google.com/forms/d/e/TESTFORM/formResponse';").replace(/const STATS_ENTRY = '[^']*';/,"const STATS_ENTRY = 'entry.42';");
 fs.writeFileSync(ap,src);
 const srv=await start(8123);const b=await H.browser();
 const {T,out}=H.suite('Statistiques');
