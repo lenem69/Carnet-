@@ -155,14 +155,14 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 .credit .lnk { margin-top: 6px; }
 
 /* Bandeau de mise à jour : plein écran, collé en haut */
-#updBar { position: sticky; top: 0; z-index: 30; margin: 0 -16px; }
+#updBar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; margin: 0 -16px; }
 #updBar:empty { display: none; }
-#updBar .upd { display: flex; align-items: center; gap: 12px; background: var(--ac); color: var(--acx); padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px; box-shadow: 0 4px 14px rgba(0, 0, 0, .35); }
+#updBar .upd { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; background: var(--ac); color: var(--acx); padding: 12px 16px; box-shadow: 0 4px 14px rgba(0, 0, 0, .35); }
 #updBar .ic { font-size: 26px; line-height: 1; }
-#updBar .tx { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#updBar .tx { flex: 1 1 160px; display: flex; flex-direction: column; min-width: 0; }
 #updBar .tx b { font-size: 17px; }
 #updBar .tx span { font-size: 13px; opacity: .9; }
-#updBar .btn { background: var(--acx); color: var(--ac); border: 0; font-weight: 700; padding: 12px 16px; white-space: nowrap; animation: updpulse 1.6s ease-in-out infinite; }
+#updBar .btn { width: auto; flex: 1 1 100%; background: var(--acx); color: var(--ac); border: 0; font-weight: 700; padding: 12px 16px; white-space: nowrap; animation: updpulse 1.6s ease-in-out infinite; }
 @keyframes updpulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, .55); } 50% { box-shadow: 0 0 0 9px rgba(255, 255, 255, 0); } }
 @media (prefers-reduced-motion: reduce) { #updBar .btn { animation: none; } }
 
