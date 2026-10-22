@@ -56,6 +56,12 @@ const r3=I.rowsToWines(rws,[]);T('modèle xlsx: 2 vins, 3 bouteilles, 1 à véri
 const text=fs.readFileSync('fixtures/big.csv','utf8');const wb2=XLSX.read(text,{type:'string',raw:true});const r4=I.rowsToWines(XLSX.utils.sheet_to_json(wb2.Sheets[wb2.SheetNames[0]],{defval:'',raw:true}),[]);
 T('1030 lignes: 1000 vins, 1060 bouteilles',r4.added.length===1000&&r4.added.reduce((a,w)=>a+w.qty,0)===1060,r4.added.length+' / '+r4.added.reduce((a,w)=>a+w.qty,0));
 T('accents préservés',r4.added.some(w=>w.color==='Rosé'));
+{const ex=[{id:'a',name:'Morgon',dom:'Lapierre',year:2023,qty:2,color:'Rouge',pairings:[]}].map(w=>({...w,price:'',loc:'',from:'',to:'',grape:'',region:'',story:'',note:'',check:false,conf:'',created:1,updated:1}));
+const rs=[{Domaine:'Lapierre',Cuvée:'Morgon',Millésime:2023,Quantité:1},{Domaine:'Dauvissat',Cuvée:'Chablis',Millésime:2021,Quantité:3}];
+const a=I.rowsToWines(rs,ex);T('import mode somme : doublon additionné, 1 ligne existante comptée',a.added.length===1&&a.updated.length===1&&a.updated[0].qty===3&&a.existing===1);
+const b=I.rowsToWines(rs,ex,'skip');T('import mode « seulement les nouveaux » : existant intact',b.added.length===1&&b.updated.length===0&&b.existing===1&&ex[0].qty===2);
+const c=I.rowsToWines([...rs,rs[1]],ex,'skip');T('mode skip : doublon interne au fichier toujours additionné',c.added.length===1&&c.added[0].qty===6);}
 console.log(out.join('\n'));
 const mw=L.normalizeWine({name:'Chassagne-Montrachet',dom:'Paul Jouard',year:2012,loc:'Casier B'});
 console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz',false],['',true]].map(([q,e])=>(L.matchesQuery(mw,q)===e?'PASS':'FAIL')+' recherche « '+q+' »').join('\n'));
+

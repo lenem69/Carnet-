@@ -36,13 +36,15 @@ export function mapHeaders(headers) {
 const DOUBT = /moyen|faible|basse|low|medium|\?|verif/;
 
 // rows : tableau d'objets {entête: valeur}. existing : vins déjà en cave.
-// Renvoie { added, updated, merged, skipped, fields } sans rien modifier en dehors.
-export function rowsToWines(rows, existing) {
+// mode : 'sum' (défaut) additionne la quantité des vins déjà en cave ; 'skip' ne touche pas aux vins déjà en cave.
+// Renvoie { added, updated, merged, skipped, existing, fields } sans rien modifier en dehors.
+// existing = nombre de lignes du fichier qui correspondent à un vin déjà en cave.
+export function rowsToWines(rows, existing, mode = 'sum') {
   const headers = rows.length ? Object.keys(rows[0]) : [];
   const map = mapHeaders(headers);
   const fields = Object.values(map);
   const byKey = new Map(existing.map(w => [keyOf(w), { w, isNew: false }]));
-  const added = []; const updated = new Map(); let merged = 0; let skipped = 0;
+  const added = []; const updated = new Map(); let merged = 0; let skipped = 0; let hits = 0;
   for (const r of rows) {
     const raw = {};
     for (const h in map) { const v = r[h]; if (v !== '' && v !== null && v !== undefined) raw[map[h]] = v; }
@@ -54,6 +56,7 @@ export function rowsToWines(rows, existing) {
     const k = keyOf(w);
     const e = byKey.get(k);
     if (e) {
+      if (!e.isNew) { hits++; if (mode === 'skip') continue; }
       // copie de l'existant (jamais modifié directement), puis cumul des quantités
       if (!e.isNew && !updated.has(e.w.id)) { e.w = JSON.parse(JSON.stringify(e.w)); updated.set(e.w.id, e.w); }
       e.w.qty += w.qty;
@@ -63,7 +66,7 @@ export function rowsToWines(rows, existing) {
       added.push(w); byKey.set(k, { w, isNew: true });
     }
   }
-  return { added, updated: [...updated.values()], merged, skipped, fields };
+  return { added, updated: [...updated.values()], merged, skipped, existing: hits, fields };
 }
 
 // Lecture du fichier (nécessite le lecteur Excel embarqué, chargé à la demande).

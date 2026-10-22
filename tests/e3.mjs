@@ -21,6 +21,24 @@ await page.select('#sort','urgent');await H.sl(200);const first=await page.$eval
 await page.reload();await H.sl(1800);T('1000 vins rechargés',(await H.txt(page,'#sB')).replace(/\s/g,'')==='1060');
 // import modèle xlsx + accents
 await imp('fixtures/test.xlsx');await H.sl(1200);T('import xlsx : vins ajoutés',(await H.txt(page,'#toasts')).includes('ajouté'),await H.txt(page,'#toasts'));
+// réimport avec des vins déjà en cave : choix proposé
+{const q0=await page.evaluate(()=>[...document.querySelectorAll('#list .w')].length);
+await H.sl(300);
+fs.writeFileSync('.site/reimport.csv','Domaine;Cuvée;Millésime;Quantité\r\nDomaine 1;Cuvée 1;2011;2\r\nNouveau Domaine;Vin neuf unique;2019;5\r\n');
+const sb0=(await H.txt(page,'#sB')).replace(/\s/g,'');
+await imp('.site/reimport.csv');await H.sl(800);
+const shown=await H.shown(page,'#sDlg');const dtx=await H.txt(page,'#dlgX');
+T('réimport : boîte de choix (existants/nouveaux)',shown&&/déjà en cave/.test(dtx)&&(await H.txt(page,'#dlgB')).includes('seulement'),dtx);
+await H.tapText(page,'#dlgB button','Annuler');await H.sl(500);
+T('réimport annulé : rien modifié',(await H.txt(page,'#sB')).replace(/\s/g,'')===sb0&&(await H.txt(page,'#toasts')).includes('annulé'));
+await imp('.site/reimport.csv');await H.sl(800);await H.tapText(page,'#dlgB button','seulement');await H.sl(1000);
+T('réimport « seulement les nouveaux » : +5 bouteilles, existant inchangé',(await H.txt(page,'#sB')).replace(/\s/g,'')===String(+sb0+5)&&/déjà en cave \(inchangé\)/.test(await H.txt(page,'#toasts')),(await H.txt(page,'#sB'))+' '+(await H.txt(page,'#toasts')));
+await imp('.site/reimport.csv');await H.sl(800);
+T('réimport sans nouveau : pas de choix « seulement »',!(await H.txt(page,'#dlgB')).includes('seulement'));
+await H.tapText(page,'#dlgB button','Additionner');await H.sl(1000);
+T('réimport « additionner » : +7 bouteilles',(await H.txt(page,'#sB')).replace(/\s/g,'')===String(+sb0+12),await H.txt(page,'#sB'));
+await page.evaluate(()=>document.querySelectorAll('.toast').forEach(t=>t.remove()));
+}
 // export CSV
 await H.click(page,'#fab');await H.tapText(page,'#sMenu button','Exporter');await H.sl(800);
 let dl=await page.evaluate(()=>window.__dl);const csv=dl.find(d=>d.name.endsWith('.csv'));

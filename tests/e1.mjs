@@ -5,7 +5,7 @@ const {page,errs}=await H.newPage(b);
 await page.goto(H.URL0);await H.sl(1200);
 T('démarrage : cave vide affichée',(await H.txt(page,'#list')).includes('Votre cave est vide'));
 {const t=await H.txt(page,'#list');T('cave vide : toutes les fonctions proposées (photos, tableur, restauration, guide)',['Scanner une étiquette','Importer des photos','Importer un tableur','Saisie manuelle','Restaurer une sauvegarde','Guide'].every(x=>t.includes(x)),t)}
-T('version affichée côté page',await page.evaluate(()=>self.APP_VERSION)==='1.1.0');
+T('version affichée côté page',await page.evaluate(()=>self.APP_VERSION)==='1.2.0');
 T('bandeau sauvegarde absent si cave vide',(await H.txt(page,'#banners')).trim()==='');
 // ajout manuel
 await H.click(page,'#fab');T('menu ouvert',await H.shown(page,'#sMenu'));

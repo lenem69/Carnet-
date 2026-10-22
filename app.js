@@ -511,10 +511,23 @@ async function importSheet(file) {
   catch (e) { t.remove(); errToast('Lecture du fichier impossible : ' + (e.message || 'format non reconnu') + '. Utilisez un fichier .xlsx ou .csv avec une ligne d’en-têtes.'); return; }
   t.remove();
   if (!rows.length) { errToast('Fichier vide ou sans ligne d’en-têtes.'); return; }
-  const r = IMP.rowsToWines(rows, S.wines);
+  let r = IMP.rowsToWines(rows, S.wines);
+  let ignored = 0;
   if (!r.added.length && !r.updated.length) {
     errToast(`Aucun vin importé. Colonnes trouvées : ${Object.keys(rows[0]).join(', ') || 'aucune'}. Il faut au moins une colonne « Cuvée » ou « Domaine ».`);
     return;
+  }
+  if (r.existing > 0) {
+    // des vins du fichier sont déjà en cave : on laisse choisir entre ignorer et additionner
+    const n = r.added.length;
+    const buttons = [];
+    if (n > 0) buttons.push({ label: `Ajouter seulement les ${n} nouveau${n > 1 ? 'x' : ''}`, value: 'skip' });
+    buttons.push({ label: 'Additionner les quantités', value: 'sum', kind: 'o' });
+    buttons.push({ label: 'Annuler', value: null, kind: 'o' });
+    const c = await ask('Vins déjà en cave',
+      `${r.existing} ligne(s) du fichier correspondent à des vins déjà en cave, ${n} sont nouvelle(s). « Additionner » ajoute leur quantité à celle déjà en cave (à utiliser si ce sont de nouvelles bouteilles).`, buttons);
+    if (!c) { toast('Import annulé : rien n’a été modifié.'); return; }
+    if (c === 'skip') { r = IMP.rowsToWines(rows, S.wines, 'skip'); ignored = r.existing; }
   }
   const ok = await persist(() => store.putWines([...r.added, ...r.updated]));
   if (!ok) return;
@@ -523,7 +536,7 @@ async function importSheet(file) {
   S.tab = 'cave'; S.filt = 'Tous'; S.sort = 'recent'; $('#sort').value = 'recent'; S.limit = PAGE;
   render();
   const chk = r.added.filter(w => w.check).length;
-  toast(`✅ ${r.added.length} vin(s) ajouté(s)${r.merged ? ', ' + r.merged + ' doublon(s) additionné(s)' : ''}${r.skipped ? ', ' + r.skipped + ' ligne(s) ignorée(s)' : ''}${chk ? '. ' + chk + ' à vérifier (filtre « À vérifier »)' : ''}.`);
+  toast(`✅ ${r.added.length} vin(s) ajouté(s)${r.merged ? ', ' + r.merged + ' doublon(s) additionné(s)' : ''}${ignored ? ', ' + ignored + ' déjà en cave (inchangé' + (ignored > 1 ? 's' : '') + ')' : ''}${r.skipped ? ', ' + r.skipped + ' ligne(s) ignorée(s)' : ''}${chk ? '. ' + chk + ' à vérifier (filtre « À vérifier »)' : ''}.`);
 }
 
 /* ============ Sauvegarde, restauration, export ============ */
