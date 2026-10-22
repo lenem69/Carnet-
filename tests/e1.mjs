@@ -27,7 +27,7 @@ await page.evaluate(()=>{window.__rf=window.fetch;window.__fx=[];window.fetch=(f
 await page.evaluate(()=>document.querySelector('#ct-pub').click());await H.sl(400);
 const fx=await page.evaluate(()=>window.__fx);
 T('publier : envoi direct au formulaire Google, sans quitter l’appli (POST, sans cookies)',fx.length===1&&fx[0].u==='https://docs.google.com/forms/d/e/1FAIpQLSfOirVg2Xykiv6DvPS1jNM5NQJSpnW0ajhbdP1gD3bKap1QDw/formResponse'&&fx[0].m==='POST'&&fx[0].mode==='no-cors'&&fx[0].c==='omit',JSON.stringify(fx));
-T('publier : champ « Votre message » rempli avec le message, la version et l’appareil',fx.length===1&&decodeURIComponent(fx[0].b.replace(/\+/g,' ')).startsWith('entry.1804718778=[Bug] Le bouton + ne répond plus')&&fx[0].b.includes('1.7.0'),fx[0]&&fx[0].b);
+T('publier : champ « Votre message » rempli avec le message, la version et l’appareil',fx.length===1&&decodeURIComponent(fx[0].b.replace(/\+/g,' ')).startsWith('entry.1804718778=[Bug] Le bouton + ne répond plus')&&fx[0].b.includes('1.8.0'),fx[0]&&fx[0].b);
 T('publier : confirmation affichée et fenêtre fermée',(await H.txt(page,'#toasts')).includes('Requête publiée')&&!(await H.shown(page,'#sContact')),await H.txt(page,'#toasts'));
 await page.evaluate(()=>document.querySelector('#bContact').click());await H.sl(300);
 T('publier : message effacé après envoi',(await page.$eval('#ct-msg',e=>e.value))==='');
