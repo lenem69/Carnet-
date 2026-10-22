@@ -10,7 +10,7 @@ import { saveFile, readText } from './files.js';
 const VERSION = self.APP_VERSION || '?';
 // Formulaire Google de retours (aucune adresse mail n’est publiée dans le code).
 const FEEDBACK_POST = 'https://docs.google.com/forms/d/e/1FAIpQLSfOirVg2Xykiv6DvPS1jNM5NQJSpnW0ajhbdP1gD3bKap1QDw/formResponse';
-const FEEDBACK_ENTRY = ''; // identifiant du champ « Votre message » du formulaire (entry.NNN)
+const FEEDBACK_ENTRY = 'entry.1804718778'; // identifiant du champ « Votre message » du formulaire (entry.NNN)
 const YEAR = new Date().getFullYear();
 const PAGE = 100;
 const BACKUP_DAYS = 60;

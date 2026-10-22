@@ -155,7 +155,7 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 .credit .lnk { margin-top: 6px; }
 
 /* Bandeau de mise à jour : plein écran, collé en haut */
-#updBar { position: sticky; top: 0; z-index: 30; }
+#updBar { position: sticky; top: 0; z-index: 30; margin: 0 -16px; }
 #updBar:empty { display: none; }
 #updBar .upd { display: flex; align-items: center; gap: 12px; background: var(--ac); color: var(--acx); padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px; box-shadow: 0 4px 14px rgba(0, 0, 0, .35); }
 #updBar .ic { font-size: 26px; line-height: 1; }
