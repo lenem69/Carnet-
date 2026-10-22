@@ -5,7 +5,21 @@ const {page,errs}=await H.newPage(b);
 await page.goto(H.URL0);await H.sl(1200);
 T('démarrage : cave vide affichée',(await H.txt(page,'#list')).includes('Votre cave est vide'));
 {const t=await H.txt(page,'#list');T('cave vide : toutes les fonctions proposées (photos, tableur, restauration, guide)',['Scanner une étiquette','Importer des photos','Importer un tableur','Saisie manuelle','Restaurer une sauvegarde','Guide'].every(x=>t.includes(x)),t)}
-T('version affichée côté page',await page.evaluate(()=>self.APP_VERSION)==='1.2.0');
+T('version affichée côté page',await page.evaluate(()=>self.APP_VERSION)==='1.3.0');
+{const q1=await H.txt(page,'#quoteText');const Q=await page.evaluate(async()=>(await import('./quotes.js')).QUOTES);
+T('citation : affichée et issue de la liste (300)',Q.length===300&&Q.includes(q1)&&q1.length>10,q1);
+T('citation : bloc visible sous l’en-tête',await page.$eval('.quote',e=>e.getBoundingClientRect().height>40)&&await page.evaluate(()=>document.querySelector('header.top').compareDocumentPosition(document.querySelector('.quote'))&4));
+T('crédit en bas de page',(await H.txt(page,'.credit')).includes('Jean-François Morin'));
+T('titre par défaut + crayon visible',(await H.txt(page,'#appTitle'))==='Ma cave'&&await page.$eval('#bTitle',e=>e.getBoundingClientRect().width>30));
+await page.reload();await H.sl(1200);const q2=await H.txt(page,'#quoteText');T('citation : change à chaque ouverture',q2!==q1&&Q.includes(q2),q1+' / '+q2);
+await H.click(page,'#bTitle');await H.sl(300);T('crayon : fenêtre de titre ouverte',await H.shown(page,'#sTitle'));
+await page.type('#ti-in','La cave de Paul');await H.click(page,'#ti-save');await H.sl(600);
+T('titre modifié affiché',(await H.txt(page,'#appTitle'))==='La cave de Paul',await H.txt(page,'#appTitle'));
+await page.reload();await H.sl(1500);T('titre conservé après réouverture',(await H.txt(page,'#appTitle'))==='La cave de Paul');
+await page.evaluate(()=>document.querySelectorAll('.toast').forEach(t=>t.remove()));
+await H.click(page,'#bTitle');await H.sl(300);await H.click(page,'#ti-reset');await H.sl(600);
+T('titre remis à « Ma cave »',(await H.txt(page,'#appTitle'))==='Ma cave');
+await page.evaluate(()=>document.querySelectorAll('.toast').forEach(t=>t.remove()));}
 T('bandeau sauvegarde absent si cave vide',(await H.txt(page,'#banners')).trim()==='');
 // ajout manuel
 await H.click(page,'#fab');T('menu ouvert',await H.shown(page,'#sMenu'));

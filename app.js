@@ -4,6 +4,7 @@ import * as store from './store.js';
 import * as L from './logic.js';
 import * as AI from './ai.js';
 import * as IMP from './importer.js';
+import { QUOTES } from './quotes.js';
 import { saveFile, readText } from './files.js';
 
 const VERSION = self.APP_VERSION || '?';
@@ -12,8 +13,9 @@ const PAGE = 100;
 const BACKUP_DAYS = 60;
 const S = {
   wines: [], tab: 'cave', filt: 'Tous', sort: 'name', q: '', limit: PAGE, bmode: 'year',
-  editId: null, formExtra: {}, lastBackup: 0, update: null, ready: false, highlight: null,
+  editId: null, formExtra: {}, lastBackup: 0, update: null, ready: false, highlight: null, title: 'Ma cave',
 };
+const DEFAULT_TITLE = 'Ma cave';
 
 /* ============ Messages ============ */
 function toast(msg, opt = {}) {
@@ -707,6 +709,11 @@ function menuAction(m) {
 function bind() {
   $('#fab').onclick = () => openSheet('sMenu');
   $('#bSet').onclick = openSettings;
+  $('#bTitle').onclick = openTitle;
+  $('#appTitle').onclick = openTitle;
+  $('#ti-save').onclick = () => saveTitle($('#ti-in').value);
+  $('#ti-reset').onclick = () => saveTitle('');
+  $('#ti-in').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveTitle($('#ti-in').value); } });
   $('#sMenu').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (b) menuAction(b.dataset.m); });
   $$('[data-close]').forEach(b => { b.onclick = () => closeSheet(b.dataset.close); });
   $$('.modal').forEach(m => m.addEventListener('click', e => {
@@ -770,10 +777,40 @@ function bind() {
   });
 }
 
+/* ============ Titre modifiable et citation du jour ============ */
+function renderTitle() {
+  $('#appTitle').textContent = S.title;
+  document.title = S.title;
+}
+function openTitle() {
+  $('#ti-in').value = S.title === DEFAULT_TITLE ? '' : S.title;
+  openSheet('sTitle');
+  setTimeout(() => { try { $('#ti-in').focus(); } catch (e) { /* */ } }, 50);
+}
+async function saveTitle(value) {
+  const t = String(value || '').replace(/\s+/g, ' ').trim().slice(0, 40) || DEFAULT_TITLE;
+  const before = S.title;
+  S.title = t; renderTitle();
+  if (!await persist(() => store.setMeta('title', t))) { S.title = before; renderTitle(); return; }
+  closeSheet('sTitle');
+  toast('✅ Titre enregistré : « ' + t + ' ».');
+}
+
+// Une citation au hasard à chaque ouverture, jamais la même que la fois précédente.
+function showQuote() {
+  let last = -1;
+  try { last = Number(localStorage.getItem('cave-lastq')); } catch (e) { /* stockage bloqué : pas grave */ }
+  let i = Math.floor(Math.random() * QUOTES.length);
+  if (QUOTES.length > 1 && i === last) i = (i + 1 + Math.floor(Math.random() * (QUOTES.length - 1))) % QUOTES.length;
+  try { localStorage.setItem('cave-lastq', String(i)); } catch (e) { /* */ }
+  $('#quoteText').textContent = QUOTES[i];
+}
+
 /* ============ Démarrage ============ */
 async function boot() {
   fitViewport();
   bind();
+  showQuote();
   render();
   await store.open();
   try {
@@ -787,6 +824,8 @@ async function boot() {
     }
     S.wines = list;
     S.lastBackup = (await store.getMeta('lastBackup')) || 0;
+    S.title = (await store.getMeta('title')) || DEFAULT_TITLE;
+    renderTitle();
   } catch (e) {
     console.error(e);
     errToast('Lecture de vos données impossible : ' + (e.message || 'erreur') + '. Ne saisissez rien et restaurez votre dernière sauvegarde si le problème persiste.');

@@ -19,13 +19,22 @@
 <div id="toasts" aria-live="polite"></div>
 
 <header class="top">
-  <h1>Ma cave</h1>
+  <div class="ttl">
+    <h1 id="appTitle">Ma cave</h1>
+    <button id="bTitle" class="pen" aria-label="Modifier le titre de la page" title="Modifier le titre">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"/></svg>
+    </button>
+  </div>
   <button id="bSet" class="icon" aria-label="Réglages">
     <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.5 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1L11 21h4l.4-2.9c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
   </button>
 </header>
 
 <main>
+  <section class="quote" aria-label="Citation sur le vin">
+    <span class="qm" aria-hidden="true">“</span>
+    <p id="quoteText"></p>
+  </section>
   <div id="banners"></div>
   <div class="stats">
     <div class="stat"><b id="sB">0</b><span>bouteilles</span></div>
@@ -60,6 +69,7 @@
     </div>
     <div id="blist"></div>
   </section>
+  <footer class="credit">Application créée par Jean-François Morin</footer>
 </main>
 
 <button id="fab" aria-label="Ajouter des vins">
@@ -131,6 +141,19 @@
     <button class="btn o" id="lgMan" hidden>Saisir à la main</button>
     <button class="btn" id="lgX" hidden>Fermer</button>
   </div>
+</div></div>
+
+<!-- Titre de la page -->
+<div class="modal" id="sTitle" role="dialog" aria-modal="true" aria-labelledby="tiT"><div class="sheet">
+  <h2 id="tiT">Titre de la page</h2>
+  <p class="mu small">Écrivez ce que vous voulez, par exemple « La cave de Paul » ou « Cave de Lyon ».</p>
+  <label for="ti-in">Titre</label>
+  <input id="ti-in" maxlength="40" autocomplete="off" placeholder="Ma cave">
+  <div class="stack">
+    <button class="btn" id="ti-save" type="button">Enregistrer</button>
+    <button class="btn o" id="ti-reset" type="button">Revenir à « Ma cave »</button>
+  </div>
+  <button class="lnk close" data-close="sTitle">Annuler</button>
 </div></div>
 
 <!-- Réglages -->

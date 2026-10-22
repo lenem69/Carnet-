@@ -1,7 +1,7 @@
 // Service worker : appli disponible hors connexion et mises à jour contrôlées.
 importScripts('version.js');
 const CACHE = 'cave-' + self.APP_VERSION;
-const FILES = ['./', 'index.html', 'styles.css', 'version.js', 'app.js', 'util.js', 'logic.js', 'store.js', 'ai.js', 'importer.js', 'files.js', 'xlsx.min.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable.png'];
+const FILES = ['./', 'index.html', 'styles.css', 'version.js', 'app.js', 'util.js', 'logic.js', 'store.js', 'ai.js', 'importer.js', 'files.js', 'quotes.js', 'xlsx.min.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
