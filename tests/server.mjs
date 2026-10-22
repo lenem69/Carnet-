@@ -1,0 +1,4 @@
+import http from 'http';import fs from 'fs';import path from 'path';
+const ROOT=process.env.SITE||new URL('./.site/www',import.meta.url).pathname;
+const T={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css','.png':'image/png','.webmanifest':'application/manifest+json','.json':'application/json'};
+export function start(port){return new Promise(r=>{const s=http.createServer((req,res)=>{let p=decodeURIComponent(new URL(req.url,'http://x').pathname);if(p.endsWith('/'))p+='index.html';const f=path.join(ROOT,p);if(!f.startsWith(ROOT)||!fs.existsSync(f)||fs.statSync(f).isDirectory()){res.writeHead(404);res.end('nf');return}res.writeHead(200,{'Content-Type':T[path.extname(f)]||'application/octet-stream','Cache-Control':'max-age=600'});fs.createReadStream(f).pipe(res)});s.listen(port,()=>r(s))})}

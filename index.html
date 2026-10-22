@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Ma cave</title>
+<!-- Discrétion : demande aux moteurs de recherche de ne pas indexer, archiver ni résumer cette page -->
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<!-- N'envoie pas l'adresse de l'appli aux services d'IA appelés -->
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#7b1e3a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="styles.css">
+<script src="version.js"></script>
+</head>
+<body>
+<div id="toasts" aria-live="polite"></div>
+
+<header class="top">
+  <h1>Ma cave</h1>
+  <button id="bSet" class="icon" aria-label="Réglages">
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.5 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1L11 21h4l.4-2.9c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
+  </button>
+</header>
+
+<main>
+  <div id="banners"></div>
+  <div class="stats">
+    <div class="stat"><b id="sB">0</b><span>bouteilles</span></div>
+    <div class="stat"><b id="sV">0 €</b><span>valeur d’achat</span></div>
+    <div class="stat"><b id="sD">0</b><span>à boire vite</span></div>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="tab on" role="tab" data-t="cave" aria-selected="true">Ma cave</button>
+    <button class="tab" role="tab" data-t="boire" aria-selected="false">Que boire ?</button>
+  </div>
+
+  <section id="vCave">
+    <div class="tools">
+      <input id="q" type="search" placeholder="Rechercher : nom, domaine, cépage…" aria-label="Rechercher" autocomplete="off">
+      <select id="sort" aria-label="Trier">
+        <option value="name">Nom</option>
+        <option value="urgent">À boire en priorité</option>
+        <option value="year">Millésime</option>
+        <option value="recent">Ajouts récents</option>
+      </select>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div id="list"></div>
+  </section>
+
+  <section id="vBoire" hidden>
+    <div class="chips" id="bchips"></div>
+    <div id="plat" hidden>
+      <label for="dish" class="lbl">Plat prévu</label>
+      <textarea id="dish" rows="2" placeholder="Ex. magret de canard aux cerises"></textarea>
+      <button class="btn" id="go">Trouver le bon vin</button>
+    </div>
+    <div id="blist"></div>
+  </section>
+</main>
+
+<button id="fab" aria-label="Ajouter des vins">
+  <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+</button>
+
+<input type="file" id="fCam" accept="image/*" capture="environment" hidden>
+<input type="file" id="fImg" accept="image/*" multiple hidden>
+<input type="file" id="fXls" accept=".xlsx,.xls,.csv,.ods,text/csv" hidden>
+<input type="file" id="fJson" accept=".json,application/json" hidden>
+
+<!-- Menu d'ajout -->
+<div class="modal" id="sMenu" role="dialog" aria-modal="true" aria-labelledby="mT"><div class="sheet">
+  <h2 id="mT">Ajouter des vins</h2>
+  <div class="stack">
+    <button class="btn" data-m="cam">📷 Scanner une étiquette</button>
+    <button class="btn o" data-m="img">🖼️ Importer des photos (plusieurs)</button>
+    <button class="btn o" data-m="xls">📊 Importer un tableur (Excel, CSV)</button>
+    <button class="btn o" data-m="man">✍️ Saisie manuelle</button>
+  </div>
+  <h3>Fiches et données</h3>
+  <div class="stack">
+    <button class="btn o" data-m="enr">✨ Compléter les fiches incomplètes (IA)</button>
+    <button class="btn o" data-m="bk">💾 Sauvegarder ma cave</button>
+    <button class="btn o" data-m="res">♻️ Restaurer une sauvegarde</button>
+    <button class="btn o" data-m="csv">⬇️ Exporter en tableur (CSV)</button>
+    <button class="btn o" data-m="help">❔ Guide : importer toute ma cave</button>
+  </div>
+  <button class="lnk close" data-close="sMenu">Fermer</button>
+</div></div>
+
+<!-- Fiche vin -->
+<div class="modal" id="sForm" role="dialog" aria-modal="true" aria-labelledby="fT"><div class="sheet fx">
+  <div class="sb">
+    <h2 id="fT">Ajouter un vin</h2>
+    <label for="f-name">Nom / cuvée *</label><input id="f-name" autocomplete="off" list="dl-name">
+    <label for="f-dom">Domaine / producteur</label><input id="f-dom" autocomplete="off" list="dl-dom">
+    <div class="g2">
+      <div><label for="f-year">Millésime</label><input id="f-year" type="number" inputmode="numeric" min="1800" max="2100"></div>
+      <div><label for="f-color">Couleur</label><select id="f-color"><option>Rouge</option><option>Blanc</option><option>Rosé</option><option>Pétillant</option><option>Autre</option></select></div>
+    </div>
+    <label for="f-region">Région / appellation</label><input id="f-region" autocomplete="off" list="dl-region">
+    <button class="btn o" id="f-gen" type="button">✨ Générer la fiche (IA)</button>
+    <label for="f-grape">Cépage(s)</label><input id="f-grape" autocomplete="off">
+    <div class="g2">
+      <div><label for="f-qty">Quantité</label><input id="f-qty" type="number" inputmode="numeric" min="0" step="1"></div>
+      <div><label for="f-price">Prix d’achat (€ / bouteille)</label><input id="f-price" inputmode="decimal" autocomplete="off"></div>
+    </div>
+    <div class="g2">
+      <div><label for="f-from">À boire à partir de</label><input id="f-from" type="number" inputmode="numeric" min="1800" max="2200"></div>
+      <div><label for="f-to">À boire jusqu’à</label><input id="f-to" type="number" inputmode="numeric" min="1800" max="2200"></div>
+    </div>
+    <label for="f-loc">Emplacement</label><input id="f-loc" placeholder="Ex. Casier B, rang 3" autocomplete="off" list="dl-loc">
+    <label for="f-story">Histoire de la cuvée et du millésime</label><textarea id="f-story" rows="3"></textarea>
+    <label for="f-pairings">Accords mets-vins (séparés par des virgules)</label><textarea id="f-pairings" rows="2"></textarea>
+    <label for="f-note">Mes notes</label><textarea id="f-note" rows="2"></textarea>
+  </div>
+  <div class="ft"><button class="btn o" id="f-cancel" type="button">Annuler</button><button class="btn" id="f-save" type="button">Enregistrer</button></div>
+</div></div>
+<datalist id="dl-name"></datalist><datalist id="dl-dom"></datalist><datalist id="dl-region"></datalist><datalist id="dl-loc"></datalist>
+
+<!-- Suivi des traitements longs -->
+<div class="modal" id="sLog" role="dialog" aria-modal="true" aria-labelledby="lgT"><div class="sheet">
+  <h2 id="lgT">Analyse en cours…</h2>
+  <p id="lgH" class="mu small"></p>
+  <div id="lg"></div>
+  <div class="stack">
+    <button class="btn o" id="lgStop">Arrêter</button>
+    <button class="btn o" id="lgMan" hidden>Saisir à la main</button>
+    <button class="btn" id="lgX" hidden>Fermer</button>
+  </div>
+</div></div>
+
+<!-- Réglages -->
+<div class="modal" id="sSet" role="dialog" aria-modal="true" aria-labelledby="stT"><div class="sheet">
+  <h2 id="stT">Réglages</h2>
+  <h3>IA (optionnelle)</h3>
+  <p class="mu small">Sert au scan d’étiquettes, aux fiches et aux accords affinés. Tout le reste fonctionne sans IA.</p>
+  <label for="ai-prov">Fournisseur</label>
+  <select id="ai-prov"></select>
+  <p id="ai-help" class="mu small"></p>
+  <label for="ai-key">Clé API</label>
+  <div class="row2"><input id="ai-key" type="password" autocomplete="off" spellcheck="false"><button class="btn o sm" id="ai-show" type="button">Voir</button></div>
+  <label for="ai-model">Modèle</label><input id="ai-model" autocomplete="off" spellcheck="false">
+  <div id="ai-base-w"><label for="ai-base">Adresse de l’API</label><input id="ai-base" autocomplete="off" spellcheck="false" placeholder="https://api.openai.com/v1"></div>
+  <p class="mu small">La clé reste uniquement sur ce téléphone. Sur l’offre gratuite de Gemini, Google peut utiliser vos photos et données pour améliorer ses produits.</p>
+  <div class="stack">
+    <button class="btn" id="ai-save">Enregistrer</button>
+    <button class="btn o" id="ai-test">Tester la connexion</button>
+  </div>
+  <h3>Données</h3>
+  <p id="st-info" class="mu small"></p>
+  <div class="stack">
+    <button class="btn o" id="st-erase">Effacer toutes les données</button>
+  </div>
+  <h3>Application</h3>
+  <p class="mu small">Version <b id="st-ver"></b></p>
+  <div class="stack"><button class="btn o" id="st-upd">Vérifier les mises à jour</button></div>
+  <button class="lnk close" data-close="sSet">Fermer</button>
+</div></div>
+
+<!-- Guide d'import -->
+<div class="modal" id="sHelp" role="dialog" aria-modal="true" aria-labelledby="hT"><div class="sheet">
+  <h2 id="hT">Importer toute ma cave</h2>
+  <ol class="steps">
+    <li><b>Photographiez</b> une étiquette par photo, de face, sans flash. Avant chaque rangée, photographiez une feuille « CASIER A – RANG 1 » : elle donne l’emplacement.</li>
+    <li><b>Ouvrez n’importe quelle IA</b> qui lit les images (Gemini, ChatGPT, Claude, Le Chat…), collez l’invite 1, joignez 25 photos maximum. Lot suivant : « Lot suivant, mêmes règles, sans en-tête ».</li>
+    <li><b>Collez les réponses</b> dans un tableur (modèle ci-dessous). Ouvrez une nouvelle conversation tous les 2–3 lots : c’est moins coûteux.</li>
+    <li><b>Facultatif</b> : invite 2 pour les années de garde (texte seul, toute IA gratuite).</li>
+    <li><b>Importez</b> le tableur ici (+ › Importer un tableur). Les doublons s’additionnent, les lignes douteuses sont marquées « à vérifier ».</li>
+  </ol>
+  <button class="btn o" id="h-tpl">⬇️ Modèle de tableur (CSV)</button>
+  <h3>Invite 1 : lire les étiquettes</h3>
+  <div class="code"><pre id="pA">Tu es sommelier. Je t’envoie des photos d’étiquettes de vin, une bouteille par photo, dans l’ordre. Une photo de feuille de papier indique le repère de rangement (par exemple « CASIER A – RANG 1 ») : il s’applique à toutes les photos suivantes jusqu’à la prochaine feuille. Une feuille « QTÉ n » juste après une photo signifie que cette cuvée existe en n exemplaires.
+
+Réponds uniquement par des lignes CSV, séparateur point-virgule, sans commentaire ni markdown, une ligne par bouteille photographiée (aucune ligne pour les feuilles). Colonnes dans cet ordre :
+Domaine;Cuvée;Millésime;Couleur;Appellation;Cépage;Début garde;Fin garde;Quantité;Emplacement;Confiance
+
+Règles :
+- Couleur : Rouge, Blanc, Rosé, Pétillant ou Autre.
+- Millésime : 4 chiffres lus sur l’étiquette, vide s’il n’y en a pas.
+- Quantité : 1, sauf feuille « QTÉ n ».
+- Laisse vides Cépage, Début garde et Fin garde.
+- Emplacement : le dernier repère vu.
+- Confiance : haute si tout est lisible, moyenne si tu as dû deviner une partie, faible si l’étiquette est illisible.
+- N’invente jamais un nom : écris ce que tu lis.
+Pour ce premier lot seulement, commence par la ligne d’en-tête des colonnes.</pre><button class="btn cp" data-copy="pA">Copier l’invite 1</button></div>
+  <h3>Invite 2 : années de garde</h3>
+  <div class="code"><pre id="pB">Tu es sommelier expert. Voici des lignes de ma cave au format CSV (séparateur ;). Complète uniquement les colonnes Cépage, Début garde et Fin garde de chaque ligne : années de dégustation conseillées. Si tu estimes sans connaître précisément la cuvée, passe la Confiance à moyenne. Ne modifie aucune autre colonne, garde le même ordre et le même nombre de lignes. Réponds uniquement par les lignes CSV complétées, sans en-tête ni commentaire.</pre><button class="btn cp" data-copy="pB">Copier l’invite 2</button></div>
+  <button class="lnk close" data-close="sHelp">Fermer</button>
+</div></div>
+
+<!-- Boîte de dialogue générique -->
+<div class="modal" id="sDlg" role="alertdialog" aria-modal="true" aria-labelledby="dlgT"><div class="sheet">
+  <h2 id="dlgT"></h2>
+  <p id="dlgX"></p>
+  <div class="stack" id="dlgB"></div>
+</div></div>
+
+<noscript><p class="noscript">Cette application a besoin de JavaScript.</p></noscript>
+<script type="module" src="app.js"></script>
+</body>
+</html>

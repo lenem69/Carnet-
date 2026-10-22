@@ -1,0 +1,8 @@
+{
+  "name": "tests",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node run-all.mjs" },
+  "dependencies": { "puppeteer-core": "25.15.0", "xlsx": "0.18.5" },
+  "optionalDependencies": { "@sparticuz/chromium": "*" }
+}
