@@ -69,7 +69,7 @@
     </div>
     <div id="blist"></div>
   </section>
-  <footer class="credit">Application créée par Jean-François Morin</footer>
+  <footer class="credit">Application créée par Jean-François Morin<br>© Copyright appartenant à Jean-François Morin 2026<br><button class="lnk" id="bContact" type="button">Aide et contact</button></footer>
 </main>
 
 <button id="fab" aria-label="Ajouter des vins">
@@ -191,8 +191,25 @@
   </div>
   <h3>Application</h3>
   <p class="mu small">Version <b id="st-ver"></b></p>
-  <div class="stack"><button class="btn o" id="st-upd">Vérifier les mises à jour</button></div>
+  <p class="mu small">© Copyright appartenant à Jean-François Morin 2026</p>
+  <div class="stack"><button class="btn o" id="st-upd">Vérifier les mises à jour</button><button class="btn o" id="st-help" type="button">Aide et contact</button></div>
   <button class="lnk close" data-close="sSet">Fermer</button>
+</div></div>
+
+<!-- Aide et contact -->
+<div class="modal" id="sContact" role="dialog" aria-modal="true" aria-labelledby="ctT"><div class="sheet">
+  <h2 id="ctT">Aide et contact</h2>
+  <p class="mu small">Un problème, une idée, une question ? Décrivez-le ici : votre message part avec la version de l’appli et le type de téléphone, pour m’aider à comprendre. Aucune donnée de votre cave n’est jointe.</p>
+  <label for="ct-type">Sujet</label>
+  <select id="ct-type"><option>Bug (quelque chose ne marche pas)</option><option>Suggestion</option><option>Question</option></select>
+  <label for="ct-msg">Votre message</label>
+  <textarea id="ct-msg" rows="5" placeholder="Que s’est-il passé ? Sur quel écran ? Qu’attendiez-vous ?"></textarea>
+  <div class="stack">
+    <button class="btn" id="ct-share" type="button">Envoyer mon message</button>
+    <button class="btn o" id="ct-form" type="button" hidden>Ouvrir le formulaire de retour</button>
+    <button class="btn o" id="ct-copy" type="button">Copier le message</button>
+  </div>
+  <button class="lnk close" data-close="sContact">Fermer</button>
 </div></div>
 
 <!-- Guide d'import -->

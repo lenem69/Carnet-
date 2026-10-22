@@ -151,3 +151,5 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 
 .src { font-size: 13px; color: var(--mu, inherit); overflow-wrap: anywhere; }
 .src a { color: var(--ac); }
+
+.credit .lnk { margin-top: 6px; }

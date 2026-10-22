@@ -8,6 +8,8 @@ import { QUOTES } from './quotes.js';
 import { saveFile, readText } from './files.js';
 
 const VERSION = self.APP_VERSION || '?';
+// Lien du formulaire Google de retours (à renseigner : aucune adresse mail n’est publiée dans le code).
+const FEEDBACK_FORM = '';
 const YEAR = new Date().getFullYear();
 const PAGE = 100;
 const BACKUP_DAYS = 60;
@@ -731,6 +733,14 @@ function bind() {
   $('#fab').onclick = () => openSheet('sMenu');
   $('#bSet').onclick = openSettings;
   $('#bTitle').onclick = openTitle;
+  $('#bContact').onclick = openContact;
+  $('#st-help').onclick = openContact;
+  $('#ct-share').onclick = sendContact;
+  $('#ct-form').onclick = openForm2;
+  $('#ct-copy').onclick = async () => {
+    if (!$('#ct-msg').value.trim()) { errToast('Écrivez d’abord votre message.'); return; }
+    toast(await copyText(contactText()) ? 'Message copié.' : 'Copie impossible : sélectionnez le texte à la main.', {});
+  };
   $('#appTitle').onclick = openTitle;
   $('#ti-save').onclick = () => saveTitle($('#ti-in').value);
   $('#ti-reset').onclick = () => saveTitle('');
@@ -804,6 +814,38 @@ function renderTitle() {
   $('#appTitle').textContent = S.title;
   document.title = S.title;
 }
+/* ============ Aide et contact ============ */
+function contactText() {
+  const t = $('#ct-type').value.split(' (')[0];
+  const nav = String(navigator.userAgent || '').slice(0, 200);
+  return `[${t}] ${$('#ct-msg').value.trim()}\n\n---\nAppli « Ma cave » version ${VERSION}\nAppareil : ${nav}`;
+}
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); return true; } catch (e) { return false; }
+}
+function openContact() {
+  closeSheet('sSet');
+  $('#ct-msg').value = '';
+  $('#ct-form').hidden = !FEEDBACK_FORM;
+  openSheet('sContact');
+}
+async function sendContact() {
+  if (!$('#ct-msg').value.trim()) { errToast('Écrivez d’abord votre message.'); $('#ct-msg').focus(); return; }
+  const text = contactText();
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Retour sur Ma cave', text }); toast('Choisissez l’application et le destinataire : rien n’est parti tant que vous n’avez pas validé l’envoi.'); }
+    catch (e) { if (!(e && e.name === 'AbortError')) errToast('Le partage a échoué. Touchez « Copier le message » puis envoyez-le vous-même.'); }
+    return;
+  }
+  toast(await copyText(text) ? 'Partage indisponible ici : le message est copié, collez-le dans votre messagerie.' : 'Partage et copie impossibles. Sélectionnez le texte du message et copiez-le à la main.', { kind: 'err' });
+}
+async function openForm2() {
+  if (!$('#ct-msg').value.trim()) { errToast('Écrivez d’abord votre message.'); $('#ct-msg').focus(); return; }
+  const ok = await copyText(contactText());
+  toast(ok ? 'Message copié : collez-le dans le formulaire qui s’ouvre.' : 'Copie impossible : recopiez votre message dans le formulaire.');
+  window.open(FEEDBACK_FORM, '_blank', 'noopener,noreferrer');
+}
+
 function openTitle() {
   $('#ti-in').value = S.title === DEFAULT_TITLE ? '' : S.title;
   openSheet('sTitle');
