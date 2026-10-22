@@ -39,7 +39,7 @@ Rhône sud	Gigondas	R	2020	4	2025	2036	fruit net, belle fraîcheur, quelques rou
 Rhône sud	Gigondas	R	2021	4	2026	2037	gel d'avril, rouges frais et tendus, parmi les meilleurs de l'année	B	hachette-vins.com;decanter.com
 Rhône sud	Gigondas	R	2022	3	2026	2034	année sèche, rouges contrastés, certains souples, d'autres très structurés	A	decanter.com;hachette-vins.com;jancisrobinson.com
 Rhône sud	Gigondas	R	2023	3	2027	2035	chaud et sec, rouges mûrs, variables selon les sols sableux	A	decanter.com;frw.co.uk;hachette-vins.com
-Rhône sud	Gigondas	R	2024	4	2029	2040	année la plus équilibrée depuis 2020, rouges frais, précis, très réussis	B	decanter.com;vins-rhone.com
+Rhône sud	Gigondas	R	2024	4	2029	2040	avis provisoire, style classique	B	decanter.com;vins-rhone.com;vinous.com;wineindustryadvisor.com
 Rhône sud	Gigondas	R	2025	4	2030	2041	canicules, orages d'août, volumes réduits, vins harmonieux, bien équilibrés	B	vinetur.com;chateauneuf.com
 Rhône sud	Vacqueyras	R	2005	5	2011	2025	chaud et sec, nuits fraîches, vins concentrés, structurés, grande garde	B	thewinecellarinsider.com;jancisrobinson.com
 Rhône sud	Vacqueyras	R	2006	4	2011	2022	sec et ensoleillé, fruit gourmand, tanins fondus, beau vieillissement	B	thewinecellarinsider.com;jancisrobinson.com
@@ -60,7 +60,7 @@ Rhône sud	Vacqueyras	R	2020	4	2025	2036	frais et équilibré, fruit pur, tanins
 Rhône sud	Vacqueyras	R	2021	3	2025	2033	gel d'avril, rendements bas, vins frais, tendus, structurés	B	hachette-vins.com;decanter.com
 Rhône sud	Vacqueyras	R	2022	3	2026	2034	chaud et sec, vins puissants, concentrés, bonne fraîcheur, garde longue	A	decanter.com;hachette-vins.com;jancisrobinson.com
 Rhône sud	Vacqueyras	R	2023	3	2027	2035	chaud et sec, qualité variable d'un domaine à l'autre	A	decanter.com;frw.co.uk;hachette-vins.com
-Rhône sud	Vacqueyras	R	2024	4	2029	2040	relativement épargné, équilibre entre fraîcheur et structure, rouges réussis	B	decanter.com;vins-rhone.com
+Rhône sud	Vacqueyras	R	2024	4	2029	2040	relativement épargné, équilibre entre fraîcheur et structure, rouges réussis ; avis provisoire	B	decanter.com;vins-rhone.com;vinous.com;wineindustryadvisor.com
 Rhône sud	Vacqueyras	R	2025	4	2030	2041	canicules, orages d'août, volumes réduits, vins harmonieux, bien équilibrés	B	vinetur.com;chateauneuf.com
 Rhône sud	Cairanne	R	2005	5	2011	2025	chaud et sec, nuits fraîches, vins concentrés, structurés, grande garde	B	thewinecellarinsider.com;jancisrobinson.com
 Rhône sud	Cairanne	R	2006	4	2011	2022	sec et ensoleillé, fruit gourmand, tanins fondus, beau vieillissement	B	thewinecellarinsider.com;jancisrobinson.com
@@ -249,7 +249,7 @@ Rhône sud	Ventoux	R	2020	4	2023	2031	frais et équilibré, fruit pur, tanins so
 Rhône sud	Ventoux	R	2021	3	2024	2030	gel d'avril, rendements bas, vins frais, tendus, structurés	B	hachette-vins.com;decanter.com
 Rhône sud	Ventoux	R	2022	3	2025	2031	chaud et sec, vins puissants, concentrés, bonne fraîcheur, garde longue	B	hachette-vins.com;decanter.com
 Rhône sud	Ventoux	R	2023	3	2026	2032	été chaud et sec, vins souples, accessibles, hétérogènes selon sélection	B	hachette-vins.com;decanter.com
-Rhône sud	Ventoux	R	2024	3	2027	2033	printemps pluvieux, récolte réduite, vins frais, aromatiques, alcool modéré	B	decanter.com;vins-rhone.com
+Rhône sud	Ventoux	R	2024	3	2027	2033	avis provisoire, gel et petits volumes	B	decanter.com;vins-rhone.com;wineindustryadvisor.com;terredevins.com
 Rhône sud	Ventoux	R	2025	4	2028	2036	canicules, orages d'août, volumes réduits, vins harmonieux, bien équilibrés	B	vinetur.com;chateauneuf.com
 Rhône sud	Luberon	R	2005	4	2007	2014	chaud et sec, nuits fraîches, vins concentrés, structurés, grande garde	C	connaissance;thewinecellarinsider.com
 Rhône sud	Luberon	R	2006	4	2008	2015	sec et ensoleillé, fruit gourmand, tanins fondus, beau vieillissement	C	connaissance;thewinecellarinsider.com

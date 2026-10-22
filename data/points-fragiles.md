@@ -32,3 +32,10 @@
 
 ## 4. Mise à jour annuelle
 Chaque automne : nouveau millésime (2026 à l'automne 2027), revérification des deux précédents, relecture des lignes C.
+
+## Contrôle croisé du 22/10/2026 (deux IA indépendantes, 23 lignes)
+- Notes confirmées : Sauternes 2012 (2), 2018 (3), Alsace VT 2022 (passée à 4), Morgon 2015/2019/2022, Champagne BdB 2020, Gigondas et Vacqueyras 2024.
+- Notes révisées : Saint-Estèphe 2025 passée de 5 à 4 (tri plus exigeant qu'à Pauillac).
+- Désaccords gardés avec fiabilité plus basse : Sauternes 2008 (4 ou 3 selon la source, fiabilité C), Margaux 2016 et 2022 (4 ou 5), Pessac-Léognan blanc 2007 (4 ou 5), Ventoux 2024 (3 ou 4), Champagne BdB 2015 (3 ou 4), Sauternes 2024 (3 ou 4).
+- 2025 : avis provisoires uniquement (primeurs), jamais au-dessus de la fiabilité B.
+- Limite : une des deux IA n'a pas pu citer de source pour 2025, l'autre a cité des revues et des sites de vente. Les lectures de pages ne sont pas vérifiables de notre côté.

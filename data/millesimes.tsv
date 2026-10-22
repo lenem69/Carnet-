@@ -40,7 +40,7 @@ Bordeaux rive gauche	Pauillac	R	2021	3	2026	2037	gel puis été frais, vins lég
 Bordeaux rive gauche	Pauillac	R	2022	5	2034	2065	grands sommets, quelques variations selon les rendements	A	vinfolio.com;blog.bbr.com;hachette-vins.com
 Bordeaux rive gauche	Pauillac	R	2023	4	2031	2049	mildiou, août chaud salvateur, vins frais, cabernets mieux que merlots	A	hachette-vins.com;jancisrobinson.com;thedrinksbusiness.com
 Bordeaux rive gauche	Pauillac	R	2024	3	2029	2040	rendements les plus bas, vins plus légers, sommets classiques	B	vinfolio.com;winewithseth.com;jancisrobinson.com
-Bordeaux rive gauche	Pauillac	R	2025	5	2037	2068	appellation la plus régulière, cabernet profond, avis provisoires	B	thedrinksbusiness.com;onthetrail.klwines.com;tanners-wines.co.uk
+Bordeaux rive gauche	Pauillac	R	2025	5	2037	2068	appellation la plus régulière, cabernet profond, avis provisoires	B	thedrinksbusiness.com;onthetrail.klwines.com;tanners-wines.co.uk;millesima.fr
 Bordeaux rive gauche	Saint-Julien	R	2005	5	2017	2048	été sec, maturité parfaite, tanins fermes, très grande garde	A	jancisrobinson.com;thewinecellarinsider.com;winescholarguild.com
 Bordeaux rive gauche	Saint-Julien	R	2006	3	2012	2026	sec puis août pluvieux, vendanges hachées, vins puissants et tanniques	A	jancisrobinson.com;thewinecellarinsider.com;winescholarguild.com
 Bordeaux rive gauche	Saint-Julien	R	2007	3	2012	2023	mildiou et pluies jusqu'en septembre, vins légers, plaisir précoce	A	jancisrobinson.com;thewinecellarinsider.com;winescholarguild.com
@@ -73,13 +73,13 @@ Bordeaux rive gauche	Margaux	R	2012	3	2018	2032	automne humide, merlot mieux que
 Bordeaux rive gauche	Margaux	R	2013	2	2016	2021	floraison difficile, pourriture, vins dilués et légers, à boire jeunes	A	jancisrobinson.com;thewinecellarinsider.com;winescholarguild.com
 Bordeaux rive gauche	Margaux	R	2014	3	2019	2030	frais, un peu en retrait des appellations du nord	B	hachette-vins.com;thewinecellarinsider.com;idealwine.net
 Bordeaux rive gauche	Margaux	R	2015	5	2027	2055	grande réussite, régulière et très fine, appellation du millésime	A	thewinecellarinsider.com;thedrinksbusiness.com;jancisrobinson.com
-Bordeaux rive gauche	Margaux	R	2016	4	2025	2049	très bon mais moins régulier que le nord Médoc	B	hachette-vins.com;thewinecellarinsider.com;bordeauxindex.com
+Bordeaux rive gauche	Margaux	R	2016	4	2025	2049	très bon mais moins régulier que le nord Médoc	B	hachette-vins.com;thewinecellarinsider.com;bordeauxindex.com;thewinedoctor.com;avis-vin.lefigaro.fr
 Bordeaux rive gauche	Margaux	R	2017	3	2022	2033	sud Médoc moins régulier, gel et maturités inégales	B	hachette-vins.com;jancisrobinson.com;thewinecellarinsider.com
 Bordeaux rive gauche	Margaux	R	2018	4	2027	2048	appellation la moins régulière: mildiou, grêle, stress hydrique	A	thedrinksbusiness.com;thewinecellarinsider.com;jancisrobinson.com
 Bordeaux rive gauche	Margaux	R	2019	4	2028	2052	mûr et affirmé, sols légers parfois monolithiques, choisir	A	blog.bbr.com;hachette-vins.com;thewinecellarinsider.com
 Bordeaux rive gauche	Margaux	R	2020	4	2029	2050	sud plus touché par la sécheresse, rendements en baisse	B	thedrinksbusiness.com;hachette-vins.com;jancisrobinson.com
 Bordeaux rive gauche	Margaux	R	2021	3	2026	2037	gel puis été frais, vins légers et tendus, cabernets préférables	B	idealwine.net;jancisrobinson.com;hachette-vins.com
-Bordeaux rive gauche	Margaux	R	2022	4	2031	2055	plateaux superbes, jeunes vignes plus faibles, très inégal	B	vinfolio.com;blog.bbr.com;hachette-vins.com
+Bordeaux rive gauche	Margaux	R	2022	4	2031	2055	très hétérogène, stress hydrique marqué	B	vinfolio.com;blog.bbr.com;hachette-vins.com;avis-vin.lefigaro.fr;thedrinksbusiness.com
 Bordeaux rive gauche	Margaux	R	2023	4	2031	2049	appellation très en vue, merlots tendus, belle finesse	A	hachette-vins.com;jancisrobinson.com;thedrinksbusiness.com
 Bordeaux rive gauche	Margaux	R	2024	4	2032	2050	parmi les mieux réussis du millésime, certains vins légers	B	vinfolio.com;winewithseth.com;jancisrobinson.com
 Bordeaux rive gauche	Margaux	R	2025	4	2034	2058	bonne qualité partout, détails de sites décisifs, provisoire	B	thedrinksbusiness.com;onthetrail.klwines.com;tanners-wines.co.uk
@@ -103,10 +103,10 @@ Bordeaux rive gauche	Saint-Estèphe	R	2021	4	2029	2047	argiles retenant l'eau, c
 Bordeaux rive gauche	Saint-Estèphe	R	2022	5	2034	2065	grêle locale en juin, mais appellation régulière et fraîche	A	vinfolio.com;blog.bbr.com;hachette-vins.com
 Bordeaux rive gauche	Saint-Estèphe	R	2023	4	2031	2049	mildiou, août chaud salvateur, vins frais, cabernets mieux que merlots	B	hachette-vins.com;jancisrobinson.com;thedrinksbusiness.com
 Bordeaux rive gauche	Saint-Estèphe	R	2024	3	2029	2040	grêle et mildiou, très inégal, quelques sommets	B	vinfolio.com;winewithseth.com;jancisrobinson.com
-Bordeaux rive gauche	Saint-Estèphe	R	2025	5	2037	2068	rendements moins touchés, argiles fraîches, tanins à maîtriser, provisoire	B	thedrinksbusiness.com;onthetrail.klwines.com;tanners-wines.co.uk
+Bordeaux rive gauche	Saint-Estèphe	R	2025	4	2037	2068	avis provisoire, tri à faire	B	thedrinksbusiness.com;onthetrail.klwines.com;tanners-wines.co.uk;millesima.fr
 Bordeaux rive gauche	Pessac-Léognan	B	2005	4	2009	2025	été sec et chaud, blancs riches et mûrs, bonne garde	B	connaissance
 Bordeaux rive gauche	Pessac-Léognan	B	2006	3	2009	2018	pluies de vendanges, blancs corrects, assez ouverts	B	connaissance
-Bordeaux rive gauche	Pessac-Léognan	B	2007	5	2013	2035	été frais, sauvignon vif et aromatique, blancs tendus et classiques	B	viniphile.fr;connaissance
+Bordeaux rive gauche	Pessac-Léognan	B	2007	5	2013	2035	blancs secs salués, référence du millésime	B	viniphile.fr;connaissance;thewinedoctor.com;sodivin.fr
 Bordeaux rive gauche	Pessac-Léognan	B	2008	4	2012	2028	maturité lente, blancs frais, bien équilibrés, assez précis	B	connaissance
 Bordeaux rive gauche	Pessac-Léognan	B	2009	4	2013	2029	année chaude, blancs riches et amples, acidité plus modérée	B	thewinecellarinsider.com;connaissance
 Bordeaux rive gauche	Pessac-Léognan	B	2010	5	2016	2038	frais et tendu, grande garde, acidité vive et belle matière	A	viniphile.fr;thewinecellarinsider.com
@@ -191,24 +191,24 @@ Bordeaux rive gauche	Graves	R	2025	4	2032	2050	rouges de graves très bons, tani
 Bordeaux rive gauche	Sauternes-Barsac	D	2005	5	2015	2050	botrytis abondant, très riche, presque aussi doux que 2003	A	jancisrobinson.com;winescholarguild.com;viniphile.fr
 Bordeaux rive gauche	Sauternes-Barsac	D	2006	3	2011	2028	peu de botrytis, vins plus légers, corrects	B	jancisrobinson.com;winescholarguild.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2007	4	2014	2039	année compliquée, tri sévère, bons domaines réussis	A	jancisrobinson.com;winescholarguild.com
-Bordeaux rive gauche	Sauternes-Barsac	D	2008	4	2015	2040	gel d'avril, petite récolte, botrytis marqué, bonne qualité	B	jancisrobinson.com;winescholarguild.com
+Bordeaux rive gauche	Sauternes-Barsac	D	2008	4	2015	2040	avis partagés, frais mais moins concentré, très rare	C	jancisrobinson.com;winescholarguild.com;decanter.com;bordeauxraisins.fr
 Bordeaux rive gauche	Sauternes-Barsac	D	2009	5	2019	2054	chaleur et humidité au bon moment, richesse et concentration superbes	A	jancisrobinson.com;winescholarguild.com;viniphile.fr
 Bordeaux rive gauche	Sauternes-Barsac	D	2010	4	2017	2042	botrytis tardif et irrégulier, vins délicats, plus frais que 2009	A	jancisrobinson.com;thewinecellarinsider.com;winescholarguild.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2011	5	2021	2056	triomphe du liquoreux, vins opulents, riches et frais	A	jancisrobinson.com;thewinecellarinsider.com;winescholarguild.com
-Bordeaux rive gauche	Sauternes-Barsac	D	2012	2	2016	2026	pluies, botrytis rare, grands crus sans grand vin, Barsac un peu mieux	A	jancisrobinson.com;thewinecellarinsider.com;decanter.com
+Bordeaux rive gauche	Sauternes-Barsac	D	2012	2	2016	2026	pluies, botrytis rare, grands crus sans grand vin, Barsac un peu mieux	A	jancisrobinson.com;thewinecellarinsider.com;decanter.com;vinapp.fr;terredevins.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2013	4	2020	2045	petits rendements, botrytis tardif, vins vifs et modernes, inégal	A	thewinecellarinsider.com;winespectator.com;decanter.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2014	4	2021	2046	acidité remarquable, botrytis abondant, vins digestes, classique	A	jancisrobinson.com;idealwine.net;hachette-vins.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2015	5	2025	2060	botrytis rapide et homogène, très belle qualité, harmonie	A	jancisrobinson.com;hachette-vins.com;decanter.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2016	4	2023	2048	bon mais pas au sommet, botrytis tardif, zesté, moins complexe	B	thewinecellarinsider.com;jancisrobinson.com;hachette-vins.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2017	4	2024	2049	gel sévère surtout à Barsac, vins riches et vifs, rares	A	thewinecellarinsider.com;jancisrobinson.com;hachette-vins.com
-Bordeaux rive gauche	Sauternes-Barsac	D	2018	3	2023	2040	grêle et mildiou, botrytis tardif, intensité modeste, tri sévère	B	thewinecellarinsider.com;thewinedoctor.com;jancisrobinson.com
+Bordeaux rive gauche	Sauternes-Barsac	D	2018	3	2023	2040	grêle et mildiou, botrytis tardif, intensité modeste, tri sévère	A	thewinecellarinsider.com;thewinedoctor.com;jancisrobinson.com;vinapp.fr
 Bordeaux rive gauche	Sauternes-Barsac	D	2019	4	2026	2051	botrytis tardif, pureté, fraîcheur, bel équilibre, concentration	A	hachette-vins.com;jancisrobinson.com;winescholarguild.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2020	3	2025	2042	rendements infimes, botrytis tardif, vins plus légers et frais, bons	B	thewinecellarinsider.com;thewineindependent.com;jancisrobinson.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2021	5	2031	2066	gel et grêle, récolte minuscule, qualité exceptionnelle, rareté	A	idealwine.net;thewineindependent.com;jancisrobinson.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2022	5	2032	2067	récolte réduite, richesse extrême, botrytis tardif mais superbe	A	idealwine.net;jancisrobinson.com;hachette-vins.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2023	5	2033	2068	botrytis précoce, vins très riches, acidité élevée, rendements bas	A	thewineindependent.com;idealwine.net;hachette-vins.com
-Bordeaux rive gauche	Sauternes-Barsac	D	2024	3	2029	2046	botrytis bien venu mais vins parfois lourds, très inégal	B	primeurs.idealwine.com;vinfolio.com;winescholarguild.com
-Bordeaux rive gauche	Sauternes-Barsac	D	2025	4	2032	2057	botrytis abondant, vins très riches et puissants, avis divergents, provisoire	B	thedrinksbusiness.com;tanners-wines.co.uk;gilbertgaillard.com
+Bordeaux rive gauche	Sauternes-Barsac	D	2024	3	2029	2046	botrytis irrégulier, avis provisoire	B	primeurs.idealwine.com;vinfolio.com;winescholarguild.com;avis-vin.lefigaro.fr;thedrinksbusiness.com
+Bordeaux rive gauche	Sauternes-Barsac	D	2025	4	2032	2057	avis provisoire très favorable, petits rendements	B	thedrinksbusiness.com;tanners-wines.co.uk;gilbertgaillard.com;primeurs.ch;bordeauxraisins.fr
 Bordeaux rive gauche	Cérons et Graves Supérieures	D	2005	5	2011	2033	botrytis abondant, très riche, presque aussi doux que 2003	B	jancisrobinson.com;winescholarguild.com
 Bordeaux rive gauche	Cérons et Graves Supérieures	D	2006	3	2010	2021	peu de botrytis, vins plus légers, corrects	B	jancisrobinson.com;winescholarguild.com
 Bordeaux rive gauche	Cérons et Graves Supérieures	D	2007	4	2012	2029	année compliquée, tri sévère, bons domaines réussis	B	jancisrobinson.com;winescholarguild.com
@@ -1731,14 +1731,14 @@ Beaujolais	Morgon	R	2011	4	2014	2023	précoce, fruit mûr et généreux, équili
 Beaujolais	Morgon	R	2012	3	2014	2020	très petite récolte, vins légers, frais et fruités, plaisir rapide	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Morgon	R	2013	3	2015	2021	printemps froid, récolte tardive, hétérogène, frais mais parfois vert	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Morgon	R	2014	4	2017	2026	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Morgon	R	2015	5	2019	2031	chaud et précoce, fruit mûr et dense, texture veloutée, garde	B	hachette-vins.com;beaujolais.com;connaissance
+Beaujolais	Morgon	R	2015	5	2019	2031	chaud et précoce, fruit mûr et dense, texture veloutée, garde	A	hachette-vins.com;beaujolais.com;connaissance;decanter.com
 Beaujolais	Morgon	R	2016	4	2019	2028	grêle dans le nord, vins frais, floraux et bien structurés	B	hachette-vins.com;beaujolais.com;connaissance
 Beaujolais	Morgon	R	2017	4	2020	2029	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
 Beaujolais	Morgon	R	2018	4	2021	2030	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Morgon	R	2019	4	2022	2031	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Morgon	R	2019	4	2022	2031	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com;decanter.com
 Beaujolais	Morgon	R	2020	4	2023	2032	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Morgon	R	2021	3	2023	2029	gel puis pluie, récolte tardive, vins fins, croquants, peu alcoolisés	A	hachette-vins.com;beaujolais.com;idealwine.net
-Beaujolais	Morgon	R	2022	5	2026	2038	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	B	hachette-vins.com;beaujolais.com;connaissance
+Beaujolais	Morgon	R	2022	5	2026	2038	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	A	hachette-vins.com;beaujolais.com;connaissance;decanter.com
 Beaujolais	Morgon	R	2023	4	2026	2035	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
 Beaujolais	Morgon	R	2024	2	2025	2029	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
 Beaujolais	Morgon	R	2025	4	2028	2037	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
@@ -2286,7 +2286,7 @@ Rhône sud	Gigondas	R	2020	4	2025	2036	fruit net, belle fraîcheur, quelques rou
 Rhône sud	Gigondas	R	2021	4	2026	2037	gel d'avril, rouges frais et tendus, parmi les meilleurs de l'année	B	hachette-vins.com;decanter.com
 Rhône sud	Gigondas	R	2022	3	2026	2034	année sèche, rouges contrastés, certains souples, d'autres très structurés	A	decanter.com;hachette-vins.com;jancisrobinson.com
 Rhône sud	Gigondas	R	2023	3	2027	2035	chaud et sec, rouges mûrs, variables selon les sols sableux	A	decanter.com;frw.co.uk;hachette-vins.com
-Rhône sud	Gigondas	R	2024	4	2029	2040	année la plus équilibrée depuis 2020, rouges frais, précis, très réussis	B	decanter.com;vins-rhone.com
+Rhône sud	Gigondas	R	2024	4	2029	2040	avis provisoire, style classique	B	decanter.com;vins-rhone.com;vinous.com;wineindustryadvisor.com
 Rhône sud	Gigondas	R	2025	4	2030	2041	canicules, orages d'août, volumes réduits, vins harmonieux, bien équilibrés	B	vinetur.com;chateauneuf.com
 Rhône sud	Vacqueyras	R	2005	5	2011	2025	chaud et sec, nuits fraîches, vins concentrés, structurés, grande garde	B	thewinecellarinsider.com;jancisrobinson.com
 Rhône sud	Vacqueyras	R	2006	4	2011	2022	sec et ensoleillé, fruit gourmand, tanins fondus, beau vieillissement	B	thewinecellarinsider.com;jancisrobinson.com
@@ -2307,7 +2307,7 @@ Rhône sud	Vacqueyras	R	2020	4	2025	2036	frais et équilibré, fruit pur, tanins
 Rhône sud	Vacqueyras	R	2021	3	2025	2033	gel d'avril, rendements bas, vins frais, tendus, structurés	B	hachette-vins.com;decanter.com
 Rhône sud	Vacqueyras	R	2022	3	2026	2034	chaud et sec, vins puissants, concentrés, bonne fraîcheur, garde longue	A	decanter.com;hachette-vins.com;jancisrobinson.com
 Rhône sud	Vacqueyras	R	2023	3	2027	2035	chaud et sec, qualité variable d'un domaine à l'autre	A	decanter.com;frw.co.uk;hachette-vins.com
-Rhône sud	Vacqueyras	R	2024	4	2029	2040	relativement épargné, équilibre entre fraîcheur et structure, rouges réussis	B	decanter.com;vins-rhone.com
+Rhône sud	Vacqueyras	R	2024	4	2029	2040	relativement épargné, équilibre entre fraîcheur et structure, rouges réussis ; avis provisoire	B	decanter.com;vins-rhone.com;vinous.com;wineindustryadvisor.com
 Rhône sud	Vacqueyras	R	2025	4	2030	2041	canicules, orages d'août, volumes réduits, vins harmonieux, bien équilibrés	B	vinetur.com;chateauneuf.com
 Rhône sud	Cairanne	R	2005	5	2011	2025	chaud et sec, nuits fraîches, vins concentrés, structurés, grande garde	B	thewinecellarinsider.com;jancisrobinson.com
 Rhône sud	Cairanne	R	2006	4	2011	2022	sec et ensoleillé, fruit gourmand, tanins fondus, beau vieillissement	B	thewinecellarinsider.com;jancisrobinson.com
@@ -2496,7 +2496,7 @@ Rhône sud	Ventoux	R	2020	4	2023	2031	frais et équilibré, fruit pur, tanins so
 Rhône sud	Ventoux	R	2021	3	2024	2030	gel d'avril, rendements bas, vins frais, tendus, structurés	B	hachette-vins.com;decanter.com
 Rhône sud	Ventoux	R	2022	3	2025	2031	chaud et sec, vins puissants, concentrés, bonne fraîcheur, garde longue	B	hachette-vins.com;decanter.com
 Rhône sud	Ventoux	R	2023	3	2026	2032	été chaud et sec, vins souples, accessibles, hétérogènes selon sélection	B	hachette-vins.com;decanter.com
-Rhône sud	Ventoux	R	2024	3	2027	2033	printemps pluvieux, récolte réduite, vins frais, aromatiques, alcool modéré	B	decanter.com;vins-rhone.com
+Rhône sud	Ventoux	R	2024	3	2027	2033	avis provisoire, gel et petits volumes	B	decanter.com;vins-rhone.com;wineindustryadvisor.com;terredevins.com
 Rhône sud	Ventoux	R	2025	4	2028	2036	canicules, orages d'août, volumes réduits, vins harmonieux, bien équilibrés	B	vinetur.com;chateauneuf.com
 Rhône sud	Luberon	R	2005	4	2007	2014	chaud et sec, nuits fraîches, vins concentrés, structurés, grande garde	C	connaissance;thewinecellarinsider.com
 Rhône sud	Luberon	R	2006	4	2008	2015	sec et ensoleillé, fruit gourmand, tanins fondus, beau vieillissement	C	connaissance;thewinecellarinsider.com
@@ -4291,8 +4291,8 @@ Alsace	Alsace Vendanges Tardives	D	2009	5	2015	2035	raisins très sains, passeri
 Alsace	Alsace Vendanges Tardives	D	2010	4	2015	2030	volumes faibles mais haute qualité, concentrés et frais	A	vinsalsace.com;winescholarguild.com;jancisrobinson.com
 Alsace	Alsace Vendanges Tardives	D	2011	3	2015	2025	botrytis peu présent, VT corrects, volumes moyens	B	vinsalsace.com;winescholarguild.com;jancisrobinson.com
 Alsace	Alsace Vendanges Tardives	D	2012	3	2016	2026	volumes faibles, octobre inégal, quelques beaux lots	B	vinsalsace.com;winescholarguild.com;jancisrobinson.com
-Alsace	Alsace Vendanges Tardives	D	2013	3	2017	2027	rares, octobre difficile, tri exigeant	B	vinsalsace.com;winescholarguild.com;jancisrobinson.com
-Alsace	Alsace Vendanges Tardives	D	2014	3	2018	2028	peu de botrytis, volumes faibles, point faible du millésime	B	vinsalsace.com;winescholarguild.com;jancisrobinson.com
+Alsace	Alsace Vendanges Tardives	D	2013	3	2017	2027	rares, octobre difficile, tri exigeant	B	vinsalsace.com;winescholarguild.com;jancisrobinson.com;winespectator.com
+Alsace	Alsace Vendanges Tardives	D	2014	3	2018	2028	peu de botrytis, volumes faibles, point faible du millésime	B	vinsalsace.com;winescholarguild.com;jancisrobinson.com;idealwine.com;winespectator.com
 Alsace	Alsace Vendanges Tardives	D	2015	4	2020	2035	nombreux VT riches et concentrés, acidité plus basse	A	vinsalsace.com;winescholarguild.com;jancisrobinson.com
 Alsace	Alsace Vendanges Tardives	D	2016	2	2020	2027	botrytis absent, presque aucun VT	A	gismondionwine.com;winescholarguild.com;lapassionduvin.com
 Alsace	Alsace Vendanges Tardives	D	2017	4	2022	2037	belle fin septembre, excellents à tous niveaux, volumes doublés	A	vinsalsace.com;winescholarguild.com;jancisrobinson.com
@@ -4300,8 +4300,8 @@ Alsace	Alsace Vendanges Tardives	D	2018	4	2023	2038	arrière-saison douce, produ
 Alsace	Alsace Vendanges Tardives	D	2019	4	2024	2039	pluies gênantes, soigneux ont réussi de belles cuvées	B	vinsalsace.com;idealwine.net;winescholarguild.com
 Alsace	Alsace Vendanges Tardives	D	2020	5	2026	2046	jours chauds nuits fraîches, acidité préservée, production normale	A	idealwine.net;winescholarguild.com;jancisrobinson.com
 Alsace	Alsace Vendanges Tardives	D	2021	2	2025	2032	très peu de botrytis, presque aucun VT	A	idealwine.net;winescholarguild.com;jancisrobinson.com
-Alsace	Alsace Vendanges Tardives	D	2022	3	2026	2036	avis partagés selon les sources, botrytis rare, passerillage	B	idealwine.net;lapassionduvin.com;winescholarguild.com
-Alsace	Alsace Vendanges Tardives	D	2023	3	2027	2037	plus nombreux qu'en 2022, équilibrés, assez rares	B	idealwine.net;vinous.com;winescholarguild.com
+Alsace	Alsace Vendanges Tardives	D	2022	4	2026	2036	botrytis plus abondant, volumes élevés, qualité variable	A	idealwine.net;lapassionduvin.com;winescholarguild.com;terredevins.com
+Alsace	Alsace Vendanges Tardives	D	2023	3	2027	2037	plus nombreux qu'en 2022, équilibrés, assez rares	B	idealwine.net;vinous.com;winescholarguild.com;idealwine.info
 Alsace	Alsace Vendanges Tardives	D	2024	2	2028	2035	peu produits, pourriture grise, seuls les très sélectifs réussissent	B	vinous.com;winescholarguild.com;draaf.grand-est.agriculture.gouv.fr
 Alsace	Alsace Vendanges Tardives	D	2025	NC	NC	NC	en cours, pluies d'automne défavorables, jugement impossible	C	draaf.grand-est.agriculture.gouv.fr;lapassionduvin.com
 Alsace	Alsace Sélection de Grains Nobles	D	2005	5	2013	2040	pourriture noble idéale en octobre, SGN excellents	A	vinsalsace.com;winescholarguild.com;jancisrobinson.com
@@ -4448,7 +4448,7 @@ Champagne	Coteaux Champenois	B	2014	4	2016	2023	chardonnay en vedette, précisio
 Champagne	Champagne	E	2015	4	2024	2039	chaud et sec, fruit riche, acidité basse, garde variable	A	hachette-vins.com;uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr
 Champagne	Champagne Millésimé	E	2015	4	2024	2039	chaud et sec, fruit riche, acidité basse, garde variable	A	hachette-vins.com;uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr
 Champagne	Champagne Cuvée de prestige	E	2015	4	2026	2043	chaud et sec, fruit riche, acidité basse, garde variable	B	hachette-vins.com;uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr
-Champagne	Champagne Blanc de Blancs	E	2015	3	2024	2035	chardonnay mûr, acidité basse, garde plus variable	B	hachette-vins.com;uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr
+Champagne	Champagne Blanc de Blancs	E	2015	3	2024	2035	chardonnay mûr, acidité basse, garde plus variable ; acidité basse, année chaude	B	uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr;terroirjournal.com;terredevins.com
 Champagne	Champagne Côte des Blancs	E	2015	3	2024	2035	chardonnay mûr, acidité basse, garde plus variable	B	hachette-vins.com;uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr
 Champagne	Champagne Blanc de Noirs	E	2015	4	2024	2037	pinot noir particulièrement réussi, riche et mûr, bonne garde	B	hachette-vins.com;uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr
 Champagne	Champagne Rosé	E	2015	4	2020	2032	pinot noir particulièrement réussi, riche et mûr, bonne garde	B	hachette-vins.com;uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr
@@ -4508,7 +4508,7 @@ Champagne	Coteaux Champenois	B	2019	4	2021	2028	chardonnay frais et éclatant, t
 Champagne	Champagne	E	2020	4	2029	2044	récolte très précoce, chaud et sec, petite récolte, concentré	A	hachette-vins.com;uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr
 Champagne	Champagne Millésimé	E	2020	4	2029	2044	récolte très précoce, chaud et sec, petite récolte, concentré	A	hachette-vins.com;uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr
 Champagne	Champagne Cuvée de prestige	E	2020	4	2031	2048	récolte très précoce, chaud et sec, petite récolte, concentré	B	hachette-vins.com;uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr
-Champagne	Champagne Blanc de Blancs	E	2020	5	2031	2052	chardonnay remarquable, précoce, concentré et salin	B	hachette-vins.com;uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr
+Champagne	Champagne Blanc de Blancs	E	2020	5	2031	2052	chardonnay remarquable, précoce, concentré et salin	A	uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr;terroirjournal.com;enviedechamp.com
 Champagne	Champagne Côte des Blancs	E	2020	5	2031	2052	chardonnay remarquable, précoce, concentré et salin	B	hachette-vins.com;uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr
 Champagne	Champagne Blanc de Noirs	E	2020	4	2029	2042	pinots prometteurs, chauds et concentrés, petite récolte	B	hachette-vins.com;uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr
 Champagne	Champagne Rosé	E	2020	4	2025	2037	pinots prometteurs, chauds et concentrés, petite récolte	B	hachette-vins.com;uncorked.co.uk;winescholarguild.com;lacompagniedesbonnesbouteilles.fr

@@ -40,7 +40,7 @@ Bordeaux rive gauche	Pauillac	R	2021	3	2026	2037	gel puis été frais, vins lég
 Bordeaux rive gauche	Pauillac	R	2022	5	2034	2065	grands sommets, quelques variations selon les rendements	A	vinfolio.com;blog.bbr.com;hachette-vins.com
 Bordeaux rive gauche	Pauillac	R	2023	4	2031	2049	mildiou, août chaud salvateur, vins frais, cabernets mieux que merlots	A	hachette-vins.com;jancisrobinson.com;thedrinksbusiness.com
 Bordeaux rive gauche	Pauillac	R	2024	3	2029	2040	rendements les plus bas, vins plus légers, sommets classiques	B	vinfolio.com;winewithseth.com;jancisrobinson.com
-Bordeaux rive gauche	Pauillac	R	2025	5	2037	2068	appellation la plus régulière, cabernet profond, avis provisoires	B	thedrinksbusiness.com;onthetrail.klwines.com;tanners-wines.co.uk
+Bordeaux rive gauche	Pauillac	R	2025	5	2037	2068	appellation la plus régulière, cabernet profond, avis provisoires	B	thedrinksbusiness.com;onthetrail.klwines.com;tanners-wines.co.uk;millesima.fr
 Bordeaux rive gauche	Saint-Julien	R	2005	5	2017	2048	été sec, maturité parfaite, tanins fermes, très grande garde	A	jancisrobinson.com;thewinecellarinsider.com;winescholarguild.com
 Bordeaux rive gauche	Saint-Julien	R	2006	3	2012	2026	sec puis août pluvieux, vendanges hachées, vins puissants et tanniques	A	jancisrobinson.com;thewinecellarinsider.com;winescholarguild.com
 Bordeaux rive gauche	Saint-Julien	R	2007	3	2012	2023	mildiou et pluies jusqu'en septembre, vins légers, plaisir précoce	A	jancisrobinson.com;thewinecellarinsider.com;winescholarguild.com
@@ -73,13 +73,13 @@ Bordeaux rive gauche	Margaux	R	2012	3	2018	2032	automne humide, merlot mieux que
 Bordeaux rive gauche	Margaux	R	2013	2	2016	2021	floraison difficile, pourriture, vins dilués et légers, à boire jeunes	A	jancisrobinson.com;thewinecellarinsider.com;winescholarguild.com
 Bordeaux rive gauche	Margaux	R	2014	3	2019	2030	frais, un peu en retrait des appellations du nord	B	hachette-vins.com;thewinecellarinsider.com;idealwine.net
 Bordeaux rive gauche	Margaux	R	2015	5	2027	2055	grande réussite, régulière et très fine, appellation du millésime	A	thewinecellarinsider.com;thedrinksbusiness.com;jancisrobinson.com
-Bordeaux rive gauche	Margaux	R	2016	4	2025	2049	très bon mais moins régulier que le nord Médoc	B	hachette-vins.com;thewinecellarinsider.com;bordeauxindex.com
+Bordeaux rive gauche	Margaux	R	2016	4	2025	2049	très bon mais moins régulier que le nord Médoc	B	hachette-vins.com;thewinecellarinsider.com;bordeauxindex.com;thewinedoctor.com;avis-vin.lefigaro.fr
 Bordeaux rive gauche	Margaux	R	2017	3	2022	2033	sud Médoc moins régulier, gel et maturités inégales	B	hachette-vins.com;jancisrobinson.com;thewinecellarinsider.com
 Bordeaux rive gauche	Margaux	R	2018	4	2027	2048	appellation la moins régulière: mildiou, grêle, stress hydrique	A	thedrinksbusiness.com;thewinecellarinsider.com;jancisrobinson.com
 Bordeaux rive gauche	Margaux	R	2019	4	2028	2052	mûr et affirmé, sols légers parfois monolithiques, choisir	A	blog.bbr.com;hachette-vins.com;thewinecellarinsider.com
 Bordeaux rive gauche	Margaux	R	2020	4	2029	2050	sud plus touché par la sécheresse, rendements en baisse	B	thedrinksbusiness.com;hachette-vins.com;jancisrobinson.com
 Bordeaux rive gauche	Margaux	R	2021	3	2026	2037	gel puis été frais, vins légers et tendus, cabernets préférables	B	idealwine.net;jancisrobinson.com;hachette-vins.com
-Bordeaux rive gauche	Margaux	R	2022	4	2031	2055	plateaux superbes, jeunes vignes plus faibles, très inégal	B	vinfolio.com;blog.bbr.com;hachette-vins.com
+Bordeaux rive gauche	Margaux	R	2022	4	2031	2055	très hétérogène, stress hydrique marqué	B	vinfolio.com;blog.bbr.com;hachette-vins.com;avis-vin.lefigaro.fr;thedrinksbusiness.com
 Bordeaux rive gauche	Margaux	R	2023	4	2031	2049	appellation très en vue, merlots tendus, belle finesse	A	hachette-vins.com;jancisrobinson.com;thedrinksbusiness.com
 Bordeaux rive gauche	Margaux	R	2024	4	2032	2050	parmi les mieux réussis du millésime, certains vins légers	B	vinfolio.com;winewithseth.com;jancisrobinson.com
 Bordeaux rive gauche	Margaux	R	2025	4	2034	2058	bonne qualité partout, détails de sites décisifs, provisoire	B	thedrinksbusiness.com;onthetrail.klwines.com;tanners-wines.co.uk
@@ -103,10 +103,10 @@ Bordeaux rive gauche	Saint-Estèphe	R	2021	4	2029	2047	argiles retenant l'eau, c
 Bordeaux rive gauche	Saint-Estèphe	R	2022	5	2034	2065	grêle locale en juin, mais appellation régulière et fraîche	A	vinfolio.com;blog.bbr.com;hachette-vins.com
 Bordeaux rive gauche	Saint-Estèphe	R	2023	4	2031	2049	mildiou, août chaud salvateur, vins frais, cabernets mieux que merlots	B	hachette-vins.com;jancisrobinson.com;thedrinksbusiness.com
 Bordeaux rive gauche	Saint-Estèphe	R	2024	3	2029	2040	grêle et mildiou, très inégal, quelques sommets	B	vinfolio.com;winewithseth.com;jancisrobinson.com
-Bordeaux rive gauche	Saint-Estèphe	R	2025	5	2037	2068	rendements moins touchés, argiles fraîches, tanins à maîtriser, provisoire	B	thedrinksbusiness.com;onthetrail.klwines.com;tanners-wines.co.uk
+Bordeaux rive gauche	Saint-Estèphe	R	2025	4	2037	2068	avis provisoire, tri à faire	B	thedrinksbusiness.com;onthetrail.klwines.com;tanners-wines.co.uk;millesima.fr
 Bordeaux rive gauche	Pessac-Léognan	B	2005	4	2009	2025	été sec et chaud, blancs riches et mûrs, bonne garde	B	connaissance
 Bordeaux rive gauche	Pessac-Léognan	B	2006	3	2009	2018	pluies de vendanges, blancs corrects, assez ouverts	B	connaissance
-Bordeaux rive gauche	Pessac-Léognan	B	2007	5	2013	2035	été frais, sauvignon vif et aromatique, blancs tendus et classiques	B	viniphile.fr;connaissance
+Bordeaux rive gauche	Pessac-Léognan	B	2007	5	2013	2035	blancs secs salués, référence du millésime	B	viniphile.fr;connaissance;thewinedoctor.com;sodivin.fr
 Bordeaux rive gauche	Pessac-Léognan	B	2008	4	2012	2028	maturité lente, blancs frais, bien équilibrés, assez précis	B	connaissance
 Bordeaux rive gauche	Pessac-Léognan	B	2009	4	2013	2029	année chaude, blancs riches et amples, acidité plus modérée	B	thewinecellarinsider.com;connaissance
 Bordeaux rive gauche	Pessac-Léognan	B	2010	5	2016	2038	frais et tendu, grande garde, acidité vive et belle matière	A	viniphile.fr;thewinecellarinsider.com
@@ -191,24 +191,24 @@ Bordeaux rive gauche	Graves	R	2025	4	2032	2050	rouges de graves très bons, tani
 Bordeaux rive gauche	Sauternes-Barsac	D	2005	5	2015	2050	botrytis abondant, très riche, presque aussi doux que 2003	A	jancisrobinson.com;winescholarguild.com;viniphile.fr
 Bordeaux rive gauche	Sauternes-Barsac	D	2006	3	2011	2028	peu de botrytis, vins plus légers, corrects	B	jancisrobinson.com;winescholarguild.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2007	4	2014	2039	année compliquée, tri sévère, bons domaines réussis	A	jancisrobinson.com;winescholarguild.com
-Bordeaux rive gauche	Sauternes-Barsac	D	2008	4	2015	2040	gel d'avril, petite récolte, botrytis marqué, bonne qualité	B	jancisrobinson.com;winescholarguild.com
+Bordeaux rive gauche	Sauternes-Barsac	D	2008	4	2015	2040	avis partagés, frais mais moins concentré, très rare	C	jancisrobinson.com;winescholarguild.com;decanter.com;bordeauxraisins.fr
 Bordeaux rive gauche	Sauternes-Barsac	D	2009	5	2019	2054	chaleur et humidité au bon moment, richesse et concentration superbes	A	jancisrobinson.com;winescholarguild.com;viniphile.fr
 Bordeaux rive gauche	Sauternes-Barsac	D	2010	4	2017	2042	botrytis tardif et irrégulier, vins délicats, plus frais que 2009	A	jancisrobinson.com;thewinecellarinsider.com;winescholarguild.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2011	5	2021	2056	triomphe du liquoreux, vins opulents, riches et frais	A	jancisrobinson.com;thewinecellarinsider.com;winescholarguild.com
-Bordeaux rive gauche	Sauternes-Barsac	D	2012	2	2016	2026	pluies, botrytis rare, grands crus sans grand vin, Barsac un peu mieux	A	jancisrobinson.com;thewinecellarinsider.com;decanter.com
+Bordeaux rive gauche	Sauternes-Barsac	D	2012	2	2016	2026	pluies, botrytis rare, grands crus sans grand vin, Barsac un peu mieux	A	jancisrobinson.com;thewinecellarinsider.com;decanter.com;vinapp.fr;terredevins.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2013	4	2020	2045	petits rendements, botrytis tardif, vins vifs et modernes, inégal	A	thewinecellarinsider.com;winespectator.com;decanter.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2014	4	2021	2046	acidité remarquable, botrytis abondant, vins digestes, classique	A	jancisrobinson.com;idealwine.net;hachette-vins.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2015	5	2025	2060	botrytis rapide et homogène, très belle qualité, harmonie	A	jancisrobinson.com;hachette-vins.com;decanter.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2016	4	2023	2048	bon mais pas au sommet, botrytis tardif, zesté, moins complexe	B	thewinecellarinsider.com;jancisrobinson.com;hachette-vins.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2017	4	2024	2049	gel sévère surtout à Barsac, vins riches et vifs, rares	A	thewinecellarinsider.com;jancisrobinson.com;hachette-vins.com
-Bordeaux rive gauche	Sauternes-Barsac	D	2018	3	2023	2040	grêle et mildiou, botrytis tardif, intensité modeste, tri sévère	B	thewinecellarinsider.com;thewinedoctor.com;jancisrobinson.com
+Bordeaux rive gauche	Sauternes-Barsac	D	2018	3	2023	2040	grêle et mildiou, botrytis tardif, intensité modeste, tri sévère	A	thewinecellarinsider.com;thewinedoctor.com;jancisrobinson.com;vinapp.fr
 Bordeaux rive gauche	Sauternes-Barsac	D	2019	4	2026	2051	botrytis tardif, pureté, fraîcheur, bel équilibre, concentration	A	hachette-vins.com;jancisrobinson.com;winescholarguild.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2020	3	2025	2042	rendements infimes, botrytis tardif, vins plus légers et frais, bons	B	thewinecellarinsider.com;thewineindependent.com;jancisrobinson.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2021	5	2031	2066	gel et grêle, récolte minuscule, qualité exceptionnelle, rareté	A	idealwine.net;thewineindependent.com;jancisrobinson.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2022	5	2032	2067	récolte réduite, richesse extrême, botrytis tardif mais superbe	A	idealwine.net;jancisrobinson.com;hachette-vins.com
 Bordeaux rive gauche	Sauternes-Barsac	D	2023	5	2033	2068	botrytis précoce, vins très riches, acidité élevée, rendements bas	A	thewineindependent.com;idealwine.net;hachette-vins.com
-Bordeaux rive gauche	Sauternes-Barsac	D	2024	3	2029	2046	botrytis bien venu mais vins parfois lourds, très inégal	B	primeurs.idealwine.com;vinfolio.com;winescholarguild.com
-Bordeaux rive gauche	Sauternes-Barsac	D	2025	4	2032	2057	botrytis abondant, vins très riches et puissants, avis divergents, provisoire	B	thedrinksbusiness.com;tanners-wines.co.uk;gilbertgaillard.com
+Bordeaux rive gauche	Sauternes-Barsac	D	2024	3	2029	2046	botrytis irrégulier, avis provisoire	B	primeurs.idealwine.com;vinfolio.com;winescholarguild.com;avis-vin.lefigaro.fr;thedrinksbusiness.com
+Bordeaux rive gauche	Sauternes-Barsac	D	2025	4	2032	2057	avis provisoire très favorable, petits rendements	B	thedrinksbusiness.com;tanners-wines.co.uk;gilbertgaillard.com;primeurs.ch;bordeauxraisins.fr
 Bordeaux rive gauche	Cérons et Graves Supérieures	D	2005	5	2011	2033	botrytis abondant, très riche, presque aussi doux que 2003	B	jancisrobinson.com;winescholarguild.com
 Bordeaux rive gauche	Cérons et Graves Supérieures	D	2006	3	2010	2021	peu de botrytis, vins plus légers, corrects	B	jancisrobinson.com;winescholarguild.com
 Bordeaux rive gauche	Cérons et Graves Supérieures	D	2007	4	2012	2029	année compliquée, tri sévère, bons domaines réussis	B	jancisrobinson.com;winescholarguild.com
