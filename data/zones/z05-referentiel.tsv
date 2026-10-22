@@ -1,13 +1,13 @@
 zone	appellation	couleurs	cepages	style	familles_gout	proches	prix_indicatif_eur	garde_ans	notoriete	fiabilite	sources
 Beaujolais	Beaujolais	R,B,Ro	gamay,chardonnay,aligoté	gamay souple et croquant à boire jeune, blanc rare, version Nouveau	leger-fruite,rond-gourmand	Beaujolais-Villages,Brouilly,Touraine	7-12	1-3	1	B	idealwine.net;beaujolais.com
-Beaujolais	Beaujolais-Villages	R,B,Ro	gamay,chardonnay	gamay du nord de la région, plus plein et fruité que le Beaujolais	leger-fruite,rond-gourmand	Beaujolais,Brouilly,Régnié	8-14	2-4	2	B	idealwine.net;beaujolais.com
+Beaujolais	Beaujolais-Villages	R,B,Ro	gamay,chardonnay	gamay des villages du nord, plus plein et fruité que le Beaujolais	leger-fruite,rond-gourmand	Beaujolais,Brouilly,Régnié	8-14	2-4	2	B	idealwine.net;beaujolais.com
 Beaujolais	Saint-Amour	R	gamay	cru nordique délicat, fruits rouges et pivoine, à boire assez jeune	elegant-frais,aromatique-floral	Chiroubles,Fleurie,Régnié	12-25	3-7	2	B	idealwine.net;connaissance
 Beaujolais	Juliénas	R	gamay	cru parfumé et structuré, pêche et fruits rouges, garde correcte	rond-gourmand,puissant-structure	Chénas,Morgon,Moulin-à-Vent	11-22	4-10	2	B	idealwine.net;connaissance
 Beaujolais	Chénas	R	gamay	plus petit cru, dense et floral avec l'âge, parfois proche d'un pinot	puissant-structure,elegant-frais	Moulin-à-Vent,Juliénas,Morgon	12-25	4-10	3	B	idealwine.net;connaissance
 Beaujolais	Moulin-à-Vent	R	gamay	cru le plus réputé, violette et cerise, vieillit vers des notes bourguignonnes	puissant-structure,elegant-frais	Morgon,Chénas,Mercurey	14-35	6-15	1	B	idealwine.net;connaissance
 Beaujolais	Fleurie	R	gamay	cru élégant et soyeux, iris, rose et violette, sols granitiques	aromatique-floral,elegant-frais	Chiroubles,Saint-Amour,Brouilly	12-30	3-9	1	B	idealwine.net;connaissance
 Beaujolais	Chiroubles	R	gamay	cru d'altitude, léger, fin et floral, tanins discrets, frais	leger-fruite,aromatique-floral	Fleurie,Saint-Amour,Régnié	11-20	2-6	3	B	idealwine.net;connaissance
-Beaujolais	Morgon	R	gamay	cru puissant et charnu, fruits à noyau, schistes, bonne garde dans les bonnes années	puissant-structure,rond-gourmand	Moulin-à-Vent,Juliénas,Côte de Brouilly	12-30	5-12	1	B	idealwine.net;connaissance
+Beaujolais	Morgon	R	gamay	cru puissant et charnu, fruits à noyau, schistes, bonne garde	puissant-structure,rond-gourmand	Moulin-à-Vent,Juliénas,Côte de Brouilly	12-30	5-12	1	B	idealwine.net;connaissance
 Beaujolais	Régnié	R	gamay	cru récent sur granit rose, charnu, tanins souples, fruité	rond-gourmand,leger-fruite	Brouilly,Chiroubles,Beaujolais-Villages	10-18	2-6	3	B	idealwine.net;connaissance
 Beaujolais	Brouilly	R	gamay	le plus vaste cru, ample, très fruité, facile d'accès	rond-gourmand,leger-fruite	Régnié,Beaujolais-Villages,Côte de Brouilly	9-16	2-6	2	B	idealwine.net;connaissance
 Beaujolais	Côte de Brouilly	R	gamay	coteau minéral et concentré, fleurs sauvages, plus de garde	mineral-tendu,puissant-structure	Morgon,Brouilly,Fleurie	12-22	4-10	2	B	idealwine.net;connaissance
