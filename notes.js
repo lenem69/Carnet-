@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.12.5': ['Import souple : toutes les feuilles du fichier sont lues, y compris les listes de caviste (prix, quantités, couleurs par section). Les vins ainsi lus sont marqués « à vérifier ».'],
   '1.12.4': ['Magic : les appellations écrites avec des fautes, « 1er cru », « Grand cru » ou « AOP » sont reconnues. Les vins français sans appellation reconnue vont dans « Vin de France », les vins étrangers dans « Étranger ».'],
   '1.12.3': ['Import Excel : la colonne « Nombre de bouteilles » reste la quantité ; « Appellation » est lue comme appellation ; le format (1,5 L…) et « Effervescent » sont pris en compte. Les fiches mal importées sont réparées automatiquement.'],
   '1.12.2': ['Import : « 2 bouteilles de… » dans le nom devient une quantité de 2 (et le nom est nettoyé). Vos fiches existantes sont corrigées automatiquement.'],

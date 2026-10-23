@@ -61,6 +61,14 @@ const rs=[{Domaine:'Lapierre',Cuvée:'Morgon',Millésime:2023,Quantité:1},{Doma
 const a=I.rowsToWines(rs,ex);T('import mode somme : doublon additionné, 1 ligne existante comptée',a.added.length===1&&a.updated.length===1&&a.updated[0].qty===3&&a.existing===1);
 const b=I.rowsToWines(rs,ex,'skip');T('import mode « seulement les nouveaux » : existant intact',b.added.length===1&&b.updated.length===0&&b.existing===1&&ex[0].qty===2);
 const c=I.rowsToWines([...rs,rs[1]],ex,'skip');T('mode skip : doublon interne au fichier toujours additionné',c.added.length===1&&c.added[0].qty===6);}
+{ // import souple : liste de caviste sans en-tête « Nom » (1.12.5)
+  const mh=I.mapHeaders(['TVA*','tarif TTC','Millésime','Q disponible','Notes/commentaires vin','commentaires domaine']);
+  T('import souple : « tarif TTC » = prix, « Q disponible » = quantité, commentaires jamais domaine',mh['tarif TTC']==='price'&&mh['Q disponible']==='qty'&&!Object.values(mh).includes('dom'),JSON.stringify(mh));
+  const rs=I.lireFeuilleLibre([['ROUGE 75cl'],['X',20,'Bourgogne','Berthaut-Gerbet "les Prielles"',2023,10,'Note Cellar Tracker 91 : très beau vin de longue garde'],['X',27,'Hautes Cotes de Nuits','SYLVIE ESMONIN',2023,4,'Commentaire long']],'Bourgogne');
+  T('import souple : région reconnue, nom du domaine, millésime, prix, quantité et couleur du titre',rs.length===2&&rs[0].Nom==='Berthaut-Gerbet "les Prielles"'&&rs[0].Région==='Bourgogne'&&rs[0].Millésime===2023&&rs[0].Prix===20&&rs[0].Quantité===10&&rs[0].Couleur==='Rouge',JSON.stringify(rs[0]));
+  T('import souple : deuxième ligne, région reconnue même sans « X »',rs[1]&&rs[1].Nom==='SYLVIE ESMONIN'&&rs[1].Région==='Hautes Cotes de Nuits'&&rs[1].Quantité===4,JSON.stringify(rs[1]));
+  const v=I.rowsToWines(rs,[]);T('import souple : lignes marquées « à vérifier », domaine absent sans erreur',v.added.length===2&&v.added.every(w=>w.check===true),JSON.stringify(v.added.map(w=>w.check)));
+}
 {const n=c=>L.normalizeWine({name:'A',conf:c});
 T('fiabilité : « connue » (ancien format) → estimée',n('connue').conf==='estimée'&&n('estimée').conf==='estimée'&&n('vérifiée').conf==='vérifiée'&&n('x').conf==='');
 const w=L.normalizeWine({name:'A',sources:[{t:'ok',u:'https://a.fr/x'},{t:'mauvais',u:'http://a.fr'},{t:'js',u:'javascript:alert(1)'},null,...Array(8).fill({t:'z',u:'https://z.fr'})]});
