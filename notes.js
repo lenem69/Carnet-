@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.22.0': ['Fenêtres : une croix en haut à droite pour fermer. On peut aussi les fermer en glissant vers le bas, depuis la moitié haute. Si une saisie n’est pas enregistrée, l’appli demande confirmation avant de l’abandonner.'],
   '1.21.1': ['Valeur estimée : toucher le montant ou son libellé le cache ou le réaffiche.'],
   '1.21.0': ['La valeur estimée de la cave se met à jour toute seule, en même temps que les fiches (sans effort de votre part). Correction : la mise à jour des fiches en arrière-plan échouait depuis la version 1.18.'],
   '1.20.0': ['Magic : un constat sur l’équilibre de la cave, avec un avis de l’IA en option. Valeur estimée de la cave (IA, indicative : peu de prix d’achat sont saisis), à estimer quand vous voulez.'],

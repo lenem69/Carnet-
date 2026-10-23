@@ -98,6 +98,11 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 #sDlg { z-index: 30; }
 .sheet { background: var(--bg); width: 100%; max-width: 680px; max-height: 94%; overflow: auto; border-radius: 18px 18px 0 0;
   padding: 18px max(16px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); overscroll-behavior: contain; }
+.sheet { position: relative; }
+.sheet::before { content: ''; position: absolute; top: 7px; left: 50%; width: 40px; height: 4px; margin-left: -20px; border-radius: 2px; background: var(--mu); opacity: .4; pointer-events: none; z-index: 1; }
+.sheet > h2:first-child, .sb > h2:first-child { padding-right: 40px; }
+.sx { position: absolute; top: 6px; right: 6px; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--mu); font-size: 30px; line-height: 40px; text-align: center; cursor: pointer; z-index: 2; -webkit-tap-highlight-color: transparent; }
+.sx:active { background: var(--line, rgb(127 127 127 / .15)); }
 .sheet label { display: block; font-size: 13px; color: var(--mu); margin: 12px 0 4px; }
 .sheet.fx { padding: 0; display: flex; flex-direction: column; overflow: hidden; }
 .sb { overflow: auto; padding: 18px max(16px, env(safe-area-inset-right, 0px)) 18px max(16px, env(safe-area-inset-left, 0px)); flex: 1; min-height: 0; overscroll-behavior: contain; }

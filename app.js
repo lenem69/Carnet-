@@ -89,6 +89,7 @@ function openSheet(id) {
   if (!stack.includes(id)) {
     if (!stack.length && !(history.state && history.state.modal)) { try { history.pushState({ modal: 1 }, ''); } catch (e) { /* sans historique */ } }
     stack.push(id);
+    $('#' + id).dataset.dirty = '';
   }
   $('#' + id).classList.add('show');
 }
@@ -97,16 +98,93 @@ function hideSheet(id) {
   $('#' + id).classList.remove('show');
   if (id === 'sDlg') settleDlg(null);
 }
+// Fermeture voulue par l’utilisateur (croix, glisser, Retour) : demande confirmation si une saisie non enregistrée existe.
+const SAISIE_SHEETS = ['sForm', 'sTasting'];
+async function requestClose(id) {
+  const m = $('#' + id);
+  if (!m || !m.classList.contains('show')) return;
+  if (id === 'sLog' && logRunning) return;
+  if (SAISIE_SHEETS.includes(id) && m.dataset.dirty === '1') {
+    const c = await ask('Abandonner la saisie ?', 'Ce que vous avez écrit ne sera pas enregistré.',
+      [{ label: 'Continuer la saisie', value: 'non', kind: 'o' }, { label: 'Abandonner', value: 'oui' }]);
+    if (c !== 'oui') { const sh = m.querySelector('.sheet'); if (sh) sh.style.transform = ''; return; }
+    m.dataset.dirty = '';
+  }
+  closeSheet(id);
+}
+let retourPrevu = false;
 function closeSheet(id) {
   hideSheet(id);
-  // différé : si une autre fenêtre s'ouvre juste après, on garde l'entrée d'historique
-  setTimeout(() => { if (!stack.length && history.state && history.state.modal) { ignorePop++; history.back(); } }, 0);
+  // différé : si une autre fenêtre s'ouvre juste après, on garde l'entrée d'historique.
+  // Une seule fois même si deux fenêtres se ferment dans le même instant (sinon double retour).
+  if (retourPrevu) return;
+  retourPrevu = true;
+  setTimeout(() => {
+    retourPrevu = false;
+    if (!stack.length && history.state && history.state.modal) { ignorePop++; history.back(); }
+  }, 0);
+}
+// Croix en haut à droite et glisser vers le bas (depuis la moitié haute de la fenêtre) pour toutes les fenêtres.
+const SANS_GLISSER = ['sDlg', 'sBienv'];
+function initSheetGestures() {
+  $$('.modal').forEach(m => {
+    const sheet = m.querySelector('.sheet');
+    if (!sheet) return;
+    if (!sheet.querySelector('.sx')) {
+      const x = document.createElement('button');
+      x.type = 'button'; x.className = 'sx'; x.setAttribute('aria-label', 'Fermer'); x.textContent = '×';
+      x.onclick = () => requestClose(m.id);
+      sheet.prepend(x);
+    }
+    ['input', 'change'].forEach(ev => m.addEventListener(ev, () => { m.dataset.dirty = '1'; }));
+    if (SANS_GLISSER.includes(m.id)) return;
+    let y0 = null, dy = 0, drag = false;
+    sheet.addEventListener('touchstart', e => {
+      y0 = null;
+      if (e.touches.length !== 1 || (m.id === 'sLog' && logRunning)) return;
+      if (e.target.closest && e.target.closest('input,textarea,select,[contenteditable]')) return;
+      const sc = sheet.querySelector('.sb') || sheet;
+      const r = sheet.getBoundingClientRect();
+      const y = e.touches[0].clientY;
+      if (sc.scrollTop > 0 || y - r.top > r.height / 2) return;
+      y0 = y; dy = 0; drag = false;
+    }, { passive: true });
+    sheet.addEventListener('touchmove', e => {
+      if (y0 === null) return;
+      dy = e.touches[0].clientY - y0;
+      if (!drag) {
+        if (dy < -8) { y0 = null; return; }
+        if (dy < 8) return;
+        drag = true; sheet.style.transition = 'none';
+      }
+      if (e.cancelable) e.preventDefault();
+      sheet.style.transform = 'translateY(' + Math.max(0, dy) + 'px)';
+    }, { passive: false });
+    const fin = () => {
+      const était = drag, d = dy;
+      y0 = null; drag = false;
+      if (!était) return;
+      sheet.style.transition = 'transform .2s ease';
+      if (d > 90) {
+        sheet.style.transform = 'translateY(100%)';
+        setTimeout(() => { sheet.style.transition = ''; sheet.style.transform = ''; requestClose(m.id); }, 200);
+      } else sheet.style.transform = '';
+    };
+    sheet.addEventListener('touchend', fin);
+    sheet.addEventListener('touchcancel', fin);
+  });
 }
 window.addEventListener('popstate', () => {
   if (ignorePop) { ignorePop--; return; }
   const id = stack[stack.length - 1];
   if (!id) return;
   if (id === 'sLog' && logRunning) { try { history.pushState({ modal: 1 }, ''); } catch (e) { /* */ } return; }
+  if (SAISIE_SHEETS.includes(id) && $('#' + id).dataset.dirty === '1') {
+    // Retour : on garde la fenêtre ouverte le temps de demander confirmation
+    try { history.pushState({ modal: 1 }, ''); } catch (e) { /* */ }
+    requestClose(id);
+    return;
+  }
   hideSheet(id);
   if (stack.length) { try { history.pushState({ modal: 1 }, ''); } catch (e) { /* */ } }
 });
@@ -998,6 +1076,7 @@ function bind() {
   $('#ti-in').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveTitle($('#ti-in').value); } });
   $('#sMenu').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (b) menuAction(b.dataset.m); });
   $$('[data-close]').forEach(b => { b.onclick = () => closeSheet(b.dataset.close); });
+  initSheetGestures();
   $$('.modal').forEach(m => m.addEventListener('click', e => {
     if (e.target !== m) return;
     if (m.id === 'sLog' && logRunning) return;
