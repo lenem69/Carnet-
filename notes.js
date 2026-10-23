@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.19.0': ['Magic : touchez une case (Prêt à boire, À garder, Urgence) pour voir la liste des vins concernés. Touchez la pastille en haut de la liste pour revenir à toute la cave. Première ouverture : un message de bienvenue vous demande votre prénom.'],
   '1.18.0': ['Fiches : la bible remplit d’abord la garde. Ensuite, l’IA complète les fiches par lots de 10 vins, à partir de ses connaissances ; la recherche web (Gemini) ne sert qu’aux champs restés vides ou incertains, par lots de 5. Une cave importée est traitée toute seule. Vos saisies restent intactes.'],
   '1.17.0': ['Les fiches se mettent à jour toutes seules : sur Android, Chrome lance la mise à jour de fond environ deux fois par jour, même appli fermée. Sur iPhone, elle se fait à l’ouverture de l’appli. L’IA peut aussi reprendre les anciennes fiches ; vos saisies récentes restent intactes.'],
   '1.16.0': ['Fiches : l’IA peut corriger les cépages, histoires, accords et gardes, sauf ce que vous avez saisi vous-même. Chaque vin est vérifié une fois, après son enregistrement.'],

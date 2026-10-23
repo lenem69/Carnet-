@@ -8,7 +8,8 @@ import { saveFile, readText } from './files.js';
 import * as Stats from './stats.js';
 import * as Notes from './notes.js';
 import { apogee, apogeeTexte, apogeeCourte } from './apogee.js';
-import { chiffres } from './chiffres.js';
+import { chiffres, statutOf } from './chiffres.js';
+const STATUT_LIBELLE = { pret: 'Prêt à boire', garder: 'À garder', urgence: 'Urgence' };
 import { QUOTES } from './quotes.js';
 
 const VERSION = self.APP_VERSION || '?';
@@ -235,14 +236,17 @@ function renderBanners() {
 }
 
 function filtered() {
-  return S.wines.filter(w => (S.filt === 'Tous' || (S.filt === 'À vérifier' ? w.check : w.color === S.filt)) && L.matchesQuery(w, S.q));
+  return S.wines.filter(w => (S.filt === 'Tous' || (S.filt === 'À vérifier' ? w.check : w.color === S.filt)) && L.matchesQuery(w, S.q)
+    && (!S.statut || (w.qty > 0 && statutOf(w, YEAR) === S.statut)));
 }
 
 function renderList() {
   const counts = { Tous: S.wines.length, 'À vérifier': S.wines.filter(w => w.check).length };
   for (const c of L.COLORS) counts[c] = S.wines.filter(w => w.color === c).length;
   const chips = ['Tous', ...(counts['À vérifier'] || S.filt === 'À vérifier' ? ['À vérifier'] : []), ...L.COLORS.filter(c => counts[c] || S.filt === c)];
-  $('#chips').innerHTML = chips.map(c => `<button class="chip${c === S.filt ? ' on' : ''}" data-c="${c}">${c} <span class="n">${counts[c] || 0}</span></button>`).join('');
+  // Filtre par statut (depuis Magic) : une pastille pour le retirer.
+  const pastille = S.statut ? `<button class="chip on" data-stat="">✕ ${STATUT_LIBELLE[S.statut]}</button>` : '';
+  $('#chips').innerHTML = pastille + chips.map(c => `<button class="chip${c === S.filt ? ' on' : ''}" data-c="${c}">${c} <span class="n">${counts[c] || 0}</span></button>`).join('');
   if (!S.ready) { $('#list').innerHTML = '<p class="empty">Chargement de votre cave…</p>'; return; }
   if (!S.wines.length) {
     $('#list').innerHTML = `<div class="empty"><p><b>Votre cave est vide.</b></p><p>Ajoutez vos premières bouteilles.</p><div class="stack">
@@ -341,10 +345,11 @@ function renderChiffres() {
     <p class="portrait">${esc(c.portrait)}</p>
     ${c.bouteilles ? `
     <div class="statuts">
-      <div class="st ok"><b>${st.pret}</b><span>Prêt à boire</span></div>
-      <div class="st wa"><b>${st.garder}</b><span>À garder</span></div>
-      <div class="st bad"><b>${st.urgence}</b><span>Urgence</span></div>
+      <button class="st ok" data-goto="pret" aria-label="Voir les vins prêts à boire"><b>${st.pret}</b><span>Prêt à boire</span></button>
+      <button class="st wa" data-goto="garder" aria-label="Voir les vins à garder"><b>${st.garder}</b><span>À garder</span></button>
+      <button class="st bad" data-goto="urgence" aria-label="Voir les vins à boire en urgence"><b>${st.urgence}</b><span>Urgence</span></button>
     </div>
+    <p class="mu small">Touchez une case pour voir les vins concernés.</p>
     ${st.sans ? `<p class="mu small">${st.sans} bouteille(s) sans période de garde, non classées.</p>` : ''}
     <h3 class="ch">Couleurs</h3>${donut(c.couleurs, c.bouteilles, 'Couleurs')}
     <h3 class="ch">Régions</h3>${donut(c.regions, c.bouteilles, 'Régions')}
@@ -942,7 +947,16 @@ function bind() {
   });
 
   $$('.tab').forEach(b => { b.onclick = () => { S.tab = b.dataset.t; if (S.tab === 'boire') Stats.track('quoiboire'); render(); }; });
-  $('#chips').onclick = e => { const b = e.target.closest('[data-c]'); if (b) { S.filt = b.dataset.c; S.limit = PAGE; renderList(); } };
+  $('#chips').onclick = e => {
+    if (e.target.closest('[data-stat]')) { S.statut = null; S.limit = PAGE; renderList(); return; }
+    const b = e.target.closest('[data-c]'); if (b) { S.filt = b.dataset.c; S.statut = null; S.limit = PAGE; renderList(); }
+  };
+  // Magic : toucher une case ouvre la liste des vins concernés.
+  $('#vChiffres').onclick = e => {
+    const b = e.target.closest('[data-goto]'); if (!b) return;
+    S.statut = b.dataset.goto; S.tab = 'cave'; S.filt = 'Tous'; S.q = ''; $('#q').value = ''; S.limit = PAGE;
+    render(); window.scrollTo(0, 0);
+  };
   $('#bchips').onclick = e => { const b = e.target.closest('[data-b]'); if (b) { S.bmode = b.dataset.b; $('#blist').innerHTML = ''; renderBoire(); } };
   let qt;
   $('#q').addEventListener('input', () => { clearTimeout(qt); qt = setTimeout(() => { S.q = $('#q').value; S.limit = PAGE; renderList(); }, 150); });
@@ -1068,6 +1082,36 @@ function showQuote() {
 /* ============ Nouveautés après mise à jour ============ */
 // Les fenêtres d'accueil (nouveautés, statistiques) passent l'une après l'autre, jamais par-dessus une autre fenêtre ouverte.
 const whenFree = async () => { await new Promise(r => setTimeout(r, 450)); while (document.querySelector('.modal.show')) await new Promise(r => setTimeout(r, 500)); };
+/* ============ Première ouverture : message de bienvenue ============ */
+// Une fois : à la première ouverture après installation, et à la première ouverture après la mise à jour qui l'introduit (cave existante comprise).
+async function showBienvenue() {
+  try {
+    // Les tests automatisés ne voient pas ce message, sauf s'ils le demandent.
+    if (navigator.webdriver && !window.__BIENVENUE) return;
+    const deja = await store.getMeta('bienvenue');
+    if (deja) return;
+    await store.setMeta('bienvenue', { prenom: '', date: Date.now() });
+    await whenFree();
+    const step1 = $('#bvStep1'), step2 = $('#bvStep2');
+    step1.hidden = false; step2.hidden = true; $('#bvPrenom').value = '';
+    const montrerMessage = prenom => {
+      const nom = prenom ? ', ' + prenom : '';
+      $('#bvMsg').innerHTML = `<p><b>Merci d’avoir téléchargé l’application${esc(nom)} !</b></p>
+        <p>Tout d’abord, ouvrez une bouteille avant de faire le tour de l’application.</p>
+        <p>Vos retours, positifs ou d’amélioration, seront les bienvenus !</p>
+        <p>Merci,<br>Jeff</p>`;
+      step1.hidden = true; step2.hidden = false;
+    };
+    $('#bvOk').onclick = async () => {
+      const prenom = $('#bvPrenom').value.trim().slice(0, 30);
+      try { await store.setMeta('bienvenue', { prenom, date: Date.now() }); } catch (e) { /* le prénom n'est pas enregistré : le message reste affiché */ }
+      montrerMessage(prenom);
+    };
+    $('#bvPasse').onclick = () => { closeSheet('sBienv'); };
+    openSheet('sBienv');
+  } catch (e) { console.error('bienvenue', e); }
+}
+
 async function showNews() {
   try {
     const seen = await store.getMeta('seenVersion');
@@ -1317,6 +1361,6 @@ async function boot() {
   render();
   store.protect();
   initSW();
-  (async () => { await loadBible(); await showNews(); await initStats(); initAuto(); })();
+  (async () => { await loadBible(); await showBienvenue(); await showNews(); await initStats(); initAuto(); })();
 }
 boot();

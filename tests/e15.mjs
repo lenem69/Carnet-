@@ -1,0 +1,32 @@
+import {start} from './server.mjs';import * as H from './h.mjs';
+H.deploy();const srv=await start(8123);const b=await H.browser();
+const S=H.suite('Bienvenue');const T=S.T;
+// 1. nouvelle installation : cave vide → message de bienvenue, prénom demandé
+const r=await H.newPage(b);const page=r.page;
+const errs=[];page.on('pageerror',e=>errs.push(e.message));
+await page.evaluateOnNewDocument(()=>{window.__BIENVENUE=true;});
+await page.goto(H.URL0);await H.sl(1200);
+T('bienvenue : affiché à la première ouverture',await H.shown(page,'#sBienv'));
+T('bienvenue : demande le prénom',(await H.txt(page,'#bvStep1')).includes('Votre prénom'));
+await page.type('#bvPrenom','  Paul  ');
+await page.click('#bvOk');await H.sl(400);
+const msg=await H.txt(page,'#bvMsg');
+T('bienvenue : message avec le prénom',msg.includes('Merci d’avoir téléchargé l’application, Paul !'),msg);
+T('bienvenue : signé Jeff, invite à ouvrir une bouteille',msg.includes('ouvrez une bouteille')&&msg.includes('Jeff'));
+await page.click('#sBienv [data-close="sBienv"]');await H.sl(400);
+T('bienvenue : fermé',!(await H.shown(page,'#sBienv')));
+await page.reload();await H.sl(1200);
+T('bienvenue : pas réaffiché après redémarrage',!(await H.shown(page,'#sBienv')));
+T('bienvenue : prénom gardé en mémoire',await page.evaluate(async()=>{const s=await import('./store.js');return (await s.getMeta('bienvenue')).prenom==='Paul';}));
+T('aucune erreur JavaScript',errs.length===0,errs.join(' | '));
+await page.close();
+// 2. cave déjà remplie (mise à jour) : pas de message, seulement le marqueur
+const r2=await H.newPage(b);const p2=r2.page;
+await p2.evaluateOnNewDocument(()=>{window.__BIENVENUE=true;});
+await p2.goto(H.URL0);await H.sl(900);
+await p2.evaluate(async()=>{const s=await import('./store.js');await s.replaceAll([{id:'x',name:'Existant',dom:'D',year:2019,color:'Rouge',region:'X',grape:'',qty:1,price:'',loc:'',from:'',to:'',story:'',note:'',pairings:[],check:false,conf:'',sources:[],created:1,updated:1}]);});
+await p2.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('bienvenue',null);});
+await p2.reload();await H.sl(1200);
+T('bienvenue : cave existante (mise à jour) : message affiché une fois',await H.shown(p2,'#sBienv'));
+await p2.close();
+console.log(S.out.join('\n'));await b.close();srv.close();

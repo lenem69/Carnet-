@@ -183,6 +183,8 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 .chiffres .st.ok b { color: var(--ok); }
 .chiffres .st.wa b { color: var(--wa); }
 .chiffres .st.bad b { color: var(--bad); }
+.chiffres button.st { font: inherit; color: inherit; cursor: pointer; width: 100%; -webkit-tap-highlight-color: transparent; }
+.chiffres button.st:active { transform: scale(.97); }
 .chiffres .donut { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
 .chiffres .donut svg { width: 150px; height: 150px; flex: none; }
 .chiffres .dc { font-size: 7px; font-weight: 700; text-anchor: middle; fill: var(--tx); }

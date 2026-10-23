@@ -279,6 +279,24 @@
   <button class="lnk close" data-close="sInstall">Fermer</button>
 </div></div>
 
+<!-- Bienvenue (première ouverture) -->
+<div class="modal" id="sBienv" role="dialog" aria-modal="true" aria-labelledby="bvT"><div class="sheet">
+  <div id="bvStep1">
+    <h2 id="bvT">Bienvenue</h2>
+    <p class="mu small">Comment faut-il vous appeler ?</p>
+    <p><label for="bvPrenom">Votre prénom</label></p>
+    <input id="bvPrenom" type="text" maxlength="30" autocomplete="given-name" placeholder="Prénom">
+    <div class="stack">
+      <button class="btn" id="bvOk" type="button">Continuer</button>
+      <button class="lnk close" id="bvPasse" type="button">Passer</button>
+    </div>
+  </div>
+  <div id="bvStep2" hidden>
+    <div id="bvMsg" class="bvmsg"></div>
+    <div class="stack"><button class="btn" data-close="sBienv" type="button">Ouvrir ma cave</button></div>
+  </div>
+</div></div>
+
 <!-- Aide et contact -->
 <div class="modal" id="sContact" role="dialog" aria-modal="true" aria-labelledby="ctT"><div class="sheet">
   <h2 id="ctT">Aide et contact</h2>
