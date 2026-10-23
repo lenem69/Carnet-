@@ -92,7 +92,7 @@ const ls=await H.txt(page,'#lg');T('arrêter : traitement interrompu proprement'
 mode='ok';
 // fiches par lots
 const nb=await page.evaluate(()=>document.querySelectorAll('#list .w').length);
-await H.click(page,'#fab');await H.tapText(page,'#sMenu button','Compléter');await H.sl(300);
+await H.click(page,'#fab');await H.tapText(page,'#sMenu button','Mettre à jour les fiches');await H.sl(300);
 T('lots : confirmation avec estimation des appels',(await H.txt(page,'#dlgX')).includes('appel'));
 const before=calls.length;await H.tapText(page,'#dlgB button','Lancer');await H.sl(1200);
 T('lots : un seul appel pour '+(nb-1)+' vins',calls.length-before===1,String(calls.length-before));
