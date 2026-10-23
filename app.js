@@ -832,6 +832,7 @@ function bind() {
   $('#bSet').onclick = openSettings;
   $('#bTitle').onclick = openTitle;
   $('#bContact').onclick = openContact;
+  $('#bReport').onclick = () => { openContact(); $('#ct-type').value = 'Bug (quelque chose ne marche pas)'; };
   $('#st-stats').onchange = async () => { await Stats.setConsent($('#st-stats').checked); toast($('#st-stats').checked ? 'Statistiques anonymes activées.' : 'Statistiques arrêtées : rien ne sera envoyé.'); };
   $('#st-stats-show').onclick = showStatsPreview;
   $('#st-auto').onchange = () => { auto.on = $('#st-auto').checked; if (auto.on) auto.pauseUntil = 0; autoSave(); $('#st-auto-info').textContent = autoStatus(); if (auto.on) setTimeout(autoStep, 500); };
@@ -1090,12 +1091,40 @@ async function showStatsPreview() {
   await ask('Ce qui est envoyé', t ? `Voici la ligne de cette semaine (elle part la semaine prochaine). Ce sont uniquement des nombres : 1) version 2) identifiant aléatoire de cette installation 3) semaines 4) compteurs d’usage.\n\n${t}` : 'Rien : les statistiques sont désactivées.', [{ label: 'Fermer', value: null, kind: 'o' }]);
 }
 
+/* ============ Installation ============ */
+// Android : bouton « Installer » natif. iPhone (Safari) : pas-à-pas animé. Déjà installée : rien.
+let deferredInstall = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; renderInstall(); });
+window.addEventListener('appinstalled', () => { deferredInstall = null; renderInstall(); });
+function isStandalone() {
+  try { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; } catch (e) { return false; }
+}
+function isIphoneSafari() {
+  const ua = navigator.userAgent || '';
+  return /iPhone|iPad|iPod/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+}
+function renderInstall() {
+  const box = $('#installBox');
+  let off = false;
+  try { off = localStorage.getItem('cave-install-off') === '1'; } catch (e) { /* stockage bloqué : on propose */ }
+  if (isStandalone() || off || (!deferredInstall && !isIphoneSafari())) { box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+  box.innerHTML = `<div class="inst"><b>Installer « Ma cave » sur l’écran d’accueil</b><p class="small mu">Elle s’ouvre alors comme une appli, même hors connexion.</p><div class="stack"><button class="btn" id="inst-go" type="button">${deferredInstall ? 'Installer' : 'Voir comment faire'}</button><button class="lnk" id="inst-off" type="button">Ne plus afficher</button></div></div>`;
+  $('#inst-go').onclick = async () => {
+    if (!deferredInstall) { openSheet('sInstall'); return; }
+    try { deferredInstall.prompt(); await deferredInstall.userChoice; } catch (e) { errToast('Installation impossible ici : utilisez le menu du navigateur › « Installer l’appli ».'); }
+    deferredInstall = null; renderInstall();
+  };
+  $('#inst-off').onclick = () => { try { localStorage.setItem('cave-install-off', '1'); } catch (e) { /* */ } renderInstall(); };
+}
+
 /* ============ Démarrage ============ */
 async function boot() {
   fitViewport();
   bind();
   showQuote();
   render();
+  renderInstall();
   await store.open();
   try {
     const raw = await store.allWines();

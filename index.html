@@ -36,6 +36,7 @@
     <span class="qm" aria-hidden="true">“</span>
     <p id="quoteText"></p>
   </section>
+  <div id="installBox" hidden></div>
   <div id="banners"></div>
   <div class="stats">
     <div class="stat"><b id="sB">0</b><span>bouteilles</span></div>
@@ -73,7 +74,7 @@
     </div>
     <div id="blist"></div>
   </section>
-  <footer class="credit">Application créée par Jean-François Morin<br>© Copyright appartenant à Jean-François Morin 2026<br><button class="lnk" id="bContact" type="button">Aide et contact</button></footer>
+  <footer class="credit">Application créée par Jean-François Morin<br>© Copyright appartenant à Jean-François Morin 2026<br><button class="lnk" id="bContact" type="button">Aide et contact</button> · <button class="lnk" id="bReport" type="button">Signaler un problème</button></footer>
 </main>
 
 <button id="fab" aria-label="Ajouter des vins">
@@ -166,14 +167,14 @@
   <h3>IA (optionnelle)</h3>
   <p class="mu small">Sert au scan d’étiquettes, aux fiches et aux accords affinés. Tout le reste fonctionne sans IA.</p>
   <div id="ai-guide" class="guide" hidden>
-    <p><b>Obtenir une clé gratuite (2 minutes)</b></p>
+    <p><b>Une clé gratuite, en 2 minutes</b></p>
+    <div class="stack"><button class="btn" id="ai-open" type="button">🔑 Obtenir ma clé gratuite</button></div>
     <ol class="steps">
-      <li>Touchez « Ouvrir Google AI Studio » ci-dessous et connectez-vous avec votre compte Google.</li>
-      <li>Touchez « Get API key », puis « Create API key ».</li>
-      <li>Copiez la clé qui s’affiche (elle commence par « AIza »).</li>
-      <li>Revenez ici, touchez « Coller la clé », puis « Enregistrer » et « Tester la connexion ».</li>
+      <li>Connectez-vous avec votre compte Google.</li>
+      <li>Touchez « Create API key ».</li>
+      <li>Copiez la clé (elle commence par « AIza »).</li>
+      <li>Revenez ici : « Coller la clé », puis « Enregistrer ».</li>
     </ol>
-    <div class="stack"><button class="btn o" id="ai-open" type="button">🔑 Ouvrir Google AI Studio</button></div>
   </div>
   <p id="ai-auto" class="mu small"></p>
   <label for="ai-prov">Fournisseur à configurer</label>
@@ -181,16 +182,26 @@
   <p id="ai-help" class="mu small"></p>
   <label for="ai-key">Clé API</label>
   <div class="row2"><input id="ai-key" type="password" autocomplete="off" spellcheck="false"><button class="btn o sm" id="ai-paste" type="button">Coller la clé</button><button class="btn o sm" id="ai-show" type="button">Voir</button></div>
-  <label for="ai-model">Modèle</label><input id="ai-model" autocomplete="off" spellcheck="false">
-  <div id="ai-base-w"><label for="ai-base">Adresse de l’API</label><input id="ai-base" autocomplete="off" spellcheck="false" placeholder="https://api.openai.com/v1"></div>
-  <p class="mu small">La clé reste uniquement sur ce téléphone. Sur l’offre gratuite de Gemini, Google peut utiliser vos photos et données pour améliorer ses produits.</p>
+  <details class="adv"><summary>Options avancées</summary>
+    <label for="ai-model">Modèle</label><input id="ai-model" autocomplete="off" spellcheck="false">
+    <div id="ai-base-w"><label for="ai-base">Adresse de l’API</label><input id="ai-base" autocomplete="off" spellcheck="false" placeholder="https://api.openai.com/v1"></div>
+    <p class="mu small">Ne modifiez ces champs que si on vous le demande.</p>
+  </details>
+  <ul class="mu small notes">
+    <li>Votre clé reste sur ce téléphone.</li>
+    <li>Gemini gratuit : Google peut utiliser vos photos et données pour améliorer ses produits.</li>
+  </ul>
   <div class="stack">
     <button class="btn" id="ai-save">Enregistrer</button>
     <button class="btn o" id="ai-test">Tester la connexion</button>
   </div>
   <h3>Fiches automatiques</h3>
   <label class="chk"><input type="checkbox" id="st-auto"> Compléter les fiches toute seule</label>
-  <p class="mu small">Quand une IA est configurée, l’appli complète en arrière-plan les fiches incomplètes (10 vins par appel, 4 appels par jour au plus), sans vous déranger. Seuls le nom, le domaine, le millésime, la couleur et la région des vins sont envoyés à l’IA.</p>
+  <ul class="mu small notes">
+    <li>Quand une IA est configurée, l’appli complète les fiches incomplètes en arrière-plan.</li>
+    <li>10 vins par appel, 4 appels par jour au plus.</li>
+    <li>Seuls le nom, le domaine, le millésime, la couleur et la région sont envoyés.</li>
+  </ul>
   <p id="st-auto-info" class="mu small"></p>
   <div id="st-stats-w" hidden>
     <h3>Statistiques anonymes</h3>
@@ -208,6 +219,22 @@
   <p class="mu small">© Copyright appartenant à Jean-François Morin 2026</p>
   <div class="stack"><button class="btn o" id="st-upd">Vérifier les mises à jour</button><button class="btn o" id="st-help" type="button">Aide et contact</button></div>
   <button class="lnk close" data-close="sSet">Fermer</button>
+</div></div>
+
+<!-- Installation sur iPhone -->
+<div class="modal" id="sInstall" role="dialog" aria-modal="true" aria-labelledby="inT"><div class="sheet">
+  <h2 id="inT">Installer sur iPhone</h2>
+  <p class="mu small">Ouvrez ce site dans <b>Safari</b> (pas dans Chrome), puis suivez les 3 étapes.</p>
+  <div class="tuto" aria-hidden="true">
+    <div class="tb"><span class="tbar">aA &nbsp;&nbsp; ⬆ <i>Partager</i></span></div>
+    <div class="tmenu"><div class="ti t1">Partager</div><div class="ti t2">Sur l’écran d’accueil</div><div class="ti t3">Ajouter</div></div>
+  </div>
+  <ol class="steps">
+    <li>Touchez <b>Partager</b> (⬆) en bas de l’écran.</li>
+    <li>Touchez <b>Sur l’écran d’accueil</b>.</li>
+    <li>Touchez <b>Ajouter</b> en haut à droite.</li>
+  </ol>
+  <button class="lnk close" data-close="sInstall">Fermer</button>
 </div></div>
 
 <!-- Aide et contact -->

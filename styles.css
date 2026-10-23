@@ -190,3 +190,26 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 .chiffres .legende li { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
 .chiffres .legende .lk { flex: 1; }
 .chiffres .sw { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+
+/* Onboarding : installation, options repliées, tutoriel animé */
+#installBox:not([hidden]) { margin-bottom: 12px; }
+#installBox .inst { background: var(--card); border: 1px solid var(--bd); border-left: 4px solid var(--ac); border-radius: 12px; padding: 12px; }
+#installBox .inst b { display: block; margin-bottom: 4px; }
+#installBox .inst .stack { margin-top: 8px; }
+details.adv { border: 1px solid var(--bd); border-radius: 10px; padding: 8px 10px; margin: 8px 0; background: var(--card); }
+details.adv summary { min-height: 36px; display: flex; align-items: center; font-weight: 600; cursor: pointer; }
+details.adv[open] summary { margin-bottom: 6px; }
+.notes { padding-left: 18px; margin: 6px 0; }
+.notes li { margin: 3px 0; }
+.tuto { background: var(--soft); border-radius: 14px; padding: 14px; margin: 10px 0; }
+.tuto .tb { background: var(--card); border-radius: 10px; padding: 8px; text-align: center; font-size: 14px; }
+.tuto .tbar i { font-style: normal; font-weight: 600; }
+.tuto .tmenu { margin-top: 10px; background: var(--card); border-radius: 10px; overflow: hidden; }
+.tuto .ti { padding: 10px 12px; font-size: 15px; border-bottom: 1px solid var(--bd); animation: tHl 6s infinite; }
+.tuto .ti.t2 { animation-delay: 2s; }
+.tuto .ti.t3 { animation-delay: 4s; }
+@keyframes tHl {
+  0%, 25% { background: #f3c9d3; box-shadow: inset 4px 0 0 var(--ac); }
+  33%, 100% { background: transparent; box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) { .tuto .ti { animation: none; } }
