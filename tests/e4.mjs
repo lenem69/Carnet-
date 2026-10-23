@@ -24,7 +24,7 @@ H.deploy('1.0.1');
 await page.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration();await r.update()});await H.sl(2500);
 T('nouvelle version détectée : bandeau affiché',(await H.txt(page,'#updBar')).includes('Nouvelle version'),await H.txt(page,'#updBar'));
 const gb=await page.evaluate(()=>{const u=document.querySelector('#updBar .upd').getBoundingClientRect(),b=document.querySelector('#updBar .btn').getBoundingClientRect();return {top:u.top,w:u.width,iw:innerWidth,bh:b.height,pos:getComputedStyle(document.querySelector('#updBar')).position}});
-T('bandeau de mise à jour : collé en haut, pleine largeur, bouton visible',gb.top<=1&&gb.w>=gb.iw-1&&gb.bh>=40&&gb.pos==='sticky',JSON.stringify(gb));
+T('bandeau de mise à jour : dans le flux (ne recouvre rien), pleine largeur, bouton visible',gb.w>=gb.iw-1&&gb.bh>=40&&gb.bh<=80&&gb.pos==='static',JSON.stringify(gb));
 T('ancienne version toujours active avant accord',await page.evaluate(()=>self.APP_VERSION)==='1.0.0');
 await page.evaluate(()=>document.querySelectorAll('.toast').forEach(t=>t.remove()));await H.click(page,'#updBar [data-b="upd"]');await H.sl(3000);
 T('après « Mettre à jour » : version 1.0.1 chargée',await page.evaluate(()=>self.APP_VERSION)==='1.0.1',await page.evaluate(()=>self.APP_VERSION));

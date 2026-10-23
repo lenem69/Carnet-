@@ -20,7 +20,7 @@ await page.evaluate(()=>{window.__sh=null;navigator.share=async d=>{window.__sh=
 await page.$eval('#ct-msg',e=>{e.value='Le bouton + ne répond plus'});
 await page.evaluate(()=>document.querySelector('#ct-share').click());await H.sl(300);
 const sh=await page.evaluate(()=>window.__sh);
-T('aide et contact : message partagé avec version et appareil, sans donnée de cave',!!sh&&sh.text.includes('[Bug]')&&sh.text.includes('Le bouton + ne répond plus')&&sh.text.includes('version 1.8.2')&&sh.text.includes('Appareil :')&&!/vin|bouteille/i.test(sh.text.replace('Ma cave','')),JSON.stringify(sh));
+T('aide et contact : message partagé avec version et appareil, sans donnée de cave',!!sh&&sh.text.includes('[Bug]')&&sh.text.includes('Le bouton + ne répond plus')&&sh.text.includes('version 1.8.3')&&sh.text.includes('Appareil :')&&!/vin|bouteille/i.test(sh.text.replace('Ma cave','')),JSON.stringify(sh));
 T('publier : message vide refusé',await page.evaluate(()=>{document.querySelector('#ct-msg').value='';document.querySelector('#ct-pub').click();return true})&&(await H.sl(200),(await H.txt(page,'#toasts')).includes('Écrivez d’abord')));
 await page.$eval('#ct-msg',e=>{e.value='Le bouton + ne répond plus'});
 await page.evaluate(()=>{window.__rf=window.fetch;window.__fx=[];window.fetch=(function(o){return function(u,i){if(String(u).includes('formResponse')){window.__fx.push({u:String(u),m:i&&i.method,mode:i&&i.mode,c:i&&i.credentials,b:i&&String(i.body)});return Promise.resolve(new Response(null))}return o.apply(this,arguments)}})(window.fetch)});
