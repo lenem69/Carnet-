@@ -183,6 +183,11 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 .chiffres .st.ok b { color: var(--ok); }
 .chiffres .st.wa b { color: var(--wa); }
 .chiffres .st.bad b { color: var(--bad); }
+.stats .vis { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.stats .vis b { font: inherit; }
+.bilan { margin: 14px 0 6px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--bd); background: var(--card); }
+.bilan p { margin: 0 0 6px; }
+.bilan .lnk { font-size: 13px; padding: 4px 0; }
 .chiffres button.st { font: inherit; color: inherit; cursor: pointer; width: 100%; -webkit-tap-highlight-color: transparent; }
 .chiffres button.st:active { transform: scale(.97); }
 .chiffres .donut { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }

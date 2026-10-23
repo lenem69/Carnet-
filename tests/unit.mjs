@@ -223,6 +223,20 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   T('fiches : la saisie utilisateur n’est jamais écrasée par l’IA', c.story === 'Ma note perso', c.story);
   T('fiches : les champs vides sont complétés par l’IA et étiquetés', c.grape === 'Syrah' && c.src.grape === 'ai' && c.from === 2025 && c.src.from === 'ai', JSON.stringify(c.src));
   T('fiches : passe IA enregistrée (une seule par vin)', c.aiPass > 0 && L.normalizeWine(c).aiPass === c.aiPass);
+// Équilibre et valeur estimée (indicative)
+{
+  const c = { bouteilles: 10, couleurs: [['Rouge', 9], ['Blanc', 1]], regions: [['Bourgogne', 3]], statuts: { pret: 2, garder: 7, urgence: 0, sans: 1 } };
+  const txt = L.equilibre(c);
+  T('équilibre : constat sur la dominante et la garde', txt.includes('très dominée par les rouges') && txt.includes('surtout composée de vins à garder'), txt);
+  T('équilibre : cave vide = pas de texte', L.equilibre({ bouteilles: 0, couleurs: [], regions: [], statuts: { pret: 0, garder: 0, urgence: 0, sans: 0 } }) === '');
+  const eq = L.equilibre({ bouteilles: 4, couleurs: [['Rouge', 2], ['Blanc', 2]], regions: [['A', 1]], statuts: { pret: 1, garder: 2, urgence: 0, sans: 1 } });
+  T('équilibre : cave répartie = « plutôt équilibrée »', eq === 'Votre cave paraît plutôt équilibrée.', eq);
+  const w1 = L.normalizeWine({ name: 'E1', dom: 'D', year: 2019, qty: 2, src: {}, estim: { min: 20, max: 40, date: 5 } });
+  const w2 = L.normalizeWine({ name: 'E2', dom: 'D', year: 2019, qty: 1, src: {} });
+  const v = L.valeurEstimee([w1, w2]);
+  T('valeur : milieu de fourchette × bouteilles, vins non estimés exclus du total', v.total === 60 && v.couverts === 2 && v.bouteilles === 3, JSON.stringify(v));
+  T('valeur : fourchette invalide ignorée', L.normalizeWine({ name: 'E3', dom: 'D', year: 2019, qty: 1, src: {}, estim: { min: 0, max: 5 } }).estim === null);
+}
 // Sans recherche d'abord : les champs vides ou incertains sont à chercher ; après une recherche, plus rien à chercher.
 {
   const base = L.normalizeWine({ name: 'Doute', dom: 'D', year: 2019, qty: 1, src: {} });

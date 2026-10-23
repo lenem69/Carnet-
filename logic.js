@@ -2,7 +2,7 @@
 import { norm, num, price, uid } from './util.js';
 
 export const COLORS = ['Rouge', 'Blanc', 'Rosé', 'Pétillant', 'Autre'];
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;
 
 export function normColor(v) {
   const s = norm(v);
@@ -73,6 +73,8 @@ export function normalizeWine(raw) {
     conf: raw.conf === 'vérifiée' ? 'vérifiée' : raw.conf === 'connue' || raw.conf === 'estimée' ? 'estimée' : '',
     sources: toSources(raw.sources),
     tastings: toTastings(raw.tastings),
+    // Valeur indicative d'une bouteille (fourchette IA, sans recherche) : null si pas encore estimée.
+    estim: toEstim(raw.estim),
     // Date de la passe IA faite sur ce vin (0 = jamais). Une seule passe, après l'enregistrement.
     aiPass: Number(raw.aiPass) || 0,
     // Date de la recherche web (0 = jamais) et champs encore à chercher.
@@ -84,6 +86,12 @@ export function normalizeWine(raw) {
 }
 
 // Journal de dégustation : { d: 'AAAA-MM-JJ', n: note de 1 à 5 étoiles, c: commentaire }.
+function toEstim(v) {
+  const min = Number(v && v.min), max = Number(v && v.max);
+  if (!v || !(min > 0)) return null;
+  return { min, max: max >= min ? max : min, date: Number(v.date) || 0 };
+}
+
 function toTastings(v) {
   if (!Array.isArray(v)) return [];
   return v.filter(x => x && /^\d{4}-\d{2}-\d{2}$/.test(String(x.d)) && Number.isInteger(Number(x.n)) && Number(x.n) >= 1 && Number(x.n) <= 5)
@@ -223,6 +231,36 @@ export function status(w, year) {
 
 export const urgent = (w, year) => w.qty > 0 && !!w.to && w.to <= year + 1;
 export const drinkableNow = (w, year) => w.qty > 0 && !!(w.from || w.to) && (!w.from || w.from <= year) && (!w.to || w.to >= year);
+
+// Valeur estimée de la cave : somme des milieux de fourchette × bouteilles, sur les vins déjà estimés seulement.
+export function valeurEstimee(wines) {
+  let total = 0, couverts = 0, bouteilles = 0;
+  for (const w of wines) {
+    if (!(w.qty > 0)) continue;
+    bouteilles += w.qty;
+    if (w.estim) { total += w.qty * (w.estim.min + w.estim.max) / 2; couverts += w.qty; }
+  }
+  return { total: Math.round(total), couverts, bouteilles };
+}
+
+const PLURIEL = { Rouge: 'rouges', Blanc: 'blancs', 'Rosé': 'rosés', 'Pétillant': 'pétillants' };
+// Lecture de l'équilibre à partir des chiffres de Magic (sans IA) : des constats simples, jamais un jugement caché.
+export function equilibre(c) {
+  const n = c.bouteilles;
+  if (!n) return '';
+  const part = k => { const r = c.couleurs.find(x => x[0] === k); return r ? r[1] / n : 0; };
+  const notes = [];
+  const dom = [...c.couleurs].sort((a, b) => b[1] - a[1])[0];
+  if (dom && dom[1] / n >= 0.75) notes.push(`très dominée par les ${PLURIEL[dom[0]] || dom[0].toLowerCase()}`);
+  if (part('Blanc') + part('Rosé') + part('Pétillant') < 0.15 && !(dom && dom[0] !== 'Rouge' && dom[1] / n >= 0.75)) notes.push('peu riche en blancs, rosés ou pétillants');
+  const reg = c.regions[0];
+  if (reg && reg[1] / n >= 0.6) notes.push(`concentrée sur ${reg[0]}`);
+  if (c.statuts.pret / n >= 0.5) notes.push('riche en vins prêts à boire');
+  if (c.statuts.garder / n >= 0.6) notes.push('surtout composée de vins à garder, peu prêts à boire');
+  if (c.statuts.urgence / n >= 0.2) notes.push('avec plusieurs bouteilles à boire vite');
+  if (!notes.length) return 'Votre cave paraît plutôt équilibrée.';
+  return 'Votre cave est ' + notes.join(', ') + '.';
+}
 
 export function stats(wines, year) {
   let bottles = 0, value = 0, soon = 0;

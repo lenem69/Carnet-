@@ -355,6 +355,26 @@ export async function pickForDish(dish, candidates, opts) {
   return items.filter(x => x && x.id != null).map(x => ({ id: String(x.id), why: String(x.why || '') }));
 }
 
+// Avis sur l'équilibre de la cave, à partir d'un résumé (pas de liste de vins). Sans recherche web.
+export async function avisCave(resume, opts = {}) {
+  const d = await callJson(`${EXPERT} Voici un résumé de ma cave (sans liste de vins) : ${JSON.stringify(resume)}. Dis en 3 phrases au maximum, en français, si elle est équilibrée (couleurs, régions, types de vins, moments de boire) et ce qui pourrait lui manquer. Ce sont des impressions, pas des faits vérifiés. Réponds uniquement par {"avis":"…"}.`, { ...opts });
+  if (!d || typeof d !== 'object' || typeof d.avis !== 'string' || !d.avis.trim()) throw { code: 'invalid_json' };
+  return d.avis.trim().slice(0, 600);
+}
+
+// Valeur indicative : fourchette de prix d'une bouteille de 75 cl par vin, sans recherche web, par lot.
+export async function estimeValeur(list, opts = {}) {
+  const d = await callJson(`${EXPERT} Pour chaque vin de la liste, donne une fourchette indicative du prix de marché en euros d'une bouteille de 75 cl (min et max), à partir de tes connaissances, sans recherche. Si tu ne connais pas la cuvée, donne une fourchette large et prudente. Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region })))}. Réponds uniquement par {"items":[{"id":"…","min":0,"max":0}]} avec une entrée par vin.`, opts);
+  const items = Array.isArray(d) ? d : d && Array.isArray(d.items) ? d.items : null;
+  if (!items) throw { code: 'invalid_json' };
+  const out = new Map();
+  for (const x of items) {
+    const min = Number(x && x.min), max = Number(x && x.max);
+    if (x && x.id != null && min > 0) out.set(String(x.id), { min, max: max >= min ? max : min, date: Date.now() });
+  }
+  return out;
+}
+
 export async function testKey(opts) {
   const d = await callJson('Réponds uniquement par l’objet JSON {"ok":true}.', opts);
   return !!(d && d.ok);

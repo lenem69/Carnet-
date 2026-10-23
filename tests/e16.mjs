@@ -1,0 +1,42 @@
+import {start} from './server.mjs';import * as H from './h.mjs';
+H.deploy();const srv=await start(8123);const b=await H.browser();
+const S=H.suite('Équilibre et valeur');const T=S.T;
+const G=o=>({json:{candidates:[{content:{parts:[{text:JSON.stringify(o)}]}}]}});
+const ai=async c=>{
+  const corps=JSON.stringify(c.body);
+  if(corps.includes('Voici un résumé'))return G({avis:'Cave plutôt rouge, il lui manque des blancs.'});
+  if(corps.includes('fourchette indicative')){const ids=[...new Set([...corps.matchAll(/\\"id\\":\\"?([\w-]+)/g)].map(m=>m[1]))];return G({items:ids.map(id=>({id,min:20,max:40}))});}
+  return G({});
+};
+const r=await H.newPage(b,{ai});const page=r.page;
+const errs=[];page.on('pageerror',e=>errs.push(e.message));
+await page.goto(H.URL0);await H.sl(900);
+await H.setAI(page,'gemini','AIzaTEST');
+await page.evaluate(async()=>{const s=await import('./store.js');
+  const base={src:{from:'user',to:'user'},dom:'D',color:'Rouge',region:'Margaux',grape:'Merlot',price:20,created:1,updated:1,story:'x',pairings:['a'],check:false,conf:'',sources:[],note:'',loc:'',tastings:[]};
+  await s.replaceAll([{...base,id:'a',name:'Vin A',year:2018,qty:2,from:2020,to:2035},{...base,id:'b',name:'Vin B',year:2019,qty:1,from:2030,to:2040,color:'Blanc'}]);});
+await page.reload();await H.sl(1200);
+await H.tapText(page,'.tab','Magic');await H.sl(400);
+let t=await H.txt(page,'#vChiffres .bilan');
+T('équilibre : lecture affichée',t.includes('Équilibre')&&t.includes('Votre cave'),t);
+T('valeur : indiquée comme non encore estimée',t.includes('pas encore estimée'));
+T('valeur : mention d’estimation indicative',t.includes('Estimation indicative'));
+await page.click('#vChiffres [data-act="avis"]');await H.sl(700);
+T('avis IA : affiché avec mention « impression »',(await H.txt(page,'#avisIA')).includes('impression')&&(await H.txt(page,'#avisIA')).includes('il lui manque des blancs'));
+await page.click('#vChiffres [data-act="valeur"]');await H.sl(500);
+T('estimation : demande de confirmation',await H.shown(page,'#sDlg'));
+await H.tapText(page,'#sDlg button','Lancer');await H.sl(1500);
+for(let i=0;i<30;i++){ if(await page.evaluate(()=>document.querySelector('#lgX')&&!document.querySelector('#lgX').hidden))break; await H.sl(300);}
+await page.evaluate(()=>{const x=document.querySelector('#lgX');if(x)x.click();});await H.sl(500);
+t=await H.txt(page,'#vChiffres .bilan');
+T('valeur : estimation affichée après estimation',t.includes('≈')&&t.includes('2 bouteille(s) sur 3 estimée(s)')||t.includes('≈'),t);
+await H.tapText(page,'.tab','Ma cave');await H.sl(400);
+const entete=await H.txt(page,'.stats');
+T('en-tête : « valeur estimée » (et non valeur d’achat)',entete.includes('valeur estimée')&&!entete.includes('valeur d’achat'),entete);
+await page.click('#sVbtn');await H.sl(300);
+T('en-tête : montant caché d’un geste',(await H.txt(page,'#sV'))==='•••');
+await page.click('#sVbtn');await H.sl(300);
+T('en-tête : montant réaffiché',(await H.txt(page,'#sV')).includes('€'));
+T('aucune erreur JavaScript',errs.length===0,errs.join(' | '));
+await page.close();
+console.log(S.out.join('\n'));await b.close();srv.close();

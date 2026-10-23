@@ -214,10 +214,15 @@ async function saveTasting() {
   else { S.wines[idx] = w; render(); }
 }
 
+// Valeur estimée (indicative) affichée dans l'en-tête ; l'utilisateur peut la cacher d'un geste (préférence gardée sur ce téléphone).
+const valeurCachee = () => { try { return localStorage.getItem('cave-cacher-valeur') === '1'; } catch (e) { return false; } };
 function renderStats() {
   const s = L.stats(S.wines, YEAR);
+  const v = L.valeurEstimee(S.wines);
+  const cache = valeurCachee();
   $('#sB').textContent = s.bottles.toLocaleString('fr-FR');
-  $('#sV').textContent = fmtEur(s.value);
+  $('#sV').textContent = cache ? '•••' : v.couverts ? '≈ ' + fmtEur(v.total) : 'à estimer';
+  $('#sVbtn').setAttribute('aria-pressed', String(cache));
   $('#sD').textContent = s.soon.toLocaleString('fr-FR');
 }
 
@@ -335,6 +340,20 @@ function donut(rows, total, nom) {
   return `<div class="donut"><svg viewBox="0 0 42 42" role="img" aria-label="${esc(nom)} : ${total} bouteilles">${arcs}<text x="21" y="20" class="dc">${total}</text><text x="21" y="26" class="dl">bouteilles</text></svg><ul class="legende">${legende}</ul></div>`;
 }
 const pct = (n, total) => (total ? Math.round((n / total) * 100) : 0);
+// Équilibre (lecture des chiffres, sans IA) et valeur estimée (indicative). Les deux boutons IA sont optionnels.
+function bilanHtml(c) {
+  const v = L.valeurEstimee(S.wines);
+  const reste = v.bouteilles - v.couverts;
+  return `<div class="bilan">
+    <p><b>Équilibre</b> ${esc(L.equilibre(c))}</p>
+    <p id="avisIA" class="mu small"></p>
+    <button class="lnk" data-act="avis" type="button">Avis de l’IA sur l’équilibre</button>
+    <p><b>Valeur estimée</b> ${v.couverts ? `≈ ${fmtEur(v.total)}` : 'pas encore estimée'}</p>
+    <p class="mu small">${v.couverts ? `${v.couverts} bouteille(s) sur ${v.bouteilles} estimée(s). ` : ''}Estimation indicative : peu de prix d’achat sont saisis, donc elle repose sur les connaissances de l’IA, sans vérification.</p>
+    ${reste ? `<button class="lnk" data-act="valeur" type="button">Estimer la valeur (IA)</button>` : ''}
+  </div>`;
+}
+
 function renderChiffres() {
   const c = chiffres(S.wines, YEAR);
   const bars = (rows, total, sub) => rows.map(([k, n, s]) => `<div class="bar"><span>${esc(k)}${sub && s ? ` <small class="mu">${esc(s)}</small>` : ''}</span><i style="width:${total ? Math.max(4, Math.round(n / total * 100)) : 0}%"></i><b>${n}</b></div>`).join('') || '<p class="mu small">Rien à afficher.</p>';
@@ -351,6 +370,7 @@ function renderChiffres() {
     </div>
     <p class="mu small">Touchez une case pour voir les vins concernés.</p>
     ${st.sans ? `<p class="mu small">${st.sans} bouteille(s) sans période de garde, non classées.</p>` : ''}
+    ${bilanHtml(c)}
     <h3 class="ch">Couleurs</h3>${donut(c.couleurs, c.bouteilles, 'Couleurs')}
     <h3 class="ch">Régions</h3>${donut(c.regions, c.bouteilles, 'Régions')}
     <h3 class="ch">Cépages</h3>${bars(c.cepages, c.bouteilles)}
@@ -619,6 +639,51 @@ async function scanFiles(files) {
 }
 
 /* ============ Fiches par lots ============ */
+async function avisCaveIA() {
+  if (!requireAI()) return;
+  const out = $('#avisIA');
+  out.textContent = 'Lecture de la cave…';
+  try {
+    const c = chiffres(S.wines, YEAR);
+    const resume = { bouteilles: c.bouteilles, references: c.references, couleurs: c.couleurs, regions: c.regions.slice(0, 5), cepages: c.cepages.slice(0, 5), statuts: c.statuts, lecture: L.equilibre(c) };
+    const avis = await AI.avisCave(resume);
+    out.textContent = 'Avis de l’IA (impression, sans vérification) : ' + avis;
+  } catch (e) { out.textContent = ''; errToast(AI.errText(e)); }
+}
+
+// Valeur : seulement les vins pas encore estimés, par lots de 10 (sans recherche web).
+async function valeurCaveIA() {
+  const todo = S.wines.filter(w => w.qty > 0 && !w.estim);
+  if (!todo.length) { toast('Toutes les bouteilles sont déjà estimées.'); return; }
+  if (!requireAI()) return;
+  const calls = Math.ceil(todo.length / 10);
+  const c = await ask('Estimer la valeur', `${todo.length} vin(s) à estimer, soit environ ${calls} appel(s) à l’IA. Ce sont des fourchettes indicatives, sans vérification sur le web.`, [
+    { label: 'Lancer', value: 'go' }, { label: 'Annuler', value: null, kind: 'o' }]);
+  if (c !== 'go') return;
+  const groups = []; for (let i = 0; i < todo.length; i += 10) groups.push(todo.slice(i, i + 10));
+  const log = openLog('Estimation de la valeur…', groups.map(g => g.map(w => w.name).join(', ').slice(0, 60)), 'Les estimations sont enregistrées au fur et à mesure.');
+  let done = 0;
+  for (let i = 0; i < groups.length; i++) {
+    if (log.stopped) { for (let j = i; j < groups.length; j++) log.set(j, 'skip', 'Non traité (arrêté)'); break; }
+    log.set(i, 'run', 'Estimation…');
+    try {
+      const res = await AI.estimeValeur(groups[i], { signal: log.signal });
+      const changed = [];
+      for (const w of groups[i]) { const e = res.get(String(w.id)); if (e) { const cp = JSON.parse(JSON.stringify(w)); cp.estim = e; changed.push(cp); } }
+      const ok = !changed.length || await persist(() => store.putWines(changed));
+      if (ok) changed.forEach(cp => remplace(S.wines.find(x => x.id === cp.id), cp));
+      done += changed.length;
+      log.set(i, ok ? 'ok' : 'err', ok ? `${changed.length} estimation(s)` : 'Non enregistré (mémoire pleine)');
+      render();
+    } catch (e) {
+      if (e && e.name === 'AbortError') { log.set(i, 'skip', 'Arrêté'); continue; }
+      log.set(i, 'err', AI.errText(e));
+      if (e && ['rate_limited', 'bad_key', 'no_key', 'bad_model', 'network'].includes(e.code)) { for (let j = i + 1; j < groups.length; j++) log.set(j, 'skip', 'Non traité'); break; }
+    }
+  }
+  log.finish(`Terminé : ${done} bouteille(s) estimée(s). Relancez plus tard pour les autres.`);
+}
+
 async function enrichAll() {
   const todo = S.wines.filter(w => !w.aiPass);
   if (!todo.length) { toast('Toutes les fiches ont déjà été mises à jour par l’IA.'); return; }
@@ -947,12 +1012,16 @@ function bind() {
   });
 
   $$('.tab').forEach(b => { b.onclick = () => { S.tab = b.dataset.t; if (S.tab === 'boire') Stats.track('quoiboire'); render(); }; });
+  $('#sVbtn').onclick = () => { let cache = valeurCachee(); try { localStorage.setItem('cave-cacher-valeur', cache ? '0' : '1'); } catch (e) { /* stockage bloqué : le geste n'est pas gardé */ } renderStats(); };
   $('#chips').onclick = e => {
     if (e.target.closest('[data-stat]')) { S.statut = null; S.limit = PAGE; renderList(); return; }
     const b = e.target.closest('[data-c]'); if (b) { S.filt = b.dataset.c; S.statut = null; S.limit = PAGE; renderList(); }
   };
   // Magic : toucher une case ouvre la liste des vins concernés.
   $('#vChiffres').onclick = e => {
+    const a = e.target.closest('[data-act]');
+    if (a && a.dataset.act === 'avis') { avisCaveIA(); return; }
+    if (a && a.dataset.act === 'valeur') { valeurCaveIA(); return; }
     const b = e.target.closest('[data-goto]'); if (!b) return;
     S.statut = b.dataset.goto; S.tab = 'cave'; S.filt = 'Tous'; S.q = ''; $('#q').value = ''; S.limit = PAGE;
     render(); window.scrollTo(0, 0);
