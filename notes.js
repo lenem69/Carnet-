@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.12.3': ['Import Excel : la colonne « Nombre de bouteilles » reste la quantité ; « Appellation » est lue comme appellation ; le format (1,5 L…) et « Effervescent » sont pris en compte. Les fiches mal importées sont réparées automatiquement.'],
   '1.12.2': ['Import : « 2 bouteilles de… » dans le nom devient une quantité de 2 (et le nom est nettoyé). Vos fiches existantes sont corrigées automatiquement.'],
   '1.12.1': ['Ouvrir le lien depuis le navigateur affiche d’abord comment installer l’appli, avec un bouton « Continuer sans installer ».'],
   '1.12.0': ['Installation simplifiée : bouton « Installer » sur Android, pas-à-pas animé sur iPhone.', 'Clé Gemini : bouton « Obtenir ma clé gratuite » ; modèle et adresse repliés dans « Options avancées ».', 'Bouton « Signaler un problème » en bas de page.'],

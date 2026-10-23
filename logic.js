@@ -2,7 +2,7 @@
 import { norm, num, price, uid } from './util.js';
 
 export const COLORS = ['Rouge', 'Blanc', 'Rosé', 'Pétillant', 'Autre'];
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export function normColor(v) {
   const s = norm(v);
@@ -42,12 +42,18 @@ export function normalizeWine(raw) {
   const q0 = num(raw.qty);
   const sq = str(raw.name) ? splitQty(name, q0 === '' ? 1 : q0) : { name, qty: q0 };
   name = sq.name;
-  const q = sq.qty;
+  let q = sq.qty;
+  let dom = str(raw.dom);
+  // Ancien import : la colonne « Nombre de bouteilles » avait été lue comme nom (« 0 », « 1 »). Le nombre redevient la quantité, le domaine le nom.
+  if (/^\d{1,3}$/.test(name) && dom) {
+    if (q === 1 || q === '') q = parseInt(name, 10);
+    name = dom; dom = '';
+  }
   const now = Date.now();
   return {
     id: str(raw.id) || uid(),
     name,
-    dom: str(raw.dom),
+    dom,
     year: num(raw.year),
     color: COLORS.includes(raw.color) ? raw.color : normColor(raw.color),
     region: str(raw.region),

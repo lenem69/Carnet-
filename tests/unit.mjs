@@ -128,6 +128,21 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   T('quantité dans le nom : seulement « 2 bouteilles » → inchangé', L.splitQty('2 bouteilles',1).name==='2 bouteilles');
   T('normalisation : fiche importée avec 2 bouteilles dans le nom', L.normalizeWine({name:'2 bouteilles de blanc etc',qty:1,color:'Blanc'}).qty===2);
 }
+// Tableau type « Inventaire vins » (colonnes Région / Appellation / Nombre de bouteille(s))
+{
+  const I = await import('../importer.js');
+  const hd=['Pays','Région','Couleur','Effervescent','Appellation','Domaine','Millésime','Format','Nombre de bouteille(s)','Commentaires','Actions'];
+  const m=I.mapHeaders(hd);
+  T('import : « Nombre de bouteille(s) » = quantité (pas le nom)', m['Nombre de bouteille(s)']==='qty' && !Object.values(m).includes('name'), JSON.stringify(m));
+  T('import : « Appellation » = appellation, « Région » ignorée', m['Appellation']==='region' && !m['Région'], JSON.stringify(m));
+  const r=I.rowsToWines([{'Pays':'France','Région':'Beaujolais','Couleur':'Rouge','Effervescent':'Non','Appellation':'Morgon','Domaine':'Lapierre','Millésime':2023,'Format':'75cl','Nombre de bouteille(s)':2,'Commentaires':'Cadeau','Actions':''},{'Pays':'France','Région':'Alsace','Couleur':'Blanc','Effervescent':'Oui','Appellation':'Crémant','Domaine':'Foo','Millésime':'inconnu','Format':'1,5L','Nombre de bouteille(s)':1,'Commentaires':'','Actions':''}],[],'sum').added;
+  T('import : quantité 2 et appellation Morgon', r[0].qty===2 && r[0].region==='Morgon' && r[0].name==='Lapierre', JSON.stringify(r[0]));
+  T('import : effervescent → Pétillant, format 1,5 L au nom, année vide', r[1].color==='Pétillant' && r[1].name.includes('1,5L') && r[1].year==='', JSON.stringify(r[1]));
+  const f=L.normalizeWine({name:'0',dom:'La Grange Tiphaine',year:2022,color:'Blanc',qty:1});
+  T('réparation : ancien titre « 0 » → quantité 0 et nom = domaine', f.qty===0 && f.name==='La Grange Tiphaine' && f.dom==='', JSON.stringify(f));
+  const g=L.normalizeWine({name:'1',dom:'Benoît Courault',year:2021,color:'Rouge',qty:1});
+  T('réparation : « 1 » → quantité 1, nom = domaine', g.qty===1 && g.name==='Benoît Courault', JSON.stringify(g));
+}
 console.log(out.join('\n'));
 const mw=L.normalizeWine({name:'Chassagne-Montrachet',dom:'Paul Jouard',year:2012,loc:'Casier B'});
 console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz',false],['',true]].map(([q,e])=>(L.matchesQuery(mw,q)===e?'PASS':'FAIL')+' recherche « '+q+' »').join('\n'));

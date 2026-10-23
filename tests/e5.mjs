@@ -9,7 +9,7 @@ await page.goto(H.URL0);await H.sl(1500);
 T('migration : ancienne fiche normalisée',(await H.txt(page,'#list')).includes('Ancien')&&(await H.txt(page,'#sB'))==='2'&&(await H.txt(page,'#list')).includes('Rouge'));
 T('migration : fiche sans nom écartée sans plantage',(await page.$$('#list .w')).length===1);
 const meta=await page.evaluate(()=>new Promise(res=>{const r=indexedDB.open('cave-a-vin',1);r.onsuccess=()=>{const g=r.result.transaction('meta').objectStore('meta').get('schema');g.onsuccess=()=>res(g.result)}}));
-T('migration : version de schéma enregistrée',meta===5,String(meta));
+T('migration : version de schéma enregistrée',meta===6,String(meta));
 T('aucune erreur (migration)',errs.length===0,errs.join('|'));
 await page.close();
 // 2. stockage refusé (navigation privée stricte) : mode secours + avertissement

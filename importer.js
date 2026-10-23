@@ -5,12 +5,14 @@ import { normalizeWine, keyOf } from './logic.js';
 // L'ordre compte : chaque colonne prend le premier champ qui lui correspond et qui n'est pas déjà pris.
 export const FIELDS = [
   ['dom', /domaine|producteur|chateau|proprietaire|proprio|maison/],
-  ['name', /^nom|cuvee|^vin$|^vin |name|wine|libelle|designation/],
+  ['name', /^nom( |$)|cuvee|^vin$|^vin |name|wine|libelle|designation/],
   ['year', /millesime|annee|year|vintage/],
   ['color', /couleur|type|color/],
-  ['region', /region|appellation|aoc|aop/],
+  ['region', /appellation|aoc|aop|region/],
   ['grape', /cepage|grape/],
   ['qty', /quant|qte|^nb|nombre|stock|bouteilles/],
+  ['effervescent', /effervescent|bulle|petillant/],
+  ['format', /^format|contenance|taille/],
   ['price', /prix|price|cout/],
   ['loc', /empl|casier|^loc|rang|rangement/],
   ['from', /debut|partir|^from|apogee debut/],
@@ -23,9 +25,12 @@ export const FIELDS = [
 
 export function mapHeaders(headers) {
   const map = {}; const used = new Set();
+  // Si une colonne « Appellation » existe, « Région » (Alsace, Beaujolais…) est une zone géographique : elle n'est pas lue.
+  const avecAppellation = headers.some(h => /appellation|aoc|aop/.test(norm(h)));
   for (const h of headers) {
     const n = norm(h);
     if (!n) continue;
+    if (avecAppellation && /region/.test(n) && !/appellation/.test(n)) continue;
     for (const [f, re] of FIELDS) {
       if (!used.has(f) && re.test(n)) { map[h] = f; used.add(f); break; }
     }
@@ -50,6 +55,10 @@ export function rowsToWines(rows, existing, mode = 'sum') {
     for (const h in map) { const v = r[h]; if (v !== '' && v !== null && v !== undefined) raw[map[h]] = v; }
     if (!raw.name && !raw.dom) { if (Object.values(r).some(v => String(v ?? '').trim())) skipped++; continue; }
     raw.check = DOUBT.test(norm(raw.check || ''));
+    // Effervescent « Oui » : la couleur devient Pétillant. Format différent de 75 cl : ajouté au nom.
+    if (/^oui|^yes|^vrai|^x$/.test(norm(raw.effervescent || ''))) raw.color = 'Pétillant';
+    const fmt = String(raw.format || '').trim();
+    if (fmt && norm(fmt).replace(/\s/g, '') !== '75cl' && (raw.name || raw.dom)) raw.name = `${raw.name || raw.dom} (${fmt})`;
     if (raw.qty !== undefined && num(raw.qty) === '') raw.qty = 1;
     const w = normalizeWine(raw);
     if (!w) { skipped++; continue; }
