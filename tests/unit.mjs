@@ -89,7 +89,7 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   const ws2=[L.normalizeWine({name:'E',region:'Saint-Joseph',grape:'Syrah',color:'Rouge',year:2020,qty:1,from:2030,to:2040}),L.normalizeWine({name:'F',region:'Vin inconnu',grape:'100% Syrah',color:'Rouge',year:2020,qty:1,from:2024,to:2040})];
   const c2=chiffres(ws2,2026,20);
   T('chiffres : Saint-Joseph classé en Vallée du Rhône, à garder',c2.regions.some(x=>x[0]==='Vallée du Rhône')&&c2.statuts.garder===1,JSON.stringify([c2.regions,c2.statuts]));
-  T('chiffres : appellation inconnue → Hors référentiel',c2.regions.some(x=>x[0]==='Hors référentiel'&&x[1]===1),JSON.stringify(c2.regions));
+  T('chiffres : appellation inconnue → Vin de France',c2.regions.some(x=>x[0]==='Vin de France'&&x[1]===1),JSON.stringify(c2.regions));
   T('chiffres : « 100% Syrah » et « Syrah » fusionnés',c2.cepages.length===1&&c2.cepages[0][0]==='Syrah'&&c2.cepages[0][1]===2,JSON.stringify(c2.cepages));
   T('cépage : variantes (Shiraz, Cab. Sauvignon, espaces, casse)',['Shiraz','100 % shiraz','SYRAH.'].every(v=>C.cepage(v).label==='Syrah')&&C.cepage('Cab. Sauvignon').label==='Cabernet sauvignon'&&C.cepage('  ')===null,JSON.stringify([C.cepage('Shiraz'),C.cepage('Cab. Sauvignon')]));
 }
@@ -143,6 +143,19 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   const g=L.normalizeWine({name:'1',dom:'Benoît Courault',year:2021,color:'Rouge',qty:1});
   T('réparation : « 1 » → quantité 1, nom = domaine', g.qty===1 && g.name==='Benoît Courault', JSON.stringify(g));
 }
+// Reconnaissance souple des appellations (Magic)
+{
+  const C = await import('../chiffres.js');
+  T('appellations : « Volnay 1er cru » reconnue comme Volnay (Bourgogne)', C.reconnaitre('Volnay 1er cru')?.[2]==='Bourgogne', JSON.stringify(C.reconnaitre('Volnay 1er cru')));
+  T('appellations : « Haut-Médoc Grand cru classé » reconnue (Bordeaux)', C.reconnaitre('Haut-Médoc Grand cru classé')?.[2]==='Bordeaux');
+  T('appellations : « Côte du Rhône » (singulier) reconnue (Vallée du Rhône)', C.reconnaitre('Côte du Rhône')?.[2]==='Vallée du Rhône', JSON.stringify(C.reconnaitre('Côte du Rhône')));
+  T('appellations : « Vin de France » non reconnue → Vin de France', C.reconnaitre('Vin de France')===null && C.chiffres([{qty:1,region:'Vin de France',color:'Rouge',grape:'',name:'x'}],2026).regions[0][0]==='Vin de France');
+  T('appellations : « Alsance Grand Cru » (faute) → Alsace', C.reconnaitre('Alsance Grand Cru')?.[2]==='Grand Est'||C.reconnaitre('Alsance Grand Cru')?.[2]==='Alsace'||C.reconnaitre('Alsance Grand Cru')?.[2]==='Alsace', JSON.stringify(C.reconnaitre('Alsance Grand Cru')));
+  T('appellations : « Mâcon Pierreclos » (début de nom) → Bourgogne', C.reconnaitre('Mâcon Pierreclos')?.[2]==='Bourgogne', JSON.stringify(C.reconnaitre('Mâcon Pierreclos')));
+  T('appellations : « Hautes-côtes de Beaune - vieilles vigens » → Bourgogne', C.reconnaitre('Hautes-côtes de Beaune - vieilles vigens')?.[2]==='Bourgogne');
+  T('vins étrangers : Riesling, Tokaji → Étranger', C.chiffres([{qty:1,region:'Riesling',color:'Blanc',grape:'',name:'a'},{qty:1,region:'Tokaji',color:'Blanc',grape:'',name:'b'}],2026).regions.some(x=>x[0]==='Étranger'&&x[1]===2));
+}
+{ const C = await import('../chiffres.js'); T('repérage : « Pays d’Hérault » → Languedoc-Roussillon, « Vin des Allobroges » → Savoie', C.chiffres([{qty:1,region:"Pays d’Hérault",color:'Rouge',grape:'',name:'a'},{qty:1,region:'Vin des Allobroges',color:'Rouge',grape:'',name:'b'}],2026).regions.map(x=>x[0]).sort().join('|')==='Languedoc-Roussillon|Sud-Ouest, Jura, Savoie'); }
 console.log(out.join('\n'));
 const mw=L.normalizeWine({name:'Chassagne-Montrachet',dom:'Paul Jouard',year:2012,loc:'Casier B'});
 console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz',false],['',true]].map(([q,e])=>(L.matchesQuery(mw,q)===e?'PASS':'FAIL')+' recherche « '+q+' »').join('\n'));

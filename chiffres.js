@@ -3,7 +3,62 @@
 import { COLORS, urgent } from './logic.js';
 import { TAXONOMIE } from './taxonomie.js';
 
-export const HORS_REFERENTIEL = 'Hors référentiel';
+export const HORS_REFERENTIEL = 'Vin de France';
+export const ETRANGER = 'Étranger';
+// Vins étrangers reconnus à leur nom, pays ou cépage typique (le fichier ne donne pas toujours le pays).
+const ETRANGERS = /\b(italie|italia|espagne|hongrie|hongroise|tcheque|moravsk\w*|slovaquie|chili|argentine|afrique du sud|australie|etats unis|usa|allemagne|autriche|portugal|nouvelle zelande|grece|georgie|liban|suisse|roumanie|slovenie|croatie|moldavie|bresil|uruguay|canada|japon|chine|inde|maroc|israel|bulgarie|serbie|mexique|bolivie|perou|riesling|tokaj\w*|valpolicell\w*|chianti|brunello|barolo|barbaresco|rioja|ribera|priorat|douro|rias baixas|rheingau|mosel|pfalz|vino|docg?|sekt|tempranillo|sangiovese|nebbiolo|malbec|carmenere|pinot grigio|prosecco|lambrusco|verdejo|albarino|gruner|zweigelt|furmint|xinomavro|assyrtiko|touriga|mencia|garnacha|kadarka|bull s blood)\b/;
+export const estEtranger = region => ETRANGERS.test(plain(region).replace(/[-']/g, ' '));
+// Repérage par nom de région quand l'appellation n'est pas reconnue (IGP, mentions régionales).
+const REPERES = [
+  [/\b(herault|languedoc|gard|bellegarde|pezenas|corbieres|minervois|roussillon|fitou|pic saint loup)\b/, 'Languedoc-Roussillon'],
+  [/\b(allobroges|savoie|bugey|jura|seyssel|chignin|arbois|cerdon)\b/, 'Sud-Ouest, Jura, Savoie'],
+  [/\b(bergerac|cahors|gaillac|madiran|jurancon|marcillac|tursan|bearn|monbazillac)\b/, 'Sud-Ouest, Jura, Savoie'],
+  [/\b(loire|touraine|anjou|saumur|muscadet|sancerre|chinon|vouvray|layon|savennieres)\b/, 'Vallée de la Loire'],
+];
+export const reperage = region => { const p = plain(region); const r = REPERES.find(([re]) => re.test(p)); return r ? r[1] : null; };
+// Mentions courantes qui ne changent pas l'appellation (« Volnay 1er cru » = « Volnay »).
+const MENTIONS = [/\b(aop|aoc|igp)\b/g, /\b(premier|1er|1 er) cru\b/g, /\bgrand cru( classe)?\b/g, /\bvieilles? vig\w*/g, /\bhaute cuvee\b/g];
+const cleanKey = s => { let t = plain(s).replace(/\bcote du\b/g, 'cotes du'); for (const re of MENTIONS) t = t.replace(re, ' '); return t.replace(/[^a-z0-9]/g, ''); };
+// Appellation reconnue : exacte d'abord, puis après retrait des mentions (1er cru, Grand cru, AOP…).
+let _noms = null;
+// Noms de référence sans mentions, pour les recherches souples.
+function noms() {
+  if (!_noms) _noms = Object.entries(TAXONOMIE).map(([k, v]) => [cleanKey(v[0]) || k, v]).filter(([c]) => c);
+  return _noms;
+}
+function distance(a, b) {
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
+// Appellation reconnue, même écrite avec des fautes ou avec une précision en plus.
+// Ordre : exacte, sans mentions, début de nom (« Mâcon Pierreclos »), nom contenu (« Hautes-Côtes de Beaune »), faute de frappe.
+export function reconnaitre(region) {
+  const exact = TAXONOMIE[keyOf(region)];
+  if (exact) return exact;
+  const c = cleanKey(region);
+  if (!c) return null;
+  const exactC = TAXONOMIE[c];
+  if (exactC) return exactC;
+  const liste = noms();
+  let best = null;
+  for (const [n, v] of liste) if (n.length >= 4 && c.startsWith(n) && (!best || n.length > best[0].length)) best = [n, v];
+  if (best) return best[1];
+  // Rapprochement approximatif seulement pour un nom non étranger (« Riesling » ne doit pas devenir Alsace).
+  if (estEtranger(region)) return null;
+  if (c.length >= 8) {
+    for (const [n, v] of liste) if (n.length >= c.length && n.includes(c) && (!best || n.length < best[0].length)) best = [n, v];
+    if (best) return best[1];
+  }
+  const seuil = c.length < 8 ? 1 : 2;
+  let fuzzy = null;
+  for (const [n, v] of liste) { const d = distance(c, n); if (d <= seuil && (!fuzzy || d < fuzzy.d)) fuzzy = { d, v }; }
+  return fuzzy ? fuzzy.v : null;
+}
 const SANS_APPELLATION = 'Sans appellation';
 const SYN = { shiraz: 'syrah', cabsauvignon: 'cabernet sauvignon', cabsauv: 'cabernet sauvignon', cabernetsauv: 'cabernet sauvignon', cabfranc: 'cabernet franc', gamaynoir: 'gamay', grenachenoir: 'grenache', pinotnoir: 'pinot noir' };
 const plain = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -38,8 +93,8 @@ export function chiffres(wines, year, horizon = 20) {
   let valeur = 0, sansPrix = 0, sansFenetre = 0;
   for (const w of stock) {
     bump(couleur, w.color || 'Autre', w.qty);
-    const t = TAXONOMIE[keyOf(w.region)];
-    const macro = t ? t[2] : HORS_REFERENTIEL;
+    const t = reconnaitre(w.region);
+    const macro = t ? t[2] : (reperage(w.region) || (estEtranger(w.region) ? ETRANGER : HORS_REFERENTIEL));
     const app = t ? t[0] : (String(w.region || '').trim() || SANS_APPELLATION);
     bump(region, macro, w.qty);
     bump(appellation, app, w.qty);
