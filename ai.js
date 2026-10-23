@@ -93,6 +93,8 @@ export function syncCfg() {
 }
 export const ready = () => configured().length > 0;
 export const limiteAtteinte = () => gratuitBloque();
+// L’avis de Magic se prépare tout seul à chaque changement : il ne consomme jamais la clé gratuite, seulement une clé personnelle.
+export const avisPossible = () => configured().some(p => p !== 'gemini' || !!getConfig('gemini').key);
 
 // Fournisseurs mis de côté un moment (crédits épuisés, clé refusée…), pour ne pas les réessayer à chaque demande.
 function cooled() {

@@ -61,6 +61,17 @@ T('limite atteinte : aucun appel',calls.slice(n1).length===0,calls.slice(n1).len
 const titre=await page.evaluate(()=>document.querySelector('#dlgT')?.textContent||'');
 T('limite atteinte : fenêtre « Limite du jour atteinte »',titre.includes('Limite du jour atteinte'),titre);
 
+// L'avis de Magic ne consomme jamais la clé gratuite : aucun appel d'avis sans clé personnelle.
+await page.evaluate(async()=>{localStorage.removeItem('cave-ai');const s=await import('./store.js');await s.setMeta('gratuit',{jour:new Date().toISOString().slice(0,10),vins:0});
+  await s.replaceAll([{id:'r',name:'Vin R',year:2016,qty:1,from:2020,to:2035,src:{from:'user',to:'user'},dom:'D',color:'Rouge',region:'M',grape:'x',price:20,created:1,updated:1,story:'x',pairings:['a'],check:false,conf:'',sources:[],note:'',loc:'',tastings:[],aiPass:1,estim:{min:1,max:2,date:1}}]);});
+const na=calls.filter(c=>JSON.stringify(c.body).includes('Voici un résumé')).length;
+await page.reload();await H.sl(5000);
+const nb=calls.filter(c=>JSON.stringify(c.body).includes('Voici un résumé')).length;
+T('clé gratuite : aucun avis généré pour Magic',nb===na,nb-na);
+await H.tapText(page,'.tab','Magic');await H.sl(500);
+const mt=await page.evaluate(()=>document.querySelector('#vChiffres')?.innerText||'');
+T('Magic : indique que l’avis demande une clé personnelle',/propre clé/.test(mt),mt.slice(0,200));
+
 // Désactivée : aucune clé gratuite, comportement d’avant.
 await page.evaluate(()=>localStorage.setItem('cave-gratuit','off'));
 await page.reload();await H.sl(1200);

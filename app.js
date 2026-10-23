@@ -433,7 +433,7 @@ function bilanHtml(c) {
   if (avisEnCours && !court) avisHtml = '<span class="mu">Lecture de la cave…</span>';
   else if (court) avisHtml = `${esc(court)}${complet ? `<details class="avis-complet"><summary>Avis complet</summary><p>${esc(complet)}</p></details>` : ''}<span class="mu small">Avis du ${new Date(avisMem.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} · impression, sans vérification${avisEnCours ? ' · mise à jour en cours' : ''}${avisMem.erreur ? ' · mise à jour impossible : ' + esc(avisMem.erreur) : ''}</span>`;
   else if (avisMem && avisMem.erreur) avisHtml = `<span class="mu">Pas encore d’avis : ${esc(avisMem.erreur)}</span>`;
-  else avisHtml = `<span class="mu">${AI.ready() ? 'Avis en préparation…' : 'Avis disponible avec une IA configurée dans Réglages.'}</span>`;
+  else avisHtml = `<span class="mu">${AI.avisPossible() ? 'Avis en préparation…' : 'L’avis de l’IA demande votre propre clé, à ajouter dans ⚙ Réglages.'}</span>`;
   return `<div class="bilan">
     <p><b>${titre}</b></p>
     <div id="avisIA" class="small">${avisHtml}</div>
@@ -751,7 +751,7 @@ const cleCave = () => {
 };
 const renderSiMagic = () => { if (S.tab === 'chiffres') renderChiffres(); };
 function avisSiChange() {
-  if (!S.wines.length || !AI.ready()) return;
+  if (!S.wines.length || !AI.avisPossible()) return;
   const cle = cleCave();
   if (cle === avisCleVue) return;
   avisCleVue = cle;
@@ -759,7 +759,7 @@ function avisSiChange() {
   avisTimer = setTimeout(() => genererAvis(), 2500);
 }
 async function genererAvis() {
-  if (avisEnCours || !S.wines.length || !AI.ready()) return;
+  if (avisEnCours || !S.wines.length || !AI.avisPossible()) return;
   avisEnCours = true; renderSiMagic();
   const cle = cleCave();
   try {
