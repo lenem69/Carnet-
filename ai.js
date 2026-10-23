@@ -10,6 +10,10 @@ export const PROVIDERS = {
 };
 
 export const cfg = { retryDelay: 20000, retries: 2, timeout: 90000 };
+// Modèle par tâche, invisible pour l'utilisateur. La lecture d'étiquette prend le modèle le plus précis ;
+// les fiches en lot et les accords restent sur le modèle économique. Un modèle choisi à la main n'est jamais remplacé.
+const MODELE_TACHE = { label: { gemini: 'gemini-3.8-flash' } };
+const modelFor = (prov, task, model) => (model !== PROVIDERS[prov].model ? model : (MODELE_TACHE[task] && MODELE_TACHE[task][prov]) || model);
 
 const KEY = 'cave-ai';
 const COOL = 'cave-ai-cool';
@@ -237,6 +241,7 @@ export async function callJson(prompt, opts = {}) {
   for (let i = 0; i < list.length; i++) {
     const prov = list[i]; const last = i === list.length - 1;
     const s = { provider: prov, ...getConfig(prov) };
+    s.model = modelFor(prov, opts.task, s.model);
     try {
       const r = await callProvider(s, prompt, opts, last && !opts.noRetry ? cfg.retries : 0);
       uncool(prov); stat('ia_ok');
@@ -264,7 +269,7 @@ const EXPERT = 'Tu es un sommelier expert de 30 ans d’expérience, qui connaî
 
 export async function scanLabel(file, opts) {
   const blob = await shrinkImage(file);
-  const d = await callJson(`${EXPERT} L’image est la photo d’une étiquette de bouteille de vin. Lis l’étiquette et identifie le vin. N’invente jamais un nom : écris ce que tu lis. Réponds uniquement par un objet JSON de ce format : ${SCHEMA_LABEL}. Si l’image n’est pas une étiquette de vin lisible, réponds {"error":true}.`, { ...opts, images: [blob] });
+  const d = await callJson(`${EXPERT} L’image est la photo d’une étiquette de bouteille de vin. Lis l’étiquette et identifie le vin. N’invente jamais un nom : écris ce que tu lis. Réponds uniquement par un objet JSON de ce format : ${SCHEMA_LABEL}. Si l’image n’est pas une étiquette de vin lisible, réponds {"error":true}.`, { ...opts, images: [blob], task: 'label' });
   if (!d || typeof d !== 'object' || d.error || !(d.name || d.dom)) throw { code: 'not_label' };
   return { name: d.name || d.dom, dom: d.dom || '', year: d.year, color: normColor(d.color), region: d.region || '', grape: d.grape || '', lecture: String(d.lecture || '').toLowerCase().startsWith('haute') ? 'haute' : 'douteuse' };
 }
@@ -300,7 +305,7 @@ function ficheFrom(d) {
 // 10 vins par appel : 10 fois moins d'appels que vin par vin.
 export async function makeFiches(list, opts) {
   const year = new Date().getFullYear();
-  const d = await callJson(`${EXPERT} Pour chaque vin de la liste, complète : g=cépages, s=histoire de la cuvée et du millésime en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ${year}), p=4 accords mets courts, c="estimée". Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region })))}. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"c":"estimée"}]} avec une entrée par vin.`, opts);
+  const d = await callJson(`${EXPERT} Pour chaque vin de la liste, complète ou corrige si besoin : g=cépages, s=histoire de la cuvée et du millésime en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ${year}), p=4 accords mets courts, c="estimée". Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region })))}. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"c":"estimée"}]} avec une entrée par vin.`, opts);
   const items = Array.isArray(d) ? d : d && Array.isArray(d.items) ? d.items : null;
   if (!items) throw { code: 'invalid_json' };
   const out = new Map();

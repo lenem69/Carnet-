@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.16.0': ['Fiches : l’IA peut corriger les cépages, histoires, accords et gardes, sauf ce que vous avez saisi vous-même. Chaque vin est vérifié une fois, après son enregistrement.'],
   '1.15.0': ['Journal de dégustation : sur la fiche de chaque vin, notez une dégustation sur 5 étoiles, avec la date et un commentaire. La moyenne s’affiche sur la carte.'],
   '1.14.0': ['« Que boire ? » : le classement tient compte des fenêtres à boire (saisies, bible ou apogée). Nouveau mode « Apogée ».'],
   '1.13.2': ['Apogée : les premiers crus vieillissent 12 ans, les blancs de Bourgogne villages 6 ans, les régionaux 4 ans.'],

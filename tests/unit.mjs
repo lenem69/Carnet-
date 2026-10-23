@@ -212,3 +212,29 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   T('journal : entrée non tableau → aucune dégustation', L.normalizeWine({ name: 'Z', dom: 'D', tastings: 'n' }).tastings.length === 0);
   console.log(out.slice(o0).join('\n'));
 }
+// Fiches : origine par champ, passe IA unique
+{
+  const o0 = out.length;
+  const base = L.normalizeWine({ name: 'Cuvée', dom: 'Dom', year: 2019, color: 'Rouge', story: 'Ma note perso', grape: '', pairings: [], from: '', to: '' });
+  const c = JSON.parse(JSON.stringify(base));
+  L.applyAi(c, { story: 'Texte IA', grape: 'Syrah', pairings: ['Agneau'], from: 2025, to: 2032 });
+  T('fiches : la saisie utilisateur n’est jamais écrasée par l’IA', c.story === 'Ma note perso', c.story);
+  T('fiches : les champs vides sont complétés par l’IA et étiquetés', c.grape === 'Syrah' && c.src.grape === 'ai' && c.from === 2025 && c.src.from === 'ai', JSON.stringify(c.src));
+  T('fiches : passe IA enregistrée (une seule par vin)', c.aiPass > 0 && L.normalizeWine(c).aiPass === c.aiPass);
+  T('fiches : indication des champs mis à jour', JSON.stringify(L.aiFields(c)) === JSON.stringify(['cépage', 'accords', 'garde']), JSON.stringify(L.aiFields(c)));
+  const b = L.normalizeWine({ name: 'B', dom: 'D', year: 2018, color: 'Rouge', from: 2026, to: 2030, src: { from: 'bible', to: 'bible' } });
+  L.applyAi(b, { from: 2027, to: 2033 });
+  T('fiches : la garde venant de la bible est corrigée par l’IA', b.from === 2027 && b.to === 2033 && b.src.from === 'ai', JSON.stringify([b.from, b.to, b.src]));
+  const old = L.normalizeWine({ name: 'C', dom: 'D', year: 2018, grape: 'Merlot', story: 'Texte IA', src: { grape: 'ai', story: 'ai' } });
+  const s1 = L.editSrc(old, { ...old, grape: 'Cabernet', story: 'Texte IA' });
+  T('fiches : modifier à la main un champ IA le fait passer en saisie', s1.grape === 'user' && s1.story === 'ai', JSON.stringify(s1));
+  const s2 = L.editSrc(old, { ...old, story: '' });
+  T('fiches : vider un champ retire son origine', !('story' in s2) && s2.grape === 'ai', JSON.stringify(s2));
+  const s3 = L.editSrc(null, { name: 'N', dom: 'D', story: 'à moi', grape: '' });
+  T('fiches : nouvelle fiche saisie à la main = champs « user »', s3.story === 'user' && !('grape' in s3), JSON.stringify(s3));
+  const legacy = L.normalizeWine({ name: 'L', dom: 'D', year: 2010, story: 'ancienne fiche sans origine' });
+  L.applyAi(legacy, { story: 'nouveau' });
+  T('fiches : ancienne fiche sans origine protégée', legacy.story === 'ancienne fiche sans origine', legacy.story);
+  console.log(out.slice(o0).join('\n'));
+}
+

@@ -161,6 +161,7 @@ function card(w, mode, why) {
   const apoA = w.name ? apogee(w, YEAR) : null;
   const apo = apoA ? apogeeTexte(apoA) : '';
   const apoRappel = apoA ? apogeeCourte(apoA) : '';
+  const majIA = L.aiFields(w);
   const qty = mode === 'cave'
     ? `<div class="q"><button data-a="m" aria-label="Retirer une bouteille">−</button><b>${w.qty}</b><button data-a="p" aria-label="Ajouter une bouteille">+</button></div>`
     : `<b style="font-size:18px">${w.qty}×</b>`;
@@ -168,7 +169,7 @@ function card(w, mode, why) {
   ${why ? `<p class="why">💡 ${esc(why)}</p>` : ''}
   <div class="row"><div><h4>${esc(w.name)}${w.year ? ' ' + esc(w.year) : ''}</h4><p>${esc([w.dom, w.region].filter(Boolean).join(' · '))}</p></div>${qty}</div>
   ${meta ? `<p>${meta}</p>` : ''}${tags ? `<p>${tags}</p>` : ''}${apoRappel ? `<p class="mu small">${esc(apoRappel)}</p>` : ''}${degLigne(w)}
-  ${hasFiche || apo ? `<details><summary>Fiche et accords</summary>${apo ? `<p class="mu small">${esc(apo)}</p>` : ''}${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : journalHtml(w, mode)}
+  ${hasFiche || apo ? `<details><summary>Fiche et accords</summary>${apo ? `<p class="mu small">${esc(apo)}</p>` : ''}${majIA.length ? `<p class="mu small">Mis à jour par l’IA : ${esc(majIA.join(', '))}.</p>` : ''}${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : journalHtml(w, mode)}
   <div class="acts">${!w.story && !w.pairings.length ? '<button class="lnk" data-a="gen">✨ Fiche (IA)</button>' : ''}<button class="lnk" data-a="e">Modifier</button>${mode === 'cave' ? '<button class="lnk" data-a="d">Supprimer</button>' : ''}</div>
 </div>`;
 }
@@ -407,16 +408,14 @@ async function saveForm() {
   if (S.editId) {
     const old = S.wines.find(w => w.id === S.editId);
     if (!old) { errToast('Ce vin n’existe plus.'); closeSheet('sForm'); return; }
-    const src = { ...(old.src || {}) };
-    if (f.from !== old.from) src.from = 'user';
-    if (f.to !== old.to) src.to = 'user';
+    const src = L.editSrc(old, f);
     const nw = L.normalizeWine({ ...old, ...f, src, check: false, conf: S.formExtra.conf || old.conf, sources: S.formExtra.sources, updated: now });
     Object.assign(old, nw);
     const ok = await persist(() => store.putWines([old]));
     finishSave(old, ok, '« ' + old.name + ' » modifié.');
     return;
   }
-  const src = { ...(f.from !== '' ? { from: 'user' } : {}), ...(f.to !== '' ? { to: 'user' } : {}) };
+  const src = L.editSrc(null, f);
   const nw = L.normalizeWine({ ...f, src, id: uid(), conf: S.formExtra.conf, sources: S.formExtra.sources, check: false, created: now, updated: now });
   // Tampon : la bible remplit la période de garde tant que l'IA n'a pas de crédit ; l'IA pourra la corriger.
   if (!nw.from && !nw.to) L.prefillFromBible(nw, S.bible);
@@ -521,8 +520,8 @@ async function onCardAction(e) {
     try {
       const d = await AI.makeFiche(w);
       Stats.track('fiches_ia'); if (d.conf === 'vérifiée') Stats.track('fiches_verif');
-      applyFiche(w, d);
-      await persist(() => store.putWines([w]));
+      const c = copieIA(w, d);
+      if (await persist(() => store.putWines([c]))) remplace(w, c);
       render();
     } catch (err) { btn.disabled = false; btn.textContent = '✨ Fiche (IA)'; errToast(AI.errText(err)); }
   }
@@ -535,21 +534,9 @@ function ficheMsg(d) {
   return 'Fiche estimée (sans recherche web) : à vérifier.';
 }
 
-// Complète sans écraser ce que l'utilisateur a déjà saisi.
-function applyFiche(w, d) {
-  if (!w.grape && d.grape) w.grape = d.grape;
-  if (!w.story && d.story) w.story = d.story;
-  // L'IA complète une garde vide, ou corrige une garde venant de la bible ; jamais une saisie de l'utilisateur.
-  const src = { ...(w.src || {}) };
-  if ((!w.from || src.from === 'bible') && num(d.from) !== '') { w.from = num(d.from); src.from = 'ai'; }
-  if ((!w.to || src.to === 'bible') && num(d.to) !== '') { w.to = num(d.to); src.to = 'ai'; }
-  w.src = src;
-  if (w.from && w.to && w.from > w.to) [w.from, w.to] = [w.to, w.from];
-  if (!w.pairings.length && d.pairings.length) w.pairings = d.pairings.map(String).filter(Boolean);
-  w.conf = w.conf === 'vérifiée' ? 'vérifiée' : d.conf;
-  if (d.sources && d.sources.length) w.sources = d.sources;
-  w.updated = Date.now();
-}
+// L'IA met à jour une copie du vin (jamais l'objet partagé), puis la copie remplace l'original une fois enregistrée.
+function copieIA(w, d) { return L.applyAi(JSON.parse(JSON.stringify(w)), d); }
+function remplace(w, c) { const i = S.wines.indexOf(w); if (i >= 0) S.wines[i] = c; }
 
 function requireAI() {
   if (AI.ready()) return true;
@@ -624,8 +611,8 @@ async function scanFiles(files) {
 
 /* ============ Fiches par lots ============ */
 async function enrichAll() {
-  const todo = S.wines.filter(w => (!w.from && !w.to) || !w.pairings.length || !w.story);
-  if (!todo.length) { toast('Toutes les fiches sont complètes.'); return; }
+  const todo = S.wines.filter(w => !w.aiPass);
+  if (!todo.length) { toast('Toutes les fiches ont déjà été vérifiées par l’IA.'); return; }
   if (!requireAI()) return;
   const calls = Math.ceil(todo.length / 10);
   const c = await ask('Compléter les fiches', `${todo.length} vin(s) à compléter, soit environ ${calls} appel(s) à l’IA (10 vins par appel). Vous pourrez arrêter à tout moment.`, [
@@ -640,11 +627,12 @@ async function enrichAll() {
     try {
       const res = await AI.makeFiches(groups[i], { signal: log.signal, onWait: s => log.set(i, 'run', `Limite de l’IA atteinte, nouvel essai dans ${s} s…`) });
       const changed = [];
-      for (const w of groups[i]) { const d = res.get(String(w.id)); if (d) { applyFiche(w, d); changed.push(w); } }
+      for (const w of groups[i]) { const d = res.get(String(w.id)); if (d) changed.push([w, copieIA(w, d)]); }
       Stats.track('fiches_ia', changed.length);
-      const ok = await persist(() => store.putWines(changed));
+      const ok = !changed.length || await persist(() => store.putWines(changed.map(x => x[1])));
+      if (ok) changed.forEach(([w, c]) => remplace(w, c));
       done += changed.length;
-      log.set(i, ok ? 'ok' : 'err', ok ? `${changed.length} fiche(s) complétée(s)` : 'Non enregistré (mémoire pleine)');
+      log.set(i, ok ? 'ok' : 'err', ok ? `${changed.length} fiche(s) complétée(s) ou corrigée(s)` : 'Non enregistré (mémoire pleine)');
       render();
     } catch (e) {
       if (e && e.name === 'AbortError') { log.set(i, 'skip', 'Arrêté'); continue; }
@@ -1092,8 +1080,7 @@ const AUTO_MAX_CALLS = 4, AUTO_TRIES = 2;
 const AUTO_DELAY = self.__AUTO_DELAY ?? 20000, AUTO_EVERY = self.__AUTO_EVERY ?? 180000;
 let auto = { on: true, day: '', calls: 0, pauseUntil: 0, pauseWhy: '', tries: {} };
 let autoBusy = false;
-const needsFiche = w => (!w.from && !w.to) || !w.pairings.length || !w.story;
-const autoTodo = () => S.wines.filter(w => needsFiche(w) && (auto.tries[w.id] || 0) < AUTO_TRIES).sort((a, b) => (b.qty > 0) - (a.qty > 0));
+const autoTodo = () => S.wines.filter(w => !w.aiPass && (auto.tries[w.id] || 0) < AUTO_TRIES).sort((a, b) => (b.qty > 0) - (a.qty > 0));
 function nextQuotaReset(now = Date.now()) {
   const d = new Date(now); d.setUTCHours(9, 0, 0, 0);
   if (d.getTime() <= now) d.setUTCDate(d.getUTCDate() + 1);
@@ -1110,8 +1097,8 @@ function autoStatus() {
   if (!auto.on) return 'Désactivé.';
   const n = autoTodo().length;
   if (!n) return 'Toutes vos fiches sont complètes.';
-  if (auto.pauseUntil > Date.now()) return `${n} fiche(s) à compléter. En pause (${auto.pauseWhy || 'limite de l’IA'}), reprise ${new Date(auto.pauseUntil).toDateString() === new Date().toDateString() ? 'vers ' + new Date(auto.pauseUntil).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : 'demain'}.`;
-  return `${n} fiche(s) à compléter, traitées petit à petit en arrière-plan.`;
+  if (auto.pauseUntil > Date.now()) return `${n} fiche(s) à vérifier. En pause (${auto.pauseWhy || 'limite de l’IA'}), reprise ${new Date(auto.pauseUntil).toDateString() === new Date().toDateString() ? 'vers ' + new Date(auto.pauseUntil).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : 'demain'}.`;
+  return `${n} fiche(s) à vérifier, traitées petit à petit en arrière-plan.`;
 }
 async function autoStep() {
   if (autoBusy || !auto.on || !S.ready || !AI.ready() || document.hidden || navigator.onLine === false) return;
@@ -1127,12 +1114,13 @@ async function autoStep() {
     const changed = [];
     for (const w of group) {
       const d = res.get(String(w.id));
-      if (d) { applyFiche(w, d); changed.push(w); }
-      if (!d || needsFiche(w)) auto.tries[w.id] = (auto.tries[w.id] || 0) + 1;
+      if (d) changed.push([w, copieIA(w, d)]);
+      else auto.tries[w.id] = (auto.tries[w.id] || 0) + 1;
     }
     if (changed.length) {
       Stats.track('fiches_ia', changed.length);
-      if (await persist(() => store.putWines(changed))) render();
+      if (await persist(() => store.putWines(changed.map(x => x[1])))) { changed.forEach(([w, c]) => remplace(w, c)); render(); }
+      else changed.forEach(([w]) => { auto.tries[w.id] = (auto.tries[w.id] || 0) + 1; });
     }
     auto.pauseUntil = 0;
   } catch (e) {

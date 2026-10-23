@@ -2,7 +2,7 @@
 import { norm, num, price, uid } from './util.js';
 
 export const COLORS = ['Rouge', 'Blanc', 'Rosé', 'Pétillant', 'Autre'];
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 
 export function normColor(v) {
   const s = norm(v);
@@ -73,6 +73,8 @@ export function normalizeWine(raw) {
     conf: raw.conf === 'vérifiée' ? 'vérifiée' : raw.conf === 'connue' || raw.conf === 'estimée' ? 'estimée' : '',
     sources: toSources(raw.sources),
     tastings: toTastings(raw.tastings),
+    // Date de la passe IA faite sur ce vin (0 = jamais). Une seule passe, après l'enregistrement.
+    aiPass: Number(raw.aiPass) || 0,
     created: Number(raw.created) || now,
     updated: Number(raw.updated) || now,
   };
@@ -98,10 +100,58 @@ function toSources(v) {
 }
 
 const ORIGINS = ['user', 'ai', 'bible'];
+// Champs que l'IA peut compléter ou corriger. Chacun porte son origine (src) : user (saisi à la main) | ai | bible.
+export const AI_FIELDS = ['grape', 'story', 'pairings', 'from', 'to'];
+const LABEL_AI = { grape: 'cépage', story: 'histoire', pairings: 'accords', from: 'garde', to: 'garde' };
 function origins(v) {
   const o = {};
-  if (v && typeof v === 'object') for (const k of ['from', 'to']) if (ORIGINS.includes(v[k])) o[k] = v[k];
+  if (v && typeof v === 'object') for (const k of AI_FIELDS) if (ORIGINS.includes(v[k])) o[k] = v[k];
   return o;
+}
+const vide = v => v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length);
+// L'IA peut écrire dans un champ s'il est vide, ou s'il vient d'elle ou de la bible. Une valeur sans origine (anciennes fiches) est considérée saisie à la main.
+function peutEcrire(w, src, k) {
+  if (src[k] === 'ai' || src[k] === 'bible') return true;
+  return !src[k] && vide(w[k]);
+}
+// Origines après une modification à la main : un champ changé devient « user », un champ vidé perd son origine.
+export function editSrc(old, raw) {
+  const nw = normalizeWine({ ...(old || {}), ...raw });
+  const src = { ...((old && old.src) || {}) };
+  for (const k of AI_FIELDS) {
+    const avant = old ? old[k] : (k === 'pairings' ? [] : '');
+    if (vide(nw[k]) && vide(avant)) continue;
+    if (JSON.stringify(nw[k]) === JSON.stringify(avant)) continue;
+    if (vide(nw[k])) delete src[k]; else src[k] = 'user';
+  }
+  return src;
+}
+// Applique une réponse de l'IA à une fiche (objet déjà copié). Ne touche jamais aux champs saisis par l'utilisateur.
+// Marque la passe comme faite : une seule passe par vin, pas de rafraîchissement périodique.
+export function applyAi(w, d, now = Date.now()) {
+  const src = { ...(w.src || {}) };
+  const propose = {
+    grape: str(d.grape), story: str(d.story),
+    pairings: Array.isArray(d.pairings) ? d.pairings.map(str).filter(Boolean) : [],
+    from: num(d.from), to: num(d.to),
+  };
+  for (const k of AI_FIELDS) {
+    const v = propose[k];
+    if (vide(v) || !peutEcrire(w, src, k)) continue;
+    w[k] = v; src[k] = 'ai';
+  }
+  w.src = src;
+  if (w.from && w.to && w.from > w.to) [w.from, w.to] = [w.to, w.from];
+  if (d.conf) w.conf = w.conf === 'vérifiée' ? 'vérifiée' : d.conf;
+  if (d.sources && d.sources.length) w.sources = d.sources;
+  w.aiPass = now; w.updated = now;
+  return w;
+}
+// Libellés des champs que l'IA a mis à jour (pour l'indication sur la fiche).
+export function aiFields(w) {
+  const s = w.src || {}; const labels = [];
+  for (const k of AI_FIELDS) if (s[k] === 'ai' && !vide(w[k]) && !labels.includes(LABEL_AI[k])) labels.push(LABEL_AI[k]);
+  return labels;
 }
 
 // Bible : { v: 1, rows: [{ a: appellation, c: couleur R/B/D/E, y: { '2015': [qualité, apogée début, apogée fin, fiabilité] } }] }
