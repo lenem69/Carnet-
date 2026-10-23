@@ -612,10 +612,10 @@ async function scanFiles(files) {
 /* ============ Fiches par lots ============ */
 async function enrichAll() {
   const todo = S.wines.filter(w => !w.aiPass);
-  if (!todo.length) { toast('Toutes les fiches ont déjà été vérifiées par l’IA.'); return; }
+  if (!todo.length) { toast('Toutes les fiches ont déjà été mises à jour par l’IA.'); return; }
   if (!requireAI()) return;
   const calls = Math.ceil(todo.length / 10);
-  const c = await ask('Compléter les fiches', `${todo.length} vin(s) à compléter, soit environ ${calls} appel(s) à l’IA (10 vins par appel). Vous pourrez arrêter à tout moment.`, [
+  const c = await ask('Mettre à jour les fiches', `${todo.length} vin(s) à vérifier, soit environ ${calls} appel(s) à l’IA (10 vins par appel). Vous pourrez arrêter à tout moment.`, [
     { label: 'Lancer', value: 'go' }, { label: 'Annuler', value: null, kind: 'o' }]);
   if (c !== 'go') return;
   const groups = []; for (let i = 0; i < todo.length; i += 10) groups.push(todo.slice(i, i + 10));
@@ -804,6 +804,7 @@ async function openSettings() {
   $('#ai-guide').hidden = AI.ready();
   $('#st-ver').textContent = VERSION;
   $('#st-auto').checked = auto.on; $('#st-auto-info').textContent = autoStatus();
+  $('#st-maj').onclick = () => { closeSheet('sSet'); enrichAll(); };
   $('#st-stats-w').hidden = !Stats.configured();
   $('#st-stats').checked = Stats.consentState() === 'oui';
   $('#st-info').textContent = 'Lecture…';
@@ -1100,16 +1101,24 @@ async function initFond() {
     if (reg.periodicSync) await reg.periodicSync.register('passe-ia', { minInterval: 12 * 3600e3 });
   } catch (e) { /* refusé ou non disponible : la passe reste à l'ouverture de l'appli */ }
 }
+const iPhone = () => /iPhone|iPad|iPod/.test(navigator.userAgent);
 async function initAuto() {
   AI.syncCfg();
   initFond();
   try { const m = await store.getMeta('autoFill'); if (m && typeof m === 'object') auto = { ...auto, ...m, tries: { ...(m.tries || {}) } }; } catch (e) { /* valeurs par défaut */ }
+  // Sur iPhone, pas de tâche de fond : un rappel discret, au plus une fois par jour, s’il reste beaucoup de fiches à vérifier.
+  const jour = new Date().toISOString().slice(0, 10);
+  if (iPhone() && AI.ready() && auto.on && autoTodo().length >= 20 && auto.remindDay !== jour) {
+    auto.remindDay = jour; autoSave();
+    toast('Sur iPhone, ouvrez l’appli pour mettre les fiches à jour.');
+  }
   setTimeout(autoStep, AUTO_DELAY);
   setInterval(autoStep, AUTO_EVERY);
 }
 function autoStatus() {
   const base = autoStatusBase();
-  return base + (/iPhone|iPad|iPod/.test(navigator.userAgent) && auto.on && AI.ready() ? ' Sur iPhone, les fiches se mettent à jour quand vous ouvrez l’appli.' : '');
+  const quand = auto.lastOk ? ` Dernière mise à jour : ${new Date(auto.lastOk).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.` : '';
+  return base + quand + (iPhone() && auto.on && AI.ready() ? ' Sur iPhone, ouvrez l’appli pour mettre les fiches à jour.' : '');
 }
 function autoStatusBase() {
   if (!AI.ready()) return 'Inactif : aucune IA configurée.';
@@ -1148,6 +1157,7 @@ async function autoStep() {
       else auto.tries[w.id] = (auto.tries[w.id] || 0) + 1;
     }
     if (changed.length) {
+      auto.lastOk = Date.now();
       Stats.track('fiches_ia', changed.length);
       if (await persist(() => store.putWines(changed.map(x => x[1])))) { changed.forEach(([w, c]) => remplace(w, c)); render(); }
       else changed.forEach(([w]) => { auto.tries[w.id] = (auto.tries[w.id] || 0) + 1; });

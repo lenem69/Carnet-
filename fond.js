@@ -186,8 +186,9 @@
         else if (['bad_key', 'bad_model', 'bad_base', 'no_key'].includes(code)) { q.pauseUntil = now + 864e5; q.pauseWhy = 'clé ou modèle d’IA à vérifier'; }
         else { q.pauseUntil = now + 30 * 6e4; q.pauseWhy = 'connexion ou serveur indisponible'; }
       }
-      await ecrireMeta(db, 'autoFill', q);
       await ecrireMeta(db, 'passeVerrou', 0);
+      if (mises) q.lastOk = now;
+      await ecrireMeta(db, 'autoFill', q);
       if (mises && self.clients) {
         const liste = await self.clients.matchAll({ includeUncontrolled: true });
         liste.forEach(c => c.postMessage({ type: 'PASSE_IA_FIN', n: mises }));
