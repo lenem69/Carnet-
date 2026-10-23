@@ -31,7 +31,7 @@ T('aucun message ni fenêtre pendant le travail',!(await H.shown(page,'#sDlg'))&
 await H.sl(3500);
 T('limite de 20 recherches par jour respectée',calls.length<=20,String(calls.length));
 await H.sl(1500);
-T('25 vins : 20 recherches lancées le premier jour, au moins 19 fiches écrites (la 20e peut attendre)',(await done(page))>=19&&calls.length===20,calls.length+' appels, '+await done(page));
+T('25 vins : traités par lots (sans recherche), toutes les fiches écrites en peu d’appels',(await done(page))>=25&&calls.length<=5,calls.length+' appels, '+await done(page));
 T('aucune erreur (remplissage)',errs.length===0,errs.join('|'));
 await page.close();
 

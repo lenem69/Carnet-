@@ -1084,13 +1084,13 @@ async function showNews() {
 /* ============ Fiches complétées automatiquement (en arrière-plan) ============ */
 // Économe : 1 appel = 10 vins, 4 appels par jour au plus, jamais pendant une saisie, pause jusqu'à la remise à zéro des quotas
 // (minuit heure du Pacifique ≈ 9 h UTC) dès que l'IA signale une limite. Le tout sans message : l'état se lit dans Réglages.
-const AUTO_MAX_CALLS = 20, AUTO_TRIES = 2;
+const AUTO_MAX_CALLS = 20, AUTO_TRIES = 2, AUTO_LOT = 10, AUTO_LOT_WEB = 5;
 let autoPrio = null;
 const AUTO_DELAY = self.__AUTO_DELAY ?? 20000, AUTO_EVERY = self.__AUTO_EVERY ?? 180000;
 let auto = { on: true, day: '', calls: 0, pauseUntil: 0, pauseWhy: '', tries: {} };
 let autoBusy = false;
 // À faire : les vins jamais passés (IA sans recherche), puis ceux qui ont encore des champs vides ou incertains (recherche web).
-const autoTodo = () => S.wines.filter(w => w.qty > 0 && (auto.tries[w.id] || 0) < AUTO_TRIES && (!w.aiPass || (!w.aiSearch && (w.aiDoute || []).length)))
+const autoTodo = () => S.wines.filter(w => w.qty > 0 && (auto.tries[w.id] || 0) < AUTO_TRIES && (!w.aiPass || (!w.aiSearch && L.doutesEffectifs(w).length)))
   .sort((a, b) => (!a.aiPass ? 0 : 1) - (!b.aiPass ? 0 : 1) || (b.qty > 0) - (a.qty > 0));
 function nextQuotaReset(now = Date.now()) {
   const d = new Date(now); d.setUTCHours(9, 0, 0, 0);
@@ -1161,21 +1161,31 @@ async function autoStep() {
   // Recherche web automatique : Gemini seulement (les autres fournisseurs n'ont pas de recherche web ici).
   if (!AI.configured().includes('gemini')) return;
   const todo = autoTodo();
-  const w = todo.find(x => x.id === autoPrio) || todo[0];
+  const premier = todo.find(x => x.id === autoPrio) || todo[0];
   autoPrio = null;
-  if (!w) return;
+  if (!premier) return;
+  // Un lot de même nature : sans recherche (jusqu'à 10 vins) ou avec recherche web (jusqu'à 5 vins).
+  const lot = [premier, ...todo.filter(x => x.id !== premier.id && !!x.aiPass === !!premier.aiPass)]
+    .slice(0, premier.aiPass ? AUTO_LOT_WEB : AUTO_LOT);
   autoBusy = true; auto.calls++;
   store.setMeta('passeVerrou', Date.now()).catch(() => {});
   try {
-    // Sans recherche d'abord ; la recherche web ne sert qu'aux champs restés vides ou incertains.
-    const d = w.aiPass
-      ? await AI.makeFiche(w, { noRetry: true, only: 'gemini' })
-      : (await AI.makeFiches([w], { noRetry: true, only: 'gemini' })).get(String(w.id));
-    if (!d) throw { code: 'invalid_json' };
-    const c = copieIA(w, d);
-    Stats.track('fiches_ia');
-    if (await persist(() => store.putWines([c]))) { remplace(w, c); auto.lastOk = Date.now(); render(); if (S.highlight === w.id) toast('✨ Fiche complétée par l’IA'); }
-    else auto.tries[w.id] = (auto.tries[w.id] || 0) + 1;
+    const res = premier.aiPass
+      ? await AI.makeFichesWeb(lot, { noRetry: true, only: 'gemini' })
+      : await AI.makeFiches(lot, { noRetry: true, only: 'gemini' });
+    const changed = [];
+    for (const w of lot) {
+      const d = res.get(String(w.id));
+      if (d) changed.push([w, copieIA(w, d)]); else auto.tries[w.id] = (auto.tries[w.id] || 0) + 1;
+    }
+    if (changed.length) {
+      Stats.track('fiches_ia', changed.length);
+      if (await persist(() => store.putWines(changed.map(x => x[1])))) {
+        changed.forEach(([w, c]) => remplace(w, c));
+        auto.lastOk = Date.now(); render();
+        if (changed.some(([w]) => S.highlight === w.id)) toast('✨ Fiche complétée par l’IA');
+      } else changed.forEach(([w]) => { auto.tries[w.id] = (auto.tries[w.id] || 0) + 1; });
+    }
     auto.pauseUntil = 0;
   } catch (e) {
     const code = e && e.code;

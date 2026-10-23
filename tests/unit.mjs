@@ -233,6 +233,8 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   T('après recherche : plus rien à chercher', cherche.aiDoute.length === 0 && cherche.aiSearch === 1700000001000);
   const perso = L.applyAi(L.normalizeWine({ name: 'Perso', dom: 'D', year: 2019, qty: 1, grape: 'Syrah', src: { grape: 'user' } }), { grape: 'Gamay' }, 1700000000000);
   T('une saisie de l’utilisateur n’est jamais à chercher', !perso.aiDoute.includes('grape'));
+  const ancienne = { name: 'Ancienne', dom: 'D', year: 2019, qty: 1, src: {}, aiPass: 1700000000000, story: '', grape: 'Gamay', pairings: ['Poulet'], from: 2026, to: 2031 };
+  T('fiche d’avant cette version : histoire vide à chercher', JSON.stringify(L.doutesEffectifs(L.normalizeWine(ancienne))) === JSON.stringify(['story']), JSON.stringify(L.doutesEffectifs(L.normalizeWine(ancienne))));
 }
   T('fiches : indication des champs mis à jour', JSON.stringify(L.aiFields(c)) === JSON.stringify(['cépage', 'accords', 'garde']), JSON.stringify(L.aiFields(c)));
   const b = L.normalizeWine({ name: 'B', dom: 'D', year: 2018, color: 'Rouge', from: 2026, to: 2030, src: { from: 'bible', to: 'bible' } });

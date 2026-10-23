@@ -8,7 +8,7 @@
   const MAX_JOUR = 20;        // appels IA par jour (lots et recherches confondus), partagés avec la page
   const MAX_PASSE = 10;       // appels par passe de fond
   const LOT = 10;             // vins par appel sans recherche
-  const PAR_PASSE = 3;        // recherches web par passe de fond
+  const RECH = 5;             // vins par appel de recherche web
   const ESSAIS = 2, VERROU_MS = 5 * 60e3;
   const CHAMPS = ['grape', 'story', 'pairings', 'from', 'to'];
   const COULEUR_BIBLE = { Rouge: ['R'], Blanc: ['B', 'D'], Pétillant: ['E'] };
@@ -35,6 +35,9 @@
     if (vide(w.from) || vide(w.to)) out.add('from');
     return DOUTE.filter(k => out.has(k) && s[k] !== 'user');
   }
+
+  // Champs à chercher : ceux signalés, ou calculés pour une fiche d'avant cette version.
+  const doutesOf = w => (Array.isArray(w.aiDoute) ? w.aiDoute : calcDoutes(w, {}));
 
   function appliquer(w, d, now) {
     const src = { ...(w.src || {}) };
@@ -152,38 +155,15 @@
   }
 
   // Une recherche web par vin, avec la demande la plus courte possible (jetons limités).
-  async function rechercheGemini(c, w) {
+  // Recherche web par lot (une requête pour quelques vins ; sources partagées par le lot).
+  async function rechercheLot(c, lot) {
     const annee = new Date().getFullYear();
-    const texte = 'Vin : ' + JSON.stringify({ n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region }) +
-      '. Nous sommes en ' + annee + '. Cherche sur le web (site du domaine, guides, cavistes) : cépage, histoire de la cuvée en une phrase, 4 accords mets-vins, fenêtre de garde (f = début, t = fin). ' +
-      'Réponds uniquement par {"g":"","s":"","f":0,"t":0,"p":[],"c":"vérifiée ou estimée"}. « vérifiée » seulement si les pages consultées confirment cette cuvée et ce millésime.';
-    const j = await http('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(c.model || 'gemini-3.5-flash-lite') + ':generateContent', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': c.key },
-      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: texte }] }], tools: [{ google_search: {} }], generationConfig: { temperature: 0.2, maxOutputTokens: 700 } }),
-    });
-    const cand = j.candidates && j.candidates[0];
-    const t = cand && cand.content && cand.content.parts ? cand.content.parts.map(p => p.text || '').join('') : '';
-    if (!t) throw { code: 'invalid_json' };
-    const d = extraire(t);
-    const sources = sourcesWeb(cand);
-    return {
-      grape: String(d.g || ''), story: String(d.s || ''), from: d.f, to: d.t,
-      pairings: Array.isArray(d.p) ? d.p.map(String) : [],
-      conf: sources.length && /v[ée]rifi/i.test(String(d.c || '')) ? 'vérifiée' : 'estimée',
-      sources,
-      searched: true,
-    };
-  }
-
-  // Appel sans recherche : un lot de vins, une seule requête (la connaissance du modèle suffit pour la plupart des champs).
-  async function lotGemini(c, lot) {
-    const annee = new Date().getFullYear();
-    const texte = 'Tu es sommelier expert. Pour chaque vin de la liste, sans recherche web, complète : g=cépages, s=histoire de la cuvée en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ' + annee + '), p=4 accords mets courts, u=liste des champs que tu ne connais pas sûrement parmi "cépage", "histoire", "garde", "accords" (liste vide si tu es sûr). Vins : ' +
+    const texte = 'Tu es sommelier. Utilise la recherche web et croise des sources fiables (site du domaine, guides, cavistes). Nous sommes en ' + annee + '. Pour chaque vin de la liste, complète : g=cépages, s=histoire de la cuvée en une phrase, f=année de début de garde, t=année de fin de garde, p=4 accords mets-vins. c="vérifiée" seulement si les pages consultées confirment cette cuvée et ce millésime, sinon "estimée". Vins : ' +
       JSON.stringify(lot.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region }))) +
-      '. Réponds uniquement par {"items":[{"id":"…","g":"","s":"","f":0,"t":0,"p":[],"u":[]}]} avec une entrée par vin.';
+      '. Réponds uniquement par {"items":[{"id":"…","g":"","s":"","f":0,"t":0,"p":[],"c":""}]} avec une entrée par vin.';
     const j = await http('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(c.model || 'gemini-3.5-flash-lite') + ':generateContent', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': c.key },
-      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: texte }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 4000, responseMimeType: 'application/json' } }),
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: texte }] }], tools: [{ google_search: {} }], generationConfig: { temperature: 0.2, maxOutputTokens: 2500 } }),
     });
     const cand = j.candidates && j.candidates[0];
     const t = cand && cand.content && cand.content.parts ? cand.content.parts.map(p => p.text || '').join('') : '';
@@ -191,14 +171,15 @@
     const obj = extraire(t);
     const items = Array.isArray(obj) ? obj : obj && Array.isArray(obj.items) ? obj.items : null;
     if (!items) throw { code: 'invalid_json' };
+    const sources = sourcesWeb(cand);
     const out = new Map();
     for (const x of items) {
       if (!x || x.id == null) continue;
       out.set(String(x.id), {
         grape: str(x.g), story: str(x.s), from: x.f, to: x.t,
         pairings: Array.isArray(x.p) ? x.p.map(String) : [],
-        conf: 'estimée', sources: [], searched: false,
-        doute: Array.isArray(x.u) ? [...new Set(x.u.map(u => DOUTE_LIBELLE[String(u).toLowerCase()]).filter(Boolean))] : [],
+        conf: sources.length && /v[ée]rifi/i.test(String(x.c || '')) ? 'vérifiée' : 'estimée',
+        sources, searched: true,
       });
     }
     return out;
@@ -269,22 +250,28 @@
         }
       }
 
-      // 3) Recherche web : seulement pour les champs restés vides ou incertains, un vin à la fois.
+      // 3) Recherche web par lots de RECH vins, seulement pour les champs restés vides ou incertains.
       if (!erreur) {
         cave = await lireVins(db);
-        const aChercher = cave.filter(w => w.aiPass && !w.aiSearch && w.qty > 0 && (w.aiDoute || []).length && (q.tries[w.id] || 0) < ESSAIS)
+        const aChercher = cave.filter(w => w.aiPass && !w.aiSearch && w.qty > 0 && doutesOf(w).length && (q.tries[w.id] || 0) < ESSAIS)
           .sort((a, b) => (b.qty > 0) - (a.qty > 0));
-        for (const v of aChercher.slice(0, Math.max(0, Math.min(PAR_PASSE, restant())))) {
+        for (let i = 0; i < aChercher.length && restant() > 0 && !erreur; i += RECH) {
+          const lot = aChercher.slice(i, i + RECH);
           q.calls = (q.calls || 0) + 1; appels++;
-          let d = null;
-          try { d = await rechercheGemini(c, v); }
-          catch (e) { erreur = e; q.tries[v.id] = (q.tries[v.id] || 0) + 1; break; }
-          const cur = (await lireVins(db)).find(w => String(w.id) === String(v.id));
-          if (!cur || cur.aiSearch) continue;
-          const tx = db.transaction('wines', 'readwrite');
-          tx.objectStore('wines').put(appliquer(JSON.parse(JSON.stringify(cur)), d, now));
-          await fin(tx);
-          mises++;
+          let res = null;
+          try { res = await rechercheLot(c, lot); }
+          catch (e) { erreur = e; lot.forEach(v => { q.tries[v.id] = (q.tries[v.id] || 0) + 1; }); break; }
+          const frais = await lireVins(db);
+          for (const v of lot) {
+            const d = res.get(String(v.id));
+            const cur = frais.find(w => String(w.id) === String(v.id));
+            if (!d) { q.tries[v.id] = (q.tries[v.id] || 0) + 1; continue; }
+            if (!cur || cur.aiSearch) continue;
+            const tx = db.transaction('wines', 'readwrite');
+            tx.objectStore('wines').put(appliquer(JSON.parse(JSON.stringify(cur)), d, now));
+            await fin(tx);
+            mises++;
+          }
         }
       }
 

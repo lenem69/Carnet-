@@ -324,6 +324,27 @@ export async function makeFiches(list, opts) {
   return out;
 }
 
+// Recherche web par lot (quelques vins par appel) : une seule requête ; les sources sont partagées par le lot.
+export async function makeFichesWeb(list, opts = {}) {
+  const year = new Date().getFullYear();
+  const out = { wantSearch: true };
+  const d = await callJson(`${EXPERT} Utilise la recherche web et croise des sources fiables (site du domaine, guides et revues, cavistes). Pour chaque vin de la liste, complète : g=cépages, s=histoire de la cuvée en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ${year}), p=4 accords mets courts, c="vérifiée" seulement si les pages consultées confirment cette cuvée et ce millésime, sinon "estimée". Ne donne jamais une fenêtre de garde sans base ; en cas de doute, élargis-la. Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region })))}. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"c":"estimée"}]} avec une entrée par vin.`, { ...opts, out });
+  const items = Array.isArray(d) ? d : d && Array.isArray(d.items) ? d.items : null;
+  if (!items) throw { code: 'invalid_json' };
+  const sources = out.searched ? (out.sources || []) : [];
+  const res = new Map();
+  for (const x of items) {
+    if (!x || x.id == null) continue;
+    const f = ficheFrom(x);
+    f.conf = sources.length && /^v[ée]rifi/i.test(String(x.c || '')) ? 'vérifiée' : 'estimée';
+    f.sources = sources;
+    f.searched = !!out.searched;
+    f.fallback = !!out.fallback;
+    res.set(String(x.id), f);
+  }
+  return res;
+}
+
 // Choix parmi des candidats déjà présélectionnés localement (coût limité, quelle que soit la taille de la cave).
 export async function pickForDish(dish, candidates, opts) {
   const year = new Date().getFullYear();

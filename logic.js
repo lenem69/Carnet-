@@ -77,7 +77,7 @@ export function normalizeWine(raw) {
     aiPass: Number(raw.aiPass) || 0,
     // Date de la recherche web (0 = jamais) et champs encore à chercher.
     aiSearch: Number(raw.aiSearch) || 0,
-    aiDoute: toDoute(raw.aiDoute),
+    aiDoute: Array.isArray(raw.aiDoute) ? toDoute(raw.aiDoute) : undefined, // ancienne fiche : calculé à la demande
     created: Number(raw.created) || now,
     updated: Number(raw.updated) || now,
   };
@@ -143,6 +143,11 @@ function calcDoutes(w, d) {
   if (vide(w.pairings)) out.add('pairings');
   if (vide(w.from) || vide(w.to)) out.add('from');
   return DOUTE.filter(k => out.has(k) && s[k] !== 'user');
+}
+
+// Champs à chercher pour cette fiche (calculés si la fiche vient d'avant cette version).
+export function doutesEffectifs(w) {
+  return Array.isArray(w.aiDoute) ? w.aiDoute : calcDoutes(w, {});
 }
 
 export function applyAi(w, d, now = Date.now()) {
