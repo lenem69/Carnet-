@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.11.0': ['L’onglet « Magic » (ex-Chiffres) : anneaux pour les couleurs et les régions, et trois statuts : Prêt à boire, À garder, Urgence.', 'Cépages fusionnés (« 100 % Syrah » = « Syrah ») ; régions classées du plus général au plus précis.', 'Thème clair en permanence ; le bloc « En résumé » est retiré de Magic, et les trois chiffres du haut n’y sont plus répétés.'],
   '1.10.0': ['Les nouvelles fiches reçoivent une période de garde indicative (bible des vins) ; vos saisies ne sont jamais modifiées.'],
   '1.9.0': ['Nouvel onglet « Chiffres » : la répartition de votre cave, couleurs, régions, cépages, et l’année où vos bouteilles sont à boire.'],
   '1.8.3': ['Le bandeau « Nouvelle version prête » ne recouvre plus le contenu, et ses messages s’affichent sous lui.'],

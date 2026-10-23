@@ -5,7 +5,7 @@ await page.goto(H.URL0);await H.sl(1000);
 T('balise noindex présente',await page.$eval('meta[name=robots]',e=>e.content.includes('noindex')&&e.content.includes('noarchive')));
 T('politique sans référent',await page.evaluate(()=>document.querySelector('meta[name=referrer]').content==='no-referrer'));
 const files=(await import('fs')).readdirSync(new URL('..',import.meta.url).pathname);T('aucun fichier de données ni de clé dans l’appli',!files.some(f=>/\.json$|backup|cle|key/i.test(f)),files.join(','));
-const src=(await import('child_process')).execSync('cat ../*.js ../*.html').toString();
+const src=(await import('child_process')).execSync('cat ../*.js ../*.html',{maxBuffer:64*1024*1024}).toString();
 T('aucune clé ni adresse e-mail dans le code',!/AIza[0-9A-Za-z_-]{20,}|sk-ant-|sk-[A-Za-z0-9]{20,}|@gmail\.com/.test(src));
 T('aucune erreur',errs.length===0,errs.join('|'));
 console.log(out.join('\n'));await b.close();srv.close();

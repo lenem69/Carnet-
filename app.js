@@ -4,11 +4,11 @@ import * as store from './store.js';
 import * as L from './logic.js';
 import * as AI from './ai.js';
 import * as IMP from './importer.js';
-import { QUOTES } from './quotes.js';
 import { saveFile, readText } from './files.js';
 import * as Stats from './stats.js';
 import * as Notes from './notes.js';
 import { chiffres } from './chiffres.js';
+import { QUOTES } from './quotes.js';
 
 const VERSION = self.APP_VERSION || '?';
 // Formulaire Google de retours (aucune adresse mail n’est publiée dans le code).
@@ -239,32 +239,53 @@ function renderDatalists() {
 function render() {
   renderStats(); renderBanners();
   $$('.tab').forEach(b => { const on = b.dataset.t === S.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
-  $('#vCave').hidden = S.tab !== 'cave'; $('#vBoire').hidden = S.tab !== 'boire'; $('#vChiffres').hidden = S.tab !== 'chiffres';
+  $('#vCave').hidden = S.tab !== 'cave'; $('#vBoire').hidden = S.tab !== 'boire'; $('#vChiffres').hidden = S.tab !== 'chiffres'; document.querySelector('.stats').hidden = S.tab === 'chiffres';
   if (S.tab === 'cave') renderList(); else if (S.tab === 'boire') renderBoire(); else renderChiffres();
 }
-// « Ma cave en chiffres » : calcul local, sans IA.
+// « Magic » : tableau de bord de la cave. Calcul local, sans IA.
+const PALETTE = ['#7b1e3a', '#b5545f', '#d68c96', '#e9c2c8', '#5b4a4f', '#9b8b90', '#c9bcc0', '#3d2c31'];
+function donut(rows, total, nom) {
+  // Au-delà de 6 parts, le reste est regroupé dans « Autres » pour garder une légende lisible.
+  let parts = rows.slice(0, 6);
+  const reste = rows.slice(6).reduce((s, r) => s + r[1], 0);
+  if (reste) parts = [...parts, ['Autres', reste]];
+  let off = 25, arcs = '';
+  parts.forEach(([k, n], i) => {
+    const p = total ? (n / total) * 100 : 0;
+    arcs += `<circle r="15.915" cx="21" cy="21" fill="none" stroke="${PALETTE[i % PALETTE.length]}" stroke-width="6" stroke-dasharray="${p.toFixed(2)} ${(100 - p).toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}"><title>${esc(k)} : ${n}</title></circle>`;
+    off -= p;
+  });
+  const legende = parts.map(([k, n], i) => `<li><span class="sw" style="background:${PALETTE[i % PALETTE.length]}"></span><span class="lk">${esc(k)}</span><b>${pct(n, total)} %</b></li>`).join('');
+  return `<div class="donut"><svg viewBox="0 0 42 42" role="img" aria-label="${esc(nom)} : ${total} bouteilles">${arcs}<text x="21" y="20" class="dc">${total}</text><text x="21" y="26" class="dl">bouteilles</text></svg><ul class="legende">${legende}</ul></div>`;
+}
+const pct = (n, total) => (total ? Math.round((n / total) * 100) : 0);
 function renderChiffres() {
   const c = chiffres(S.wines, YEAR);
-  const bars = (rows, total) => rows.map(([k, n]) => `<div class="bar"><span>${esc(k)}</span><i style="width:${total ? Math.max(4, Math.round(n / total * 100)) : 0}%"></i><b>${n}</b></div>`).join('') || '<p class="mu small">Rien à afficher.</p>';
+  const bars = (rows, total, sub) => rows.map(([k, n, s]) => `<div class="bar"><span>${esc(k)}${sub && s ? ` <small class="mu">${esc(s)}</small>` : ''}</span><i style="width:${total ? Math.max(4, Math.round(n / total * 100)) : 0}%"></i><b>${n}</b></div>`).join('') || '<p class="mu small">Rien à afficher.</p>';
   const maxF = Math.max(1, ...c.frise.map(x => x[1]));
-  const frise = c.frise.map(([y, n]) => `<div class="fcol" title="${y} : ${n} bouteille${n > 1 ? 's' : ''}"><i style="height:${Math.round(n / maxF * 100)}%"></i><span>${y % 5 === 0 || y === YEAR ? String(y).slice(2) : ''}</span></div>`).join('');
+  const frise = c.frise.map(([y, n]) => `<div class="fcol" title="${y} : ${n} bouteille${n > 1 ? 's' : ''}"><i style="height:${Math.round(n / maxF * 100)}%"></i><span>${y}</span></div>`).join('');
+  const st = c.statuts;
   $('#vChiffres').innerHTML = `
     <p class="portrait">${esc(c.portrait)}</p>
     ${c.bouteilles ? `
-    <h3 class="ch">Couleurs</h3>${bars(c.couleurs.map(([k, n]) => [k, n]), c.bouteilles)}
-    <h3 class="ch">Régions</h3>${bars(c.regions, c.bouteilles)}
+    <div class="statuts">
+      <div class="st ok"><b>${st.pret}</b><span>Prêt à boire</span></div>
+      <div class="st wa"><b>${st.garder}</b><span>À garder</span></div>
+      <div class="st bad"><b>${st.urgence}</b><span>Urgence</span></div>
+    </div>
+    ${st.sans ? `<p class="mu small">${st.sans} bouteille(s) sans période de garde, non classées.</p>` : ''}
+    <h3 class="ch">Couleurs</h3>${donut(c.couleurs, c.bouteilles, 'Couleurs')}
+    <h3 class="ch">Régions</h3>${donut(c.regions, c.bouteilles, 'Régions')}
+    <h3 class="ch">Appellations</h3>${bars(c.appellations, c.bouteilles, true)}
     <h3 class="ch">Cépages</h3>${bars(c.cepages, c.bouteilles)}
     <h3 class="ch">Époques des millésimes</h3>${bars(c.decennies, c.bouteilles)}
     <h3 class="ch">À boire, année par année</h3>
     <div class="frise">${frise}</div>
-    <p class="mu small">${c.pic ? `Pic en ${c.pic.annee} : ${c.pic.bouteilles} bouteille${c.pic.bouteilles > 1 ? 's' : ''} à boire.` : 'Aucune bouteille avec une période de garde.'}${c.sansFenetre ? ` ${c.sansFenetre} bouteille(s) sans période de garde ne sont pas comptées ici.` : ''}</p>
+    <p class="mu small">${c.pic ? `Pic en ${c.pic.annee} : ${c.pic.bouteilles} bouteille${c.pic.bouteilles > 1 ? 's' : ''} à boire.` : 'Aucune bouteille avec une période de garde.'}</p>
     <h3 class="ch">Équilibre</h3>
     <p class="small">${c.diversite.regions} région(s), ${c.diversite.cepages} cépage(s). La première région pèse ${c.diversite.partRegionTop} % de la cave.</p>
     <h3 class="ch">Valeur</h3>
-    <p class="small">${c.valeur.total ? `Valeur d’achat connue : ${c.valeur.total.toLocaleString('fr-FR')} €.` : 'Pas de prix renseigné.'}${c.valeur.sansPrix ? ` ${c.valeur.sansPrix} bouteille(s) sans prix.` : ''}</p>
-    <h3 class="ch">En résumé</h3>
-    <ul class="small">${c.adn.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
-    <p class="mu small">À boire vite : ${c.aBoireVite} bouteille(s).</p>` : ''}`;
+    <p class="small">${c.valeur.total ? `Valeur d’achat connue : ${c.valeur.total.toLocaleString('fr-FR')} €.` : 'Pas de prix renseigné.'}${c.valeur.sansPrix ? ` ${c.valeur.sansPrix} bouteille(s) sans prix.` : ''}</p>` : ''}`;
 }
 
 /* ============ Fiche (formulaire) ============ */
