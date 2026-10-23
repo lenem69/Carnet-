@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.21.0': ['La valeur estimée de la cave se met à jour toute seule, en même temps que les fiches (sans effort de votre part). Correction : la mise à jour des fiches en arrière-plan échouait depuis la version 1.18.'],
   '1.20.0': ['Magic : un constat sur l’équilibre de la cave, avec un avis de l’IA en option. Valeur estimée de la cave (IA, indicative : peu de prix d’achat sont saisis), à estimer quand vous voulez.'],
   '1.19.0': ['Magic : touchez une case (Prêt à boire, À garder, Urgence) pour voir la liste des vins concernés. Touchez la pastille en haut de la liste pour revenir à toute la cave. Première ouverture : un message de bienvenue vous demande votre prénom.'],
   '1.18.0': ['Fiches : la bible remplit d’abord la garde. Ensuite, l’IA complète les fiches par lots de 10 vins, à partir de ses connaissances ; la recherche web (Gemini) ne sert qu’aux champs restés vides ou incertains, par lots de 5. Une cave importée est traitée toute seule. Vos saisies restent intactes.'],

@@ -237,6 +237,20 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   T('valeur : milieu de fourchette × bouteilles, vins non estimés exclus du total', v.total === 60 && v.couverts === 2 && v.bouteilles === 3, JSON.stringify(v));
   T('valeur : fourchette invalide ignorée', L.normalizeWine({ name: 'E3', dom: 'D', year: 2019, qty: 1, src: {}, estim: { min: 0, max: 5 } }).estim === null);
 }
+// Garde-fou : toute fonction appelée avec « await » dans fond.js doit être définie dans fond.js (sinon la passe de fond échoue en silence).
+{
+  const code = fs.readFileSync(new URL('../fond.js', import.meta.url), 'utf8');
+  const appels = [...new Set([...code.matchAll(/await (\w+)\(/g)].map(m => m[1]))];
+  const manquantes = appels.filter(f => !new RegExp('(function ' + f + '\\(|const ' + f + ' =)').test(code) && !['fetch', 'http', 'extraire', 'lireVins', 'lireMeta', 'ecrireMeta', 'lireBible', 'ouvrir', 'fin', 'appliquer', 'bibleGarde', 'prochaineRemise'].includes(f) );
+  T('fond.js : toutes les fonctions appelées sont définies', manquantes.length === 0, manquantes.join(', '));
+}
+// Valeur reprise par la fiche (logic.js et fond.js de la même façon)
+{
+  const w = { name: 'V', dom: 'D', year: 2019, src: {}, qty: 1, conf: '' };
+  const d = { grape: 'Syrah', estim: { min: 20, max: 30 } };
+  const a = L.applyAi(JSON.parse(JSON.stringify(w)), d, 1700000000000);
+  T('fiche : la valeur de l’IA est gardée', a.estim && a.estim.min === 20 && a.estim.max === 30, JSON.stringify(a.estim));
+}
 // Sans recherche d'abord : les champs vides ou incertains sont à chercher ; après une recherche, plus rien à chercher.
 {
   const base = L.normalizeWine({ name: 'Doute', dom: 'D', year: 2019, qty: 1, src: {} });

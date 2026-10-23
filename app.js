@@ -1202,8 +1202,8 @@ let autoPrio = null;
 const AUTO_DELAY = self.__AUTO_DELAY ?? 20000, AUTO_EVERY = self.__AUTO_EVERY ?? 180000;
 let auto = { on: true, day: '', calls: 0, pauseUntil: 0, pauseWhy: '', tries: {} };
 let autoBusy = false;
-// À faire : les vins jamais passés (IA sans recherche), puis ceux qui ont encore des champs vides ou incertains (recherche web).
-const autoTodo = () => S.wines.filter(w => w.qty > 0 && (auto.tries[w.id] || 0) < AUTO_TRIES && (!w.aiPass || (!w.aiSearch && L.doutesEffectifs(w).length)))
+// À faire : les vins jamais passés (IA sans recherche, avec leur valeur), puis ceux à compléter (recherche web, valeur seule).
+const autoTodo = () => S.wines.filter(w => w.qty > 0 && (auto.tries[w.id] || 0) < AUTO_TRIES && (!w.aiPass || (!w.aiSearch && L.doutesEffectifs(w).length) || !w.estim))
   .sort((a, b) => (!a.aiPass ? 0 : 1) - (!b.aiPass ? 0 : 1) || (b.qty > 0) - (a.qty > 0));
 function nextQuotaReset(now = Date.now()) {
   const d = new Date(now); d.setUTCHours(9, 0, 0, 0);
@@ -1277,19 +1277,21 @@ async function autoStep() {
   const premier = todo.find(x => x.id === autoPrio) || todo[0];
   autoPrio = null;
   if (!premier) return;
-  // Un lot de même nature : sans recherche (jusqu'à 10 vins) ou avec recherche web (jusqu'à 5 vins).
-  const lot = [premier, ...todo.filter(x => x.id !== premier.id && !!x.aiPass === !!premier.aiPass)]
-    .slice(0, premier.aiPass ? AUTO_LOT_WEB : AUTO_LOT);
+  // Un lot de même nature : fiche sans recherche (10 vins, avec la valeur), recherche web (5 vins) ou valeur seule (10 vins).
+  const genre = w => (!w.aiPass ? 'fiche' : (!w.aiSearch && L.doutesEffectifs(w).length) ? 'web' : 'valeur');
+  const g = genre(premier);
+  const lot = [premier, ...todo.filter(x => x.id !== premier.id && genre(x) === g)].slice(0, g === 'web' ? AUTO_LOT_WEB : AUTO_LOT);
   autoBusy = true; auto.calls++;
   store.setMeta('passeVerrou', Date.now()).catch(() => {});
   try {
-    const res = premier.aiPass
-      ? await AI.makeFichesWeb(lot, { noRetry: true, only: 'gemini' })
-      : await AI.makeFiches(lot, { noRetry: true, only: 'gemini' });
+    const opts = { noRetry: true, only: 'gemini' };
+    const res = g === 'fiche' ? await AI.makeFiches(lot, opts) : g === 'web' ? await AI.makeFichesWeb(lot, opts) : await AI.estimeValeur(lot, opts);
     const changed = [];
     for (const w of lot) {
       const d = res.get(String(w.id));
-      if (d) changed.push([w, copieIA(w, d)]); else auto.tries[w.id] = (auto.tries[w.id] || 0) + 1;
+      if (!d) { auto.tries[w.id] = (auto.tries[w.id] || 0) + 1; continue; }
+      if (g === 'valeur') { const cp = JSON.parse(JSON.stringify(w)); cp.estim = d; changed.push([w, cp]); }
+      else changed.push([w, copieIA(w, d)]);
     }
     if (changed.length) {
       Stats.track('fiches_ia', changed.length);

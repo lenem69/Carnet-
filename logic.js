@@ -176,6 +176,7 @@ export function applyAi(w, d, now = Date.now()) {
   if (d.sources && d.sources.length) w.sources = d.sources;
   if (d.searched) { w.aiSearch = now; w.aiDoute = []; }
   else w.aiDoute = calcDoutes(w, d);
+  if (d.estim && d.estim.min > 0) w.estim = toEstim({ min: d.estim.min, max: d.estim.max, date: now });
   w.aiPass = now; w.updated = now;
   return w;
 }

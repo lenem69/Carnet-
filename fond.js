@@ -25,6 +25,11 @@
   const DOUTE = ['grape', 'story', 'pairings', 'from'];
   const DOUTE_LIBELLE = { 'cépage': 'grape', histoire: 'story', garde: 'from', accords: 'pairings' };
   const toDoute = v => (Array.isArray(v) ? v.map(String).filter(k => DOUTE.includes(k)) : []);
+  // Fourchette de valeur [min, max] (même règle que ai.js).
+  const estimOf = v => {
+    const min = Number(Array.isArray(v) ? v[0] : 0), max = Number(Array.isArray(v) ? v[1] : 0);
+    return min > 0 ? { min, max: max >= min ? max : min } : null;
+  };
   // Même règle que logic.js (calcDoutes).
   function calcDoutes(w, d) {
     const s = w.src || {};
@@ -57,6 +62,7 @@
     if (d.sources && d.sources.length) w.sources = d.sources;
     if (d.searched) { w.aiSearch = now || Date.now(); w.aiDoute = []; }
     else w.aiDoute = calcDoutes(w, d);
+    if (d.estim && d.estim.min > 0) { const mx = d.estim.max >= d.estim.min ? d.estim.max : d.estim.min; w.estim = { min: d.estim.min, max: mx, date: now || Date.now() }; }
     w.aiPass = now || Date.now(); w.updated = w.aiPass;
     return w;
   }
@@ -155,6 +161,59 @@
   }
 
   // Une recherche web par vin, avec la demande la plus courte possible (jetons limités).
+  // Appel sans recherche : un lot de vins, une seule requête (la connaissance du modèle suffit pour la plupart des champs).
+  async function lotGemini(c, lot) {
+    const annee = new Date().getFullYear();
+    const texte = 'Tu es sommelier expert. Pour chaque vin de la liste, sans recherche web, complète : g=cépages, s=histoire de la cuvée en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ' + annee + '), p=4 accords mets courts, u=liste des champs que tu ne connais pas sûrement parmi "cépage", "histoire", "garde", "accords" (liste vide si tu es sûr). Vins : ' +
+      JSON.stringify(lot.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region }))) +
+      '. Réponds uniquement par {"items":[{"id":"…","g":"","s":"","f":0,"t":0,"p":[],"u":[]}]} avec une entrée par vin.';
+    const j = await http('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(c.model || 'gemini-3.5-flash-lite') + ':generateContent', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': c.key },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: texte }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 4000, responseMimeType: 'application/json' } }),
+    });
+    const cand = j.candidates && j.candidates[0];
+    const t = cand && cand.content && cand.content.parts ? cand.content.parts.map(p => p.text || '').join('') : '';
+    if (!t) throw { code: 'invalid_json' };
+    const obj = extraire(t);
+    const items = Array.isArray(obj) ? obj : obj && Array.isArray(obj.items) ? obj.items : null;
+    if (!items) throw { code: 'invalid_json' };
+    const out = new Map();
+    for (const x of items) {
+      if (!x || x.id == null) continue;
+      out.set(String(x.id), {
+        grape: str(x.g), story: str(x.s), from: x.f, to: x.t,
+        pairings: Array.isArray(x.p) ? x.p.map(String) : [],
+        conf: 'estimée', sources: [], searched: false,
+        estim: estimOf(x.v),
+        doute: Array.isArray(x.u) ? [...new Set(x.u.map(u => DOUTE_LIBELLE[String(u).toLowerCase()]).filter(Boolean))] : [],
+      });
+    }
+    return out;
+  }
+
+  // Valeur indicative seule, pour les vins déjà passés : lots de 10, sans recherche.
+  async function lotValeur(c, lot) {
+    const texte = 'Tu es sommelier expert. Pour chaque vin de la liste, donne une fourchette indicative du prix de marché en euros d’une bouteille de 75 cl (min et max), à partir de tes connaissances, sans recherche. Si tu ne connais pas la cuvée, donne une fourchette large et prudente. Vins : ' +
+      JSON.stringify(lot.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region }))) +
+      '. Réponds uniquement par {"items":[{"id":"…","min":0,"max":0}]} avec une entrée par vin.';
+    const j = await http('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(c.model || 'gemini-3.5-flash-lite') + ':generateContent', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': c.key },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: texte }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 1500, responseMimeType: 'application/json' } }),
+    });
+    const cand = j.candidates && j.candidates[0];
+    const t = cand && cand.content && cand.content.parts ? cand.content.parts.map(p => p.text || '').join('') : '';
+    if (!t) throw { code: 'invalid_json' };
+    const obj = extraire(t);
+    const items = Array.isArray(obj) ? obj : obj && Array.isArray(obj.items) ? obj.items : null;
+    if (!items) throw { code: 'invalid_json' };
+    const out = new Map();
+    for (const x of items) {
+      const min = Number(x && x.min), max = Number(x && x.max);
+      if (x && x.id != null && min > 0) out.set(String(x.id), { min, max: max >= min ? max : min });
+    }
+    return out;
+  }
+
   // Recherche web par lot (une requête pour quelques vins ; sources partagées par le lot).
   async function rechercheLot(c, lot) {
     const annee = new Date().getFullYear();
@@ -247,6 +306,31 @@
           tx.objectStore('wines').put(appliquer(JSON.parse(JSON.stringify(cur)), d, now));
           await fin(tx);
           mises++;
+        }
+      }
+
+      // 2b) Valeur indicative pour les vins déjà passés sans estimation (lots de 10, sans recherche).
+      if (!erreur) {
+        const sansValeur = cave.filter(w => w.aiPass && !w.estim && w.qty > 0 && (q.tries[w.id] || 0) < ESSAIS);
+        for (let i = 0; i < sansValeur.length && restant() > 0 && !erreur; i += LOT) {
+          const lot = sansValeur.slice(i, i + LOT);
+          q.calls = (q.calls || 0) + 1; appels++;
+          let res = null;
+          try { res = await lotValeur(c, lot); }
+          catch (e) { erreur = e; break; }
+          const frais = await lireVins(db);
+          for (const v of lot) {
+            const e = res.get(String(v.id));
+            const cur = frais.find(w => String(w.id) === String(v.id));
+            if (!e) { q.tries[v.id] = (q.tries[v.id] || 0) + 1; continue; }
+            if (!cur || cur.estim) continue;
+            const cp = JSON.parse(JSON.stringify(cur));
+            cp.estim = { min: e.min, max: e.max, date: now };
+            const tx = db.transaction('wines', 'readwrite');
+            tx.objectStore('wines').put(cp);
+            await fin(tx);
+            mises++;
+          }
         }
       }
 
