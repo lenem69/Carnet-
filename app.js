@@ -444,6 +444,8 @@ async function saveForm() {
 
 function finishSave(w, ok, msg) {
   closeSheet('sForm');
+  // Le vin qui vient d'être enregistré passe en tête de la passe IA, si l'IA a encore du crédit (la bible reste la base).
+  if (ok && AI.configured().includes('gemini')) { autoPrio = w.id; setTimeout(() => autoStep(), 1500); }
   S.tab = 'cave'; S.filt = 'Tous'; S.q = ''; $('#q').value = '';
   const pos = L.sortWines(S.wines, S.sort, YEAR).findIndex(x => x.id === w.id);
   if (pos >= S.limit) S.limit = Math.ceil((pos + 1) / PAGE) * PAGE;
@@ -1084,6 +1086,7 @@ async function showNews() {
 // Économe : 1 appel = 10 vins, 4 appels par jour au plus, jamais pendant une saisie, pause jusqu'à la remise à zéro des quotas
 // (minuit heure du Pacifique ≈ 9 h UTC) dès que l'IA signale une limite. Le tout sans message : l'état se lit dans Réglages.
 const AUTO_MAX_CALLS = 20, AUTO_TRIES = 2;
+let autoPrio = null;
 const AUTO_DELAY = self.__AUTO_DELAY ?? 20000, AUTO_EVERY = self.__AUTO_EVERY ?? 180000;
 let auto = { on: true, day: '', calls: 0, pauseUntil: 0, pauseWhy: '', tries: {} };
 let autoBusy = false;
@@ -1156,7 +1159,9 @@ async function autoStep() {
   if (now < auto.pauseUntil || auto.calls >= AUTO_MAX_CALLS) return;
   // Recherche web automatique : Gemini seulement (les autres fournisseurs n'ont pas de recherche web ici).
   if (!AI.configured().includes('gemini')) return;
-  const w = autoTodo()[0];
+  const todo = autoTodo();
+  const w = todo.find(x => x.id === autoPrio) || todo[0];
+  autoPrio = null;
   if (!w) return;
   autoBusy = true; auto.calls++;
   store.setMeta('passeVerrou', Date.now()).catch(() => {});
@@ -1164,7 +1169,7 @@ async function autoStep() {
     const d = await AI.makeFiche(w, { noRetry: true, only: 'gemini' });
     const c = copieIA(w, d);
     Stats.track('fiches_ia');
-    if (await persist(() => store.putWines([c]))) { remplace(w, c); auto.lastOk = Date.now(); render(); }
+    if (await persist(() => store.putWines([c]))) { remplace(w, c); auto.lastOk = Date.now(); render(); if (S.highlight === w.id) toast('✨ Fiche complétée par l’IA'); }
     else auto.tries[w.id] = (auto.tries[w.id] || 0) + 1;
     auto.pauseUntil = 0;
   } catch (e) {
