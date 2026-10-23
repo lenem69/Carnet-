@@ -26,7 +26,7 @@ let {page,errs,calls}=await mk(25,{every:60});
 await H.sl(2500);
 const n1=await done(page);
 T('fiches complétées sans action de l’utilisateur',n1>=10,String(n1));
-T('un appel = un vin (recherche par vin)',calls.length>=1&&calls.every(c=>!JSON.stringify(c.body).includes('Pour chaque vin')));
+T('sans recherche par lots, recherche web un vin par appel',calls.length>=1&&calls.filter(c=>JSON.stringify(c.body).includes('google_search')).every(c=>!JSON.stringify(c.body).includes('Pour chaque vin')));
 T('aucun message ni fenêtre pendant le travail',!(await H.shown(page,'#sDlg'))&&!(await H.shown(page,'#sLog')));
 await H.sl(3500);
 T('limite de 20 recherches par jour respectée',calls.length<=20,String(calls.length));

@@ -5,8 +5,10 @@
 // La logique (appliquer, bibleGarde) doit rester identique à logic.js : voir tests/unit.mjs.
 (function () {
   const DB = 'cave-a-vin';
-  const MAX_JOUR = 20;        // vins recherchés par jour (quota gratuit Gemini : la vraie limite est celle de Google)
-  const PAR_PASSE = 2;        // vins par passe de fond
+  const MAX_JOUR = 20;        // appels IA par jour (lots et recherches confondus), partagés avec la page
+  const MAX_PASSE = 10;       // appels par passe de fond
+  const LOT = 10;             // vins par appel sans recherche
+  const PAR_PASSE = 3;        // recherches web par passe de fond
   const ESSAIS = 2, VERROU_MS = 5 * 60e3;
   const CHAMPS = ['grape', 'story', 'pairings', 'from', 'to'];
   const COULEUR_BIBLE = { Rouge: ['R'], Blanc: ['B', 'D'], Pétillant: ['E'] };
@@ -20,6 +22,20 @@
   };
 
   // Mise à jour d'une fiche (copie). Un champ saisi par l'utilisateur n'est jamais écrit ; le reste l'est (option B).
+  const DOUTE = ['grape', 'story', 'pairings', 'from'];
+  const DOUTE_LIBELLE = { 'cépage': 'grape', histoire: 'story', garde: 'from', accords: 'pairings' };
+  const toDoute = v => (Array.isArray(v) ? v.map(String).filter(k => DOUTE.includes(k)) : []);
+  // Même règle que logic.js (calcDoutes).
+  function calcDoutes(w, d) {
+    const s = w.src || {};
+    const out = new Set(toDoute(d.doute));
+    if (vide(w.grape)) out.add('grape');
+    if (vide(w.story)) out.add('story');
+    if (vide(w.pairings)) out.add('pairings');
+    if (vide(w.from) || vide(w.to)) out.add('from');
+    return DOUTE.filter(k => out.has(k) && s[k] !== 'user');
+  }
+
   function appliquer(w, d, now) {
     const src = { ...(w.src || {}) };
     const p = {
@@ -36,6 +52,8 @@
     if (w.from && w.to && w.from > w.to) { const t = w.from; w.from = w.to; w.to = t; }
     if (d.conf) w.conf = w.conf === 'vérifiée' ? 'vérifiée' : d.conf;
     if (d.sources && d.sources.length) w.sources = d.sources;
+    if (d.searched) { w.aiSearch = now || Date.now(); w.aiDoute = []; }
+    else w.aiDoute = calcDoutes(w, d);
     w.aiPass = now || Date.now(); w.updated = w.aiPass;
     return w;
   }
@@ -153,13 +171,45 @@
       pairings: Array.isArray(d.p) ? d.p.map(String) : [],
       conf: sources.length && /v[ée]rifi/i.test(String(d.c || '')) ? 'vérifiée' : 'estimée',
       sources,
+      searched: true,
     };
   }
 
-  // Une passe : bible sur toute la cave, puis au plus PAR_PASSE recherches, dans la limite du jour (partagée avec la page).
+  // Appel sans recherche : un lot de vins, une seule requête (la connaissance du modèle suffit pour la plupart des champs).
+  async function lotGemini(c, lot) {
+    const annee = new Date().getFullYear();
+    const texte = 'Tu es sommelier expert. Pour chaque vin de la liste, sans recherche web, complète : g=cépages, s=histoire de la cuvée en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ' + annee + '), p=4 accords mets courts, u=liste des champs que tu ne connais pas sûrement parmi "cépage", "histoire", "garde", "accords" (liste vide si tu es sûr). Vins : ' +
+      JSON.stringify(lot.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region }))) +
+      '. Réponds uniquement par {"items":[{"id":"…","g":"","s":"","f":0,"t":0,"p":[],"u":[]}]} avec une entrée par vin.';
+    const j = await http('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(c.model || 'gemini-3.5-flash-lite') + ':generateContent', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': c.key },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: texte }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 4000, responseMimeType: 'application/json' } }),
+    });
+    const cand = j.candidates && j.candidates[0];
+    const t = cand && cand.content && cand.content.parts ? cand.content.parts.map(p => p.text || '').join('') : '';
+    if (!t) throw { code: 'invalid_json' };
+    const obj = extraire(t);
+    const items = Array.isArray(obj) ? obj : obj && Array.isArray(obj.items) ? obj.items : null;
+    if (!items) throw { code: 'invalid_json' };
+    const out = new Map();
+    for (const x of items) {
+      if (!x || x.id == null) continue;
+      out.set(String(x.id), {
+        grape: str(x.g), story: str(x.s), from: x.f, to: x.t,
+        pairings: Array.isArray(x.p) ? x.p.map(String) : [],
+        conf: 'estimée', sources: [], searched: false,
+        doute: Array.isArray(x.u) ? [...new Set(x.u.map(u => DOUTE_LIBELLE[String(u).toLowerCase()]).filter(Boolean))] : [],
+      });
+    }
+    return out;
+  }
+
+  // Une passe : 1) la bible sur toute la cave, 2) l'IA sans recherche par lots de 10, 3) recherche web seulement
+  // pour les vins dont des champs restent vides ou incertains. Tout passe par une seule limite du jour, partagée avec la page.
   async function passeIA() {
     let db;
     try { db = await ouvrir(); } catch (e) { return { ok: false, why: 'base' }; }
+    let mises = 0, erreur = null, appels = 0;
     try {
       const cfg = (await lireMeta(db, 'aiCfg')) || {};
       const auto = (await lireMeta(db, 'autoFill')) || {};
@@ -189,33 +239,55 @@
         cave = cave.map(w => ids.get(String(w.id)) || w);
       }
 
-      // 2) Une recherche web par vin, dans la limite du jour.
       if (now < (q.pauseUntil || 0) || (q.calls || 0) >= MAX_JOUR) {
         await ecrireMeta(db, 'autoFill', q);
         return { ok: true, n: 0, bible: bibleMaj.length, why: 'quota' };
       }
-      const vins = cave.filter(w => !w.aiPass && w.qty > 0 && (q.tries[w.id] || 0) < ESSAIS)
-        .sort((a, b) => (b.qty > 0) - (a.qty > 0)).slice(0, Math.min(PAR_PASSE, MAX_JOUR - (q.calls || 0)));
-      if (!vins.length) {
-        await ecrireMeta(db, 'autoFill', q);
-        return { ok: true, n: 0, bible: bibleMaj.length };
-      }
+      const restant = () => Math.min(MAX_PASSE - appels, MAX_JOUR - (q.calls || 0));
 
       await ecrireMeta(db, 'passeVerrou', now);
-      let mises = 0, erreur = null;
-      for (const v of vins) {
-        q.calls = (q.calls || 0) + 1;
-        let d = null;
-        try { d = await rechercheGemini(c, v); }
-        catch (e) { erreur = e; q.tries[v.id] = (q.tries[v.id] || 0) + 1; break; }
+
+      // 2) IA sans recherche : vins jamais passés, par lots de LOT.
+      const aFaire = cave.filter(w => !w.aiPass && w.qty > 0 && (q.tries[w.id] || 0) < ESSAIS);
+      for (let i = 0; i < aFaire.length && restant() > 0 && !erreur; i += LOT) {
+        const lot = aFaire.slice(i, i + LOT);
+        q.calls = (q.calls || 0) + 1; appels++;
+        let res = null;
+        try { res = await lotGemini(c, lot); }
+        catch (e) { erreur = e; break; }
         // Relecture avant écriture : une modification faite entre-temps est gardée.
-        const cur = (await lireVins(db)).find(w => String(w.id) === String(v.id));
-        if (!cur || cur.aiPass) continue;
-        const tx = db.transaction('wines', 'readwrite');
-        tx.objectStore('wines').put(appliquer(JSON.parse(JSON.stringify(cur)), d, now));
-        await fin(tx);
-        mises++;
+        const frais = await lireVins(db);
+        for (const v of lot) {
+          const d = res.get(String(v.id));
+          const cur = frais.find(w => String(w.id) === String(v.id));
+          if (!d) { q.tries[v.id] = (q.tries[v.id] || 0) + 1; continue; }
+          if (!cur || cur.aiPass) continue;
+          const tx = db.transaction('wines', 'readwrite');
+          tx.objectStore('wines').put(appliquer(JSON.parse(JSON.stringify(cur)), d, now));
+          await fin(tx);
+          mises++;
+        }
       }
+
+      // 3) Recherche web : seulement pour les champs restés vides ou incertains, un vin à la fois.
+      if (!erreur) {
+        cave = await lireVins(db);
+        const aChercher = cave.filter(w => w.aiPass && !w.aiSearch && w.qty > 0 && (w.aiDoute || []).length && (q.tries[w.id] || 0) < ESSAIS)
+          .sort((a, b) => (b.qty > 0) - (a.qty > 0));
+        for (const v of aChercher.slice(0, Math.max(0, Math.min(PAR_PASSE, restant())))) {
+          q.calls = (q.calls || 0) + 1; appels++;
+          let d = null;
+          try { d = await rechercheGemini(c, v); }
+          catch (e) { erreur = e; q.tries[v.id] = (q.tries[v.id] || 0) + 1; break; }
+          const cur = (await lireVins(db)).find(w => String(w.id) === String(v.id));
+          if (!cur || cur.aiSearch) continue;
+          const tx = db.transaction('wines', 'readwrite');
+          tx.objectStore('wines').put(appliquer(JSON.parse(JSON.stringify(cur)), d, now));
+          await fin(tx);
+          mises++;
+        }
+      }
+
       if (erreur) {
         const code = erreur.code;
         if (code === 'rate_limited') { q.pauseUntil = prochaineRemise(now); q.pauseWhy = 'limite de l’IA atteinte'; }
@@ -225,7 +297,7 @@
       if (mises) q.lastOk = now;
       await ecrireMeta(db, 'autoFill', q);
       await ecrireMeta(db, 'passeVerrou', 0);
-      if ((mises || bibleMaj.length) && self.clients) {
+      if (mises && self.clients) {
         const liste = await self.clients.matchAll({ includeUncontrolled: true });
         liste.forEach(x => x.postMessage({ type: 'PASSE_IA_FIN', n: mises }));
       }

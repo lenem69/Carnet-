@@ -223,6 +223,17 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   T('fiches : la saisie utilisateur n’est jamais écrasée par l’IA', c.story === 'Ma note perso', c.story);
   T('fiches : les champs vides sont complétés par l’IA et étiquetés', c.grape === 'Syrah' && c.src.grape === 'ai' && c.from === 2025 && c.src.from === 'ai', JSON.stringify(c.src));
   T('fiches : passe IA enregistrée (une seule par vin)', c.aiPass > 0 && L.normalizeWine(c).aiPass === c.aiPass);
+// Sans recherche d'abord : les champs vides ou incertains sont à chercher ; après une recherche, plus rien à chercher.
+{
+  const base = L.normalizeWine({ name: 'Doute', dom: 'D', year: 2019, qty: 1, src: {} });
+  const sans = L.applyAi(JSON.parse(JSON.stringify(base)), { grape: 'Gamay', story: '', pairings: ['Poulet'], from: 2026, to: 2031, doute: ['grape'] }, 1700000000000);
+  T('sans recherche : champs vides ou incertains à chercher', JSON.stringify(sans.aiDoute) === JSON.stringify(['grape', 'story']), JSON.stringify(sans.aiDoute));
+  T('sans recherche : aucune recherche enregistrée', sans.aiSearch === 0 && sans.aiPass > 0);
+  const cherche = L.applyAi(JSON.parse(JSON.stringify(sans)), { grape: 'Gamay', story: 'Histoire', pairings: ['Poulet'], from: 2026, to: 2031, searched: true, sources: [{ t: 'a', u: 'https://a.fr' }] }, 1700000001000);
+  T('après recherche : plus rien à chercher', cherche.aiDoute.length === 0 && cherche.aiSearch === 1700000001000);
+  const perso = L.applyAi(L.normalizeWine({ name: 'Perso', dom: 'D', year: 2019, qty: 1, grape: 'Syrah', src: { grape: 'user' } }), { grape: 'Gamay' }, 1700000000000);
+  T('une saisie de l’utilisateur n’est jamais à chercher', !perso.aiDoute.includes('grape'));
+}
   T('fiches : indication des champs mis à jour', JSON.stringify(L.aiFields(c)) === JSON.stringify(['cépage', 'accords', 'garde']), JSON.stringify(L.aiFields(c)));
   const b = L.normalizeWine({ name: 'B', dom: 'D', year: 2018, color: 'Rouge', from: 2026, to: 2030, src: { from: 'bible', to: 'bible' } });
   L.applyAi(b, { from: 2027, to: 2033 });

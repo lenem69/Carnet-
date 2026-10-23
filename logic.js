@@ -2,7 +2,7 @@
 import { norm, num, price, uid } from './util.js';
 
 export const COLORS = ['Rouge', 'Blanc', 'Rosé', 'Pétillant', 'Autre'];
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;
 
 export function normColor(v) {
   const s = norm(v);
@@ -75,6 +75,9 @@ export function normalizeWine(raw) {
     tastings: toTastings(raw.tastings),
     // Date de la passe IA faite sur ce vin (0 = jamais). Une seule passe, après l'enregistrement.
     aiPass: Number(raw.aiPass) || 0,
+    // Date de la recherche web (0 = jamais) et champs encore à chercher.
+    aiSearch: Number(raw.aiSearch) || 0,
+    aiDoute: toDoute(raw.aiDoute),
     created: Number(raw.created) || now,
     updated: Number(raw.updated) || now,
   };
@@ -102,6 +105,9 @@ function toSources(v) {
 const ORIGINS = ['user', 'ai', 'bible'];
 // Champs que l'IA peut compléter ou corriger. Chacun porte son origine (src) : user (saisi à la main) | ai | bible.
 export const AI_FIELDS = ['grape', 'story', 'pairings', 'from', 'to'];
+// Champs que la recherche web peut compléter (la garde compte pour « from »).
+export const DOUTE = ['grape', 'story', 'pairings', 'from'];
+const toDoute = v => (Array.isArray(v) ? v.map(String).filter(k => DOUTE.includes(k)) : []);
 const LABEL_AI = { grape: 'cépage', story: 'histoire', pairings: 'accords', from: 'garde', to: 'garde' };
 function origins(v) {
   const o = {};
@@ -128,6 +134,17 @@ export function editSrc(old, raw) {
 }
 // Applique une réponse de l'IA à une fiche (objet déjà copié). Ne touche jamais aux champs saisis par l'utilisateur.
 // Marque la passe comme faite : une seule passe par vin, pas de rafraîchissement périodique.
+// Champs à chercher sur le web : ceux que l'IA signale incertains et ceux restés vides. Une saisie de l'utilisateur n'est jamais concernée.
+function calcDoutes(w, d) {
+  const s = w.src || {};
+  const out = new Set(toDoute(d.doute));
+  if (vide(w.grape)) out.add('grape');
+  if (vide(w.story)) out.add('story');
+  if (vide(w.pairings)) out.add('pairings');
+  if (vide(w.from) || vide(w.to)) out.add('from');
+  return DOUTE.filter(k => out.has(k) && s[k] !== 'user');
+}
+
 export function applyAi(w, d, now = Date.now()) {
   const src = { ...(w.src || {}) };
   const propose = {
@@ -144,6 +161,8 @@ export function applyAi(w, d, now = Date.now()) {
   if (w.from && w.to && w.from > w.to) [w.from, w.to] = [w.to, w.from];
   if (d.conf) w.conf = w.conf === 'vérifiée' ? 'vérifiée' : d.conf;
   if (d.sources && d.sources.length) w.sources = d.sources;
+  if (d.searched) { w.aiSearch = now; w.aiDoute = []; }
+  else w.aiDoute = calcDoutes(w, d);
   w.aiPass = now; w.updated = now;
   return w;
 }

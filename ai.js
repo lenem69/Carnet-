@@ -297,8 +297,13 @@ export async function makeFiche(w, opts = {}) {
   return f;
 }
 
+// Libellés envoyés par le modèle (« u ») vers les champs de la fiche.
+const DOUTE_LIBELLE = { 'cépage': 'grape', histoire: 'story', garde: 'from', accords: 'pairings' };
+function mapDoute(v) { return Array.isArray(v) ? [...new Set(v.map(x => DOUTE_LIBELLE[String(x).toLowerCase()]).filter(Boolean))] : []; }
+
 function ficheFrom(d) {
   return {
+    doute: mapDoute(d.u || d.doute),
     grape: String(d.grape || d.g || ''),
     story: String(d.story || d.s || ''),
     from: d.from ?? d.f, to: d.to ?? d.t,
@@ -311,7 +316,7 @@ function ficheFrom(d) {
 // 10 vins par appel : 10 fois moins d'appels que vin par vin.
 export async function makeFiches(list, opts) {
   const year = new Date().getFullYear();
-  const d = await callJson(`${EXPERT} Pour chaque vin de la liste, complète ou corrige si besoin : g=cépages, s=histoire de la cuvée et du millésime en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ${year}), p=4 accords mets courts, c="estimée". Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region })))}. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"c":"estimée"}]} avec une entrée par vin.`, opts);
+  const d = await callJson(`${EXPERT} Pour chaque vin de la liste, complète ou corrige si besoin : g=cépages, s=histoire de la cuvée et du millésime en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ${year}), p=4 accords mets courts, u=liste des champs que tu ne connais pas sûrement parmi "cépage", "histoire", "garde", "accords" (liste vide si tu es sûr), c="estimée". Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region })))}. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"u":[],"c":"estimée"}]} avec une entrée par vin.`, opts);
   const items = Array.isArray(d) ? d : d && Array.isArray(d.items) ? d.items : null;
   if (!items) throw { code: 'invalid_json' };
   const out = new Map();
