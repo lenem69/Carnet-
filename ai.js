@@ -2,6 +2,7 @@
 // L'appli fonctionne entièrement sans IA ; ce module n'est appelé que sur action explicite.
 import { sleep } from './util.js';
 import { normColor } from './logic.js';
+import * as store from './store.js';
 
 export const PROVIDERS = {
   gemini: { label: 'Gemini (Google)', model: 'gemini-3.5-flash-lite', help: 'Clé gratuite sur aistudio.google.com → « Get API key ». Pour mieux lire les étiquettes difficiles : gemini-3.8-flash.' },
@@ -50,6 +51,11 @@ export function setSettings(s) {
   else delete r.list[s.provider];
   localStorage.setItem(KEY, JSON.stringify({ v: 2, provider: s.provider, list: r.list }));
   try { localStorage.removeItem(COOL); } catch (e) { /* sans effet */ }
+  syncCfg();
+}
+// Copie des clés dans IndexedDB (sur le téléphone seulement) : le service worker en a besoin pour la passe de fond.
+export function syncCfg() {
+  try { store.setMeta('aiCfg', readRaw().list).catch(() => {}); } catch (e) { /* sans effet */ }
 }
 export const ready = () => configured().length > 0;
 

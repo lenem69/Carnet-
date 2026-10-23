@@ -215,7 +215,7 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
 // Fiches : origine par champ, passe IA unique
 {
   const o0 = out.length;
-  const base = L.normalizeWine({ name: 'Cuvée', dom: 'Dom', year: 2019, color: 'Rouge', story: 'Ma note perso', grape: '', pairings: [], from: '', to: '' });
+  const base = L.normalizeWine({ name: 'Cuvée', dom: 'Dom', year: 2019, color: 'Rouge', story: 'Ma note perso', src: { story: 'user' }, grape: '', pairings: [], from: '', to: '' });
   const c = JSON.parse(JSON.stringify(base));
   L.applyAi(c, { story: 'Texte IA', grape: 'Syrah', pairings: ['Agneau'], from: 2025, to: 2032 });
   T('fiches : la saisie utilisateur n’est jamais écrasée par l’IA', c.story === 'Ma note perso', c.story);
@@ -234,7 +234,23 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   T('fiches : nouvelle fiche saisie à la main = champs « user »', s3.story === 'user' && !('grape' in s3), JSON.stringify(s3));
   const legacy = L.normalizeWine({ name: 'L', dom: 'D', year: 2010, story: 'ancienne fiche sans origine' });
   L.applyAi(legacy, { story: 'nouveau' });
-  T('fiches : ancienne fiche sans origine protégée', legacy.story === 'ancienne fiche sans origine', legacy.story);
+  T('fiches : ancienne fiche sans origine réécrite par l’IA (option B)', legacy.story === 'nouveau' && legacy.src.story === 'ai', legacy.story);
+  // La copie de la passe de fond (fond.js, service worker) doit donner exactement le même résultat que logic.js.
+  const vm = await import('vm');
+  const code = fs.readFileSync(new URL('../fond.js', import.meta.url), 'utf8');
+  const ctx = { self: {}, indexedDB: {}, fetch: null, console };
+  vm.runInNewContext(code, ctx);
+  const cas = [
+    [{ name: 'X', dom: 'D', year: 2019, story: 'saisie', src: { story: 'user' } }, { story: 'IA', grape: 'Syrah', pairings: ['Agneau'], from: 2025, to: 2032 }],
+    [{ name: 'Y', dom: 'D', year: 2019, story: 'vieux', src: {} }, { story: 'neuf', from: 2030, to: 2024 }],
+    [{ name: 'Z', dom: 'D', year: 2019, from: 2026, to: 2030, src: { from: 'bible', to: 'bible' } }, { from: 2027, to: 2033, conf: 'vérifiée', sources: [{ t: 'a', u: 'https://a.fr' }] }],
+  ];
+  for (const [w, d] of cas) {
+    const now = 1700000000000;
+    const a = L.applyAi(JSON.parse(JSON.stringify(w)), d, now);
+    const b = ctx.self.FondIA.appliquer(JSON.parse(JSON.stringify(w)), d, now);
+    T('fond de tâche = logique de la page : ' + w.name, JSON.stringify(a) === JSON.stringify(b), JSON.stringify([a, b]));
+  }
   console.log(out.slice(o0).join('\n'));
 }
 

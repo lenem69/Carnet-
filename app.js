@@ -1087,12 +1087,31 @@ function nextQuotaReset(now = Date.now()) {
   return d.getTime();
 }
 const autoSave = () => store.setMeta('autoFill', auto).catch(() => {});
+// Tâche de fond : Chrome Android lance la passe deux fois par jour, appli fermée. Ailleurs (iPhone), la passe se fait à l'ouverture.
+async function initFond() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.addEventListener('message', async e => {
+    if (e.data && e.data.type === 'PASSE_IA_FIN') {
+      try { S.wines = await store.allWines(); render(); } catch (err) { /* l'affichage se rafraîchira à la prochaine ouverture */ }
+    }
+  });
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    if (reg.periodicSync) await reg.periodicSync.register('passe-ia', { minInterval: 12 * 3600e3 });
+  } catch (e) { /* refusé ou non disponible : la passe reste à l'ouverture de l'appli */ }
+}
 async function initAuto() {
+  AI.syncCfg();
+  initFond();
   try { const m = await store.getMeta('autoFill'); if (m && typeof m === 'object') auto = { ...auto, ...m, tries: { ...(m.tries || {}) } }; } catch (e) { /* valeurs par défaut */ }
   setTimeout(autoStep, AUTO_DELAY);
   setInterval(autoStep, AUTO_EVERY);
 }
 function autoStatus() {
+  const base = autoStatusBase();
+  return base + (/iPhone|iPad|iPod/.test(navigator.userAgent) && auto.on && AI.ready() ? ' Sur iPhone, les fiches se mettent à jour quand vous ouvrez l’appli.' : '');
+}
+function autoStatusBase() {
   if (!AI.ready()) return 'Inactif : aucune IA configurée.';
   if (!auto.on) return 'Désactivé.';
   const n = autoTodo().length;
@@ -1105,10 +1124,21 @@ async function autoStep() {
   if (document.querySelector('.modal.show') || /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName)) return;
   const now = Date.now(), day = new Date(now).toISOString().slice(0, 10);
   if (auto.day !== day) { auto.day = day; auto.calls = 0; }
+  // Les quotas et le verrou sont partagés avec la passe de fond (service worker) : on relit ce qu'elle a fait.
+  try {
+    const frais = await store.getMeta('autoFill');
+    if (frais && typeof frais === 'object') {
+      if (frais.day === day) auto.calls = Math.max(auto.calls, frais.calls || 0);
+      auto.pauseUntil = Math.max(auto.pauseUntil, frais.pauseUntil || 0);
+    }
+    const verrou = await store.getMeta('passeVerrou');
+    if (verrou && Date.now() - verrou < 5 * 6e4 * 1) return;
+  } catch (e) { /* lecture impossible : on attend le prochain tour */ return; }
   if (now < auto.pauseUntil || auto.calls >= AUTO_MAX_CALLS) return;
   const group = autoTodo().slice(0, 10);
   if (!group.length) return;
   autoBusy = true; auto.calls++;
+  store.setMeta('passeVerrou', Date.now()).catch(() => {});
   try {
     const res = await AI.makeFiches(group, { noRetry: true });
     const changed = [];
@@ -1130,7 +1160,7 @@ async function autoStep() {
       auto.pauseUntil = now + 864e5; auto.pauseWhy = 'clé ou modèle d’IA à vérifier';
       errToast('Fiches automatiques en pause : ' + AI.errText(e));
     } else { auto.pauseUntil = now + 30 * 6e4; auto.pauseWhy = 'connexion ou serveur indisponible'; }
-  } finally { autoBusy = false; autoSave(); }
+  } finally { autoBusy = false; autoSave(); store.setMeta('passeVerrou', 0).catch(() => {}); }
 }
 
 /* ============ Statistiques anonymes (facultatives) ============ */

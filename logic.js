@@ -109,10 +109,10 @@ function origins(v) {
   return o;
 }
 const vide = v => v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length);
-// L'IA peut écrire dans un champ s'il est vide, ou s'il vient d'elle ou de la bible. Une valeur sans origine (anciennes fiches) est considérée saisie à la main.
+// L'IA peut écrire partout sauf dans une saisie de l'utilisateur (origine « user »). Les anciennes fiches sans origine sont réécrites
+// (choix de l'utilisateur, option B) : les textes saisis avant la version 1.16.0 peuvent donc être remplacés.
 function peutEcrire(w, src, k) {
-  if (src[k] === 'ai' || src[k] === 'bible') return true;
-  return !src[k] && vide(w[k]);
+  return src[k] !== 'user';
 }
 // Origines après une modification à la main : un champ changé devient « user », un champ vidé perd son origine.
 export function editSrc(old, raw) {

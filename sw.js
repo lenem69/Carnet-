@@ -1,7 +1,7 @@
 // Service worker : appli disponible hors connexion et mises à jour contrôlées.
-importScripts('version.js');
+importScripts('version.js', 'fond.js');
 const CACHE = 'cave-' + self.APP_VERSION;
-const FILES = ['./', 'index.html', 'styles.css', 'version.js', 'app.js', 'util.js', 'logic.js', 'apogee.js', 'store.js', 'ai.js', 'importer.js', 'files.js', 'quotes.js', 'stats.js', 'notes.js', 'chiffres.js', 'taxonomie.js', 'bible/bible.json', 'xlsx.min.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable.png'];
+const FILES = ['./', 'index.html', 'styles.css', 'version.js', 'app.js', 'util.js', 'logic.js', 'apogee.js', 'store.js', 'ai.js', 'fond.js', 'importer.js', 'files.js', 'quotes.js', 'stats.js', 'notes.js', 'chiffres.js', 'taxonomie.js', 'bible/bible.json', 'xlsx.min.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -14,6 +14,11 @@ self.addEventListener('install', event => {
     }));
   })());
   // pas de skipWaiting automatique : l'utilisateur choisit « Mettre à jour »
+});
+
+// Passe IA en tâche de fond (Chrome Android) : même appli fermée, à la fréquence décidée par le navigateur.
+self.addEventListener('periodicsync', event => {
+  if (event.tag === 'passe-ia') event.waitUntil(self.passeIA ? self.passeIA() : Promise.resolve());
 });
 
 self.addEventListener('message', event => {
