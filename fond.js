@@ -381,6 +381,27 @@
     }
   }
 
+  // Nouvelle version publiée : une notification sur le téléphone, une seule fois par version (sans serveur de notifications).
+  async function verifierVersion() {
+    let txt;
+    try {
+      const res = await fetch(new Request('version.js', { cache: 'reload' }));
+      if (!res.ok) return 'hors-ligne';
+      txt = await res.text();
+    } catch (e) { return 'hors-ligne'; }
+    const m = /APP_VERSION\s*=\s*'([^']+)'/.exec(txt);
+    if (!m || m[1] === self.APP_VERSION) return 'a-jour';
+    let db = null, deja = null;
+    try { db = await ouvrir(); deja = await lireMeta(db, 'notifVersion'); } catch (e) { db = null; }
+    if (deja === m[1]) { if (db) db.close(); return 'deja-notifiee'; }
+    try {
+      await self.registration.showNotification('Ma cave', { body: 'Version ' + m[1] + ' disponible. Ouvrez l’appli et touchez « Mettre à jour ».', tag: 'maj-cave', icon: 'icon-192.png', badge: 'icon-192.png' });
+    } catch (e) { if (db) db.close(); return 'refusee'; }
+    if (db) { try { await ecrireMeta(db, 'notifVersion', m[1]); } catch (e) { /* tant pis : au pire une notification de plus */ } db.close(); }
+    return 'notifiee';
+  }
+
   self.passeIA = passeIA;
+  self.verifierVersion = verifierVersion;
   self.FondIA = { appliquer, bibleGarde };
 })();

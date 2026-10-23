@@ -1002,6 +1002,22 @@ async function openSettings() {
   $('#st-ver').textContent = VERSION;
   $('#st-auto').checked = auto.on; $('#st-auto-info').textContent = autoStatus();
   $('#st-maj').onclick = () => { closeSheet('sSet'); enrichAll(); };
+  const notifInfo = () => {
+    if (!('Notification' in window)) return 'Non disponible sur ce navigateur.';
+    if (Notification.permission === 'granted') return 'Activé. Sur Android, une notification apparaît quand une nouvelle version est publiée, même appli fermée (fréquence décidée par le navigateur).';
+    if (Notification.permission === 'denied') return 'Refusé. Autorisez les notifications pour Ma cave dans les réglages du téléphone.';
+    return 'Désactivé.';
+  };
+  $('#st-notif-info').textContent = notifInfo();
+  $('#st-notif').hidden = !('Notification' in window) || Notification.permission === 'granted';
+  $('#st-notif').onclick = async () => {
+    try {
+      const p = await Notification.requestPermission();
+      $('#st-notif-info').textContent = notifInfo();
+      $('#st-notif').hidden = p === 'granted';
+      if (p !== 'granted') toast('Notifications non autorisées : rien ne sera affiché.');
+    } catch (e) { errToast('Impossible de demander l’autorisation : ' + (e.message || 'erreur')); }
+  };
   $('#st-stats-w').hidden = !Stats.configured();
   $('#st-stats').checked = Stats.consentState() === 'oui';
   $('#st-info').textContent = 'Lecture…';

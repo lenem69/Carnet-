@@ -18,7 +18,20 @@ self.addEventListener('install', event => {
 
 // Passe IA en tâche de fond (Chrome Android) : même appli fermée, à la fréquence décidée par le navigateur.
 self.addEventListener('periodicsync', event => {
-  if (event.tag === 'passe-ia') event.waitUntil(self.passeIA ? self.passeIA() : Promise.resolve());
+  if (event.tag !== 'passe-ia') return;
+  // la passe et la vérification de version sont indépendantes : l'une n'empêche pas l'autre
+  event.waitUntil(Promise.allSettled([
+    self.passeIA ? self.passeIA() : Promise.resolve(),
+    self.verifierVersion ? self.verifierVersion() : Promise.resolve()
+  ]));
+});
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const liste = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    if (liste.length) return liste[0].focus();
+    return self.clients.openWindow(self.registration.scope);
+  })());
 });
 
 self.addEventListener('message', event => {
