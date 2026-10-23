@@ -167,10 +167,49 @@ function card(w, mode, why) {
   return `<div class="w${w.qty <= 0 ? ' out' : ''}${S.highlight === w.id ? ' hl' : ''}" data-id="${esc(w.id)}">
   ${why ? `<p class="why">💡 ${esc(why)}</p>` : ''}
   <div class="row"><div><h4>${esc(w.name)}${w.year ? ' ' + esc(w.year) : ''}</h4><p>${esc([w.dom, w.region].filter(Boolean).join(' · '))}</p></div>${qty}</div>
-  ${meta ? `<p>${meta}</p>` : ''}${tags ? `<p>${tags}</p>` : ''}${apoRappel ? `<p class="mu small">${esc(apoRappel)}</p>` : ''}
-  ${hasFiche || apo ? `<details><summary>Fiche et accords</summary>${apo ? `<p class="mu small">${esc(apo)}</p>` : ''}${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}</details>` : ''}
+  ${meta ? `<p>${meta}</p>` : ''}${tags ? `<p>${tags}</p>` : ''}${apoRappel ? `<p class="mu small">${esc(apoRappel)}</p>` : ''}${degLigne(w)}
+  ${hasFiche || apo ? `<details><summary>Fiche et accords</summary>${apo ? `<p class="mu small">${esc(apo)}</p>` : ''}${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : journalHtml(w, mode)}
   <div class="acts">${!w.story && !w.pairings.length ? '<button class="lnk" data-a="gen">✨ Fiche (IA)</button>' : ''}<button class="lnk" data-a="e">Modifier</button>${mode === 'cave' ? '<button class="lnk" data-a="d">Supprimer</button>' : ''}</div>
 </div>`;
+}
+
+// Journal de dégustation (saisie manuelle uniquement).
+function journalHtml(w, mode) {
+  if (mode !== 'cave' && mode !== 'boire') return '';
+  const t = Array.isArray(w.tastings) ? w.tastings : [];
+  const lignes = t.map((x, i) => `<li><span class="etoiles" aria-label="${x.n} sur 5">${'★'.repeat(x.n)}${'☆'.repeat(5 - x.n)}</span> <span class="mu small">${esc(x.d.split('-').reverse().join('/'))}</span>${x.c ? `<br>${esc(x.c)}` : ''} <button class="lnk" data-a="dgdel" data-i="${i}">Supprimer</button></li>`).join('');
+  return `<div class="jr"><p><b>Journal de dégustation</b></p>${lignes ? `<ul>${lignes}</ul>` : '<p class="mu small">Aucune dégustation notée.</p>'}<button class="lnk" data-a="dg">+ Noter une dégustation</button></div>`;
+}
+function degLigne(w) {
+  const d = L.degustations(w);
+  if (!d) return '';
+  return `<p class="mu small">Dégusté ${d.count} fois · moyenne ${String(d.avg).replace('.', ',')}/5</p>`;
+}
+let tgWine = null; let tgNote = 0;
+function openTasting(w) {
+  tgWine = w; tgNote = 0;
+  const d = new Date();
+  $('#tg-date').value = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+  $('#tg-name').textContent = w.name + (w.year ? ' ' + w.year : '');
+  $('#tg-c').value = '';
+  paintStars();
+  openSheet('sTasting');
+}
+function paintStars() {
+  $$('#tg-stars [data-n]').forEach(b => { const n = Number(b.dataset.n); b.textContent = n <= tgNote ? '★' : '☆'; b.setAttribute('aria-checked', n === tgNote ? 'true' : 'false'); });
+}
+async function saveTasting() {
+  const w = tgWine; if (!w) return;
+  if (!tgNote) { errToast('Choisissez une note de 1 à 5 étoiles.'); return; }
+  const date = $('#tg-date').value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { errToast('Date invalide.'); return; }
+  const copie = JSON.parse(JSON.stringify(w));
+  copie.tastings = [...(Array.isArray(copie.tastings) ? copie.tastings : []), { d: date, n: tgNote, c: $('#tg-c').value.trim().slice(0, 500) }];
+  copie.updated = Date.now();
+  const idx = S.wines.indexOf(w);
+  S.wines[idx] = copie;
+  if (await persist(() => store.putWines([copie]))) { closeSheet('sTasting'); tgWine = null; render(); toast('Dégustation notée.'); }
+  else { S.wines[idx] = w; render(); }
 }
 
 function renderStats() {
@@ -463,6 +502,19 @@ async function onCardAction(e) {
         if (await persist(() => store.putWines([w]))) toast('Suppression annulée.');
       } } });
     }
+  } else if (a === 'dg') {
+    openTasting(w);
+  } else if (a === 'dgdel') {
+    const i = Number(btn.dataset.i);
+    if (!Array.isArray(w.tastings) || !w.tastings[i]) return;
+    const c = await ask('Supprimer cette dégustation ?', 'Cette note sera retirée du journal de ce vin.', [
+      { label: 'Supprimer', value: 'yes', kind: 'danger' }, { label: 'Annuler', value: null, kind: 'o' }]);
+    if (c !== 'yes') return;
+    const copie = JSON.parse(JSON.stringify(w));
+    copie.tastings.splice(i, 1); copie.updated = Date.now();
+    const idx = S.wines.indexOf(w);
+    S.wines[idx] = copie;
+    if (await persist(() => store.putWines([copie]))) { render(); toast('Dégustation supprimée.'); } else { S.wines[idx] = w; render(); }
   } else if (a === 'gen') {
     if (!requireAI()) return;
     btn.disabled = true; btn.textContent = 'Génération…';
@@ -934,6 +986,9 @@ function bind() {
   $('#st-upd').onclick = checkUpdate;
 
   $('#h-tpl').onclick = downloadTemplate;
+  $('#tg-stars').onclick = e => { const b = e.target.closest('[data-n]'); if (!b) return; tgNote = Number(b.dataset.n); paintStars(); };
+  $('#tg-save').onclick = saveTasting;
+  $('#tg-cancel').onclick = () => { tgWine = null; closeSheet('sTasting'); };
   $('#sHelp').addEventListener('click', e => {
     const b = e.target.closest('[data-copy]'); if (!b) return;
     const el = $('#' + b.dataset.copy); const label = b.textContent;

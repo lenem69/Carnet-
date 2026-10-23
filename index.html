@@ -165,6 +165,19 @@
 <datalist id="dl-name"></datalist><datalist id="dl-dom"></datalist><datalist id="dl-region"></datalist><datalist id="dl-loc"></datalist>
 
 <!-- Suivi des traitements longs -->
+<div class="modal" id="sTasting" role="dialog" aria-modal="true" aria-labelledby="tgT"><div class="sheet">
+  <div class="sb">
+    <h2 id="tgT">Noter une dégustation</h2>
+    <p class="mu small" id="tg-name"></p>
+    <label for="tg-date">Date</label><input id="tg-date" type="date">
+    <span class="lbl" id="tg-stars-l">Note</span>
+    <div class="stars" role="radiogroup" aria-labelledby="tg-stars-l" id="tg-stars">
+      <button type="button" role="radio" aria-checked="false" data-n="1" aria-label="1 étoile">☆</button><button type="button" role="radio" aria-checked="false" data-n="2" aria-label="2 étoiles">☆</button><button type="button" role="radio" aria-checked="false" data-n="3" aria-label="3 étoiles">☆</button><button type="button" role="radio" aria-checked="false" data-n="4" aria-label="4 étoiles">☆</button><button type="button" role="radio" aria-checked="false" data-n="5" aria-label="5 étoiles">☆</button>
+    </div>
+    <label for="tg-c">Commentaire (facultatif)</label><textarea id="tg-c" rows="3" maxlength="500"></textarea>
+  </div>
+  <div class="ft"><button class="btn o" id="tg-cancel" type="button">Annuler</button><button class="btn" id="tg-save" type="button">Enregistrer</button></div>
+</div></div>
 <div class="modal" id="sLog" role="dialog" aria-modal="true" aria-labelledby="lgT"><div class="sheet">
   <h2 id="lgT">Analyse en cours…</h2>
   <p id="lgH" class="mu small"></p>

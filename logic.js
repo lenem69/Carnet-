@@ -2,7 +2,7 @@
 import { norm, num, price, uid } from './util.js';
 
 export const COLORS = ['Rouge', 'Blanc', 'Rosé', 'Pétillant', 'Autre'];
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 export function normColor(v) {
   const s = norm(v);
@@ -72,9 +72,23 @@ export function normalizeWine(raw) {
     src: origins(raw.src),
     conf: raw.conf === 'vérifiée' ? 'vérifiée' : raw.conf === 'connue' || raw.conf === 'estimée' ? 'estimée' : '',
     sources: toSources(raw.sources),
+    tastings: toTastings(raw.tastings),
     created: Number(raw.created) || now,
     updated: Number(raw.updated) || now,
   };
+}
+
+// Journal de dégustation : { d: 'AAAA-MM-JJ', n: note de 1 à 5 étoiles, c: commentaire }.
+function toTastings(v) {
+  if (!Array.isArray(v)) return [];
+  return v.filter(x => x && /^\d{4}-\d{2}-\d{2}$/.test(String(x.d)) && Number.isInteger(Number(x.n)) && Number(x.n) >= 1 && Number(x.n) <= 5)
+    .slice(0, 100).map(x => ({ d: String(x.d), n: Number(x.n), c: str(x.c).slice(0, 500) }));
+}
+// Nombre de dégustations notées et moyenne sur 5 (null s'il n'y en a pas).
+export function degustations(w) {
+  const t = Array.isArray(w.tastings) ? w.tastings : [];
+  if (!t.length) return null;
+  return { count: t.length, avg: Math.round(t.reduce((a, x) => a + x.n, 0) / t.length * 10) / 10 };
 }
 
 // Clé de doublon : même cuvée, même domaine, même millésime.

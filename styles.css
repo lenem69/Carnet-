@@ -221,3 +221,13 @@ details.adv[open] summary { margin-bottom: 6px; }
   33%, 100% { background: transparent; box-shadow: none; }
 }
 @media (prefers-reduced-motion: reduce) { .tuto .ti { animation: none; } }
+
+/* Journal de dégustation */
+.jr { margin-top: 10px; padding-top: 8px; border-top: 1px solid #eadfe2; }
+.jr ul { list-style: none; padding: 0; margin: 4px 0; }
+.jr li { margin: 6px 0; }
+.etoiles { color: #7b1e3a; letter-spacing: 1px; }
+.stars { display: flex; gap: 4px; margin: 6px 0 12px; }
+.stars button { font-size: 34px; line-height: 1; padding: 4px 6px; background: none; border: 0; color: #b5545f; cursor: pointer; min-width: 44px; min-height: 44px; }
+.stars button[aria-checked="true"] { color: #7b1e3a; }
+.stars button:focus-visible { outline: 2px solid #7b1e3a; outline-offset: 2px; }

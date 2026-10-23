@@ -198,3 +198,17 @@ console.log(out.join('\n'));
 const mw=L.normalizeWine({name:'Chassagne-Montrachet',dom:'Paul Jouard',year:2012,loc:'Casier B'});
 console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz',false],['',true]].map(([q,e])=>(L.matchesQuery(mw,q)===e?'PASS':'FAIL')+' recherche « '+q+' »').join('\n'));
 
+// Journal de dégustation : données et calcul de la moyenne
+{
+  const o0 = out.length;
+  const w = L.normalizeWine({ name: 'Test', dom: 'Dom', year: 2020, tastings: [{ d: '2026-03-01', n: 4, c: 'Belle' }, { d: '2026-04-02', n: 2, c: '' }, { d: 'pas une date', n: 5 }, { d: '2026-05-03', n: 9 }, { d: '2026-05-04', n: 3.0, c: 'x'.repeat(600) }] });
+  T('journal : entrées invalides écartées (date ou note hors 1–5)', w.tastings.length === 3 && w.tastings.every(x => x.n >= 1 && x.n <= 5), JSON.stringify(w.tastings));
+  T('journal : commentaire limité à 500 caractères', w.tastings[2].c.length === 500, String(w.tastings[2].c.length));
+  const d = L.degustations(w);
+  T('journal : moyenne et nombre', d && d.count === 3 && d.avg === 3, JSON.stringify(d));
+  T('journal : sans dégustation → null', L.degustations(L.normalizeWine({ name: 'Vide', dom: 'D' })) === null);
+  const un = L.normalizeWine({ name: 'Un', dom: 'D', tastings: [{ d: '2026-01-01', n: 4, c: 'ok' }] });
+  T('journal : une dégustation → 1 fois, moyenne 4', L.degustations(un).count === 1 && L.degustations(un).avg === 4);
+  T('journal : entrée non tableau → aucune dégustation', L.normalizeWine({ name: 'Z', dom: 'D', tastings: 'n' }).tastings.length === 0);
+  console.log(out.slice(o0).join('\n'));
+}
