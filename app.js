@@ -424,16 +424,17 @@ function bilanHtml(c) {
   const v = L.valeurEstimee(S.wines);
   const reste = v.bouteilles - v.couverts;
   const titre = prenomMem ? `Avis sur l’équilibre de votre cave, ${esc(prenomMem)}` : 'Avis sur l’équilibre de votre cave';
+  const court = avisMem && (avisMem.court || avisMem.texte);
+  const complet = avisMem && avisMem.complet;
   let avisHtml;
-  if (avisEnCours) avisHtml = '<span class="mu">Lecture de la cave…</span>';
-  else if (avisMem && avisMem.texte) avisHtml = `${esc(avisMem.texte)}<br><span class="mu small">Avis du ${new Date(avisMem.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} · impression, sans vérification${avisMem.erreur ? ' · mise à jour impossible : ' + esc(avisMem.erreur) : ''}</span>`;
+  if (avisEnCours && !court) avisHtml = '<span class="mu">Lecture de la cave…</span>';
+  else if (court) avisHtml = `${esc(court)}${complet ? `<details class="avis-complet"><summary>Avis complet</summary><p>${esc(complet)}</p></details>` : ''}<span class="mu small">Avis du ${new Date(avisMem.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} · impression, sans vérification${avisEnCours ? ' · mise à jour en cours' : ''}${avisMem.erreur ? ' · mise à jour impossible : ' + esc(avisMem.erreur) : ''}</span>`;
   else if (avisMem && avisMem.erreur) avisHtml = `<span class="mu">Pas encore d’avis : ${esc(avisMem.erreur)}</span>`;
-  else avisHtml = `<span class="mu">${AI.ready() ? 'Un avis apparaîtra après l’ajout ou la suppression d’un vin.' : 'Avis disponible avec une IA configurée dans Réglages.'}</span>`;
+  else avisHtml = `<span class="mu">${AI.ready() ? 'Avis en préparation…' : 'Avis disponible avec une IA configurée dans Réglages.'}</span>`;
   return `<div class="bilan">
     <p><b>${titre}</b></p>
-    <p id="avisIA" class="small">${avisHtml}</p>
+    <div id="avisIA" class="small">${avisHtml}</div>
     <p><b>Équilibre</b> ${esc(L.equilibre(c))}</p>
-    <button class="lnk" data-act="avis" type="button">Actualiser l’avis</button>
     <p><b>Valeur estimée</b> ${v.couverts ? `≈ ${fmtEur(v.total)}` : 'pas encore estimée'}</p>
     <p class="mu small">${v.couverts ? `${v.couverts} bouteille(s) sur ${v.bouteilles} estimée(s). ` : ''}Estimation indicative : peu de prix d’achat sont saisis, donc elle repose sur les connaissances de l’IA, sans vérification.</p>
     ${reste ? `<button class="lnk" data-act="valeur" type="button">Estimer la valeur (IA)</button>` : ''}
@@ -743,9 +744,9 @@ function avisSiChange() {
   if (cle === avisCleVue) return;
   avisCleVue = cle;
   clearTimeout(avisTimer);
-  avisTimer = setTimeout(() => genererAvis(false), 2500);
+  avisTimer = setTimeout(() => genererAvis(), 2500);
 }
-async function genererAvis(manuel) {
+async function genererAvis() {
   if (avisEnCours || !S.wines.length || !AI.ready()) return;
   avisEnCours = true; renderSiMagic();
   const cle = cleCave();
@@ -753,23 +754,18 @@ async function genererAvis(manuel) {
     await whenFree();
     const c = chiffres(S.wines, YEAR);
     const resume = { bouteilles: c.bouteilles, references: c.references, couleurs: c.couleurs, regions: c.regions.slice(0, 5), cepages: c.cepages.slice(0, 5), statuts: c.statuts, lecture: L.equilibre(c) };
-    const texte = await AI.avisCave(resume);
-    avisMem = { texte, date: Date.now(), cle, erreur: '' };
+    const { court, complet } = await AI.avisCave(resume);
+    avisMem = { court, complet, date: Date.now(), cle, v: VERSION, erreur: '' };
   } catch (e) {
     // Sans crédit ou en panne : on garde l’avis précédent et on dit pourquoi
-    const msg = AI.errText(e);
-    avisMem = { ...(avisMem || {}), cle, erreur: msg };
-    if (manuel) errToast(msg);
+    avisMem = { ...(avisMem || {}), cle, v: VERSION, erreur: AI.errText(e) };
   }
   try { await store.setMeta('avis', avisMem); } catch (e) { console.error(e); }
   avisEnCours = false; renderSiMagic();
   // la cave a changé pendant la lecture : on relance une fois
-  if (cleCave() !== cle) { clearTimeout(avisTimer); avisTimer = setTimeout(() => genererAvis(false), 2500); }
+  if (cleCave() !== cle) { clearTimeout(avisTimer); avisTimer = setTimeout(() => genererAvis(), 2500); }
 }
-function avisForce() {
-  if (!requireAI()) return;
-  genererAvis(true);
-}
+
 
 // Valeur : seulement les vins pas encore estimés, par lots de 10 (sans recherche web).
 async function valeurCaveIA() {
@@ -1157,7 +1153,6 @@ function bind() {
   // Magic : toucher une case ouvre la liste des vins concernés.
   $('#vChiffres').onclick = e => {
     const a = e.target.closest('[data-act]');
-    if (a && a.dataset.act === 'avis') { avisForce(); return; }
     if (a && a.dataset.act === 'valeur') { valeurCaveIA(); return; }
     const b = e.target.closest('[data-goto]'); if (!b) return;
     S.statut = b.dataset.goto; S.tab = 'cave'; S.filt = 'Tous'; S.q = ''; $('#q').value = ''; S.limit = PAGE;
@@ -1561,7 +1556,8 @@ async function boot() {
     avisMem = (await store.getMeta('avis').catch(() => null)) || null;
     prenomMem = ((await store.getMeta('bienvenue').catch(() => null)) || {}).prenom || '';
     // point de départ : pas d’appel à l’ouverture, seulement quand la cave changera
-    avisCleVue = avisMem && avisMem.cle ? avisMem.cle : cleCave();
+    // avis du même numéro de version : rien à faire ; sinon (installation de la version) : un avis est préparé dès que possible
+    avisCleVue = avisMem && avisMem.v === VERSION ? avisMem.cle : null;
     S.lastBackup = (await store.getMeta('lastBackup')) || 0;
     S.title = (await store.getMeta('title')) || DEFAULT_TITLE;
     renderTitle();

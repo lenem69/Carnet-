@@ -4,7 +4,7 @@ const S=H.suite('Équilibre et valeur');const T=S.T;
 const G=o=>({json:{candidates:[{content:{parts:[{text:JSON.stringify(o)}]}}]}});
 const ai=async c=>{
   const corps=JSON.stringify(c.body);
-  if(corps.includes('Voici un résumé'))return G({avis:'Cave plutôt rouge, il lui manque des blancs.'});
+  if(corps.includes('Voici un résumé'))return G({court:'Cave plutôt rouge, il lui manque des blancs.',complet:'Détail sur les blancs.'});
   if(corps.includes('fourchette indicative')){const ids=[...new Set([...corps.matchAll(/\\"id\\":\\"?([\w-]+)/g)].map(m=>m[1]))];return G({items:ids.map(id=>({id,min:20,max:40}))});}
   return G({});
 };
@@ -21,7 +21,7 @@ let t=await H.txt(page,'#vChiffres .bilan');
 T('équilibre : lecture affichée',t.includes('Équilibre')&&t.includes('Votre cave'),t);
 T('valeur : indiquée comme non encore estimée',t.includes('pas encore estimée'));
 T('valeur : mention d’estimation indicative',t.includes('Estimation indicative'));
-await page.click('#vChiffres [data-act="avis"]');await H.sl(700);
+await page.evaluate(()=>document.querySelectorAll('.modal.show').forEach(m=>m.classList.remove('show')));await H.sl(4000);await H.tapText(page,'.tab','Ma cave');await H.sl(300);await H.tapText(page,'.tab','Magic');await H.sl(400);
 T('avis IA : affiché avec mention « impression »',(await H.txt(page,'#avisIA')).includes('impression')&&(await H.txt(page,'#avisIA')).includes('il lui manque des blancs'));
 await page.click('#vChiffres [data-act="valeur"]');await H.sl(500);
 T('estimation : demande de confirmation',await H.shown(page,'#sDlg'));

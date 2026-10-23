@@ -364,9 +364,9 @@ export async function pickForDish(dish, candidates, opts) {
 
 // Avis sur l'équilibre de la cave, à partir d'un résumé (pas de liste de vins). Sans recherche web.
 export async function avisCave(resume, opts = {}) {
-  const d = await callJson(`${EXPERT} Voici un résumé de ma cave (sans liste de vins) : ${JSON.stringify(resume)}. Dis en 3 phrases au maximum, en français, si elle est équilibrée (couleurs, régions, types de vins, moments de boire) et ce qui pourrait lui manquer. Ce sont des impressions, pas des faits vérifiés. Réponds uniquement par {"avis":"…"}.`, { ...opts });
-  if (!d || typeof d !== 'object' || typeof d.avis !== 'string' || !d.avis.trim()) throw { code: 'invalid_json' };
-  return d.avis.trim().slice(0, 600);
+  const d = await callJson(`${EXPERT} Voici un résumé de ma cave (sans liste de vins) : ${JSON.stringify(resume)}. Donne deux avis, en français, sur son équilibre (couleurs, régions, types de vins, moments de boire) et ce qui pourrait lui manquer. "court" : 3 phrases au maximum. "complet" : 6 à 8 phrases, avec des conseils concrets d’accords et d’achats. Ce sont des impressions, pas des faits vérifiés. Réponds uniquement par {"court":"…","complet":"…"}.`, { ...opts });
+  if (!d || typeof d !== 'object' || typeof d.court !== 'string' || !d.court.trim()) throw { code: 'invalid_json' };
+  return { court: d.court.trim().slice(0, 500), complet: typeof d.complet === 'string' ? d.complet.trim().slice(0, 2000) : '' };
 }
 
 // Valeur indicative : fourchette de prix d'une bouteille de 75 cl par vin, sans recherche web, par lot.

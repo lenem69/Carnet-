@@ -59,16 +59,16 @@ T('sans IA configurée : aucun appel',calls.length===0);
 await page.close();
 mode='empty';
 ({page,errs,calls}=await mk(2));await H.sl(5000);
-T('IA sans réponse : 2 essais par vin au plus',calls.length<=2,String(calls.length));
+T('IA sans réponse : 2 essais par vin au plus',calls.filter(c=>!JSON.stringify(c.body).includes('Voici un résumé')).length<=2,String(calls.length));
 await page.close();mode='ok';
 
 // 4. nouveautés après mise à jour : une seule fois, résumé court
 ({page,errs}=await mk(0));await H.sl(1500);
 await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('seenVersion','1.16.0')});
 await page.reload();await H.sl(1500);
-T('mise à jour : fenêtre des nouveautés affichée',(await H.shown(page,'#sDlg'))&&/Mise à jour 1.23.0/.test(await H.txt(page,'#dlgT')),await H.txt(page,'#dlgT'));
+T('mise à jour : fenêtre des nouveautés affichée',(await H.shown(page,'#sDlg'))&&/Mise à jour 1.24.0/.test(await H.txt(page,'#dlgT')),await H.txt(page,'#dlgT'));
 const nx=await H.txt(page,'#dlgX');
-T('résumé : points des versions manquées, pas ceux déjà vus',/Magic : un constat/.test(nx)&&/Réglages › Nouvelles versions/.test(nx)&&!/Onglet « Magic »/.test(nx)&&!/Publier ma requête/.test(nx)&&!/Choix automatique de l’IA/.test(nx),nx);
+T('résumé : points des versions manquées, pas ceux déjà vus',/Magic : l’avis sur l’équilibre/.test(nx)&&/Réglages › Nouvelles versions/.test(nx)&&!/Onglet « Magic »/.test(nx)&&!/Publier ma requête/.test(nx)&&!/Choix automatique de l’IA/.test(nx),nx);
 await H.tapText(page,'#dlgB button','Compris');await H.sl(300);
 await page.reload();await H.sl(1500);
 T('nouveautés : affichées une seule fois',!(await H.shown(page,'#sDlg')));
