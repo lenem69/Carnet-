@@ -61,7 +61,7 @@ const rs=[{Domaine:'Lapierre',Cuvée:'Morgon',Millésime:2023,Quantité:1},{Doma
 const a=I.rowsToWines(rs,ex);T('import mode somme : doublon additionné, 1 ligne existante comptée',a.added.length===1&&a.updated.length===1&&a.updated[0].qty===3&&a.existing===1);
 const b=I.rowsToWines(rs,ex,'skip');T('import mode « seulement les nouveaux » : existant intact',b.added.length===1&&b.updated.length===0&&b.existing===1&&ex[0].qty===2);
 const c=I.rowsToWines([...rs,rs[1]],ex,'skip');T('mode skip : doublon interne au fichier toujours additionné',c.added.length===1&&c.added[0].qty===6);}
-{ // import souple : liste de caviste sans en-tête « Nom » (1.12.5)
+{ // import souple : liste de caviste sans en-tête « Nom » (1.13.0)
   const mh=I.mapHeaders(['TVA*','tarif TTC','Millésime','Q disponible','Notes/commentaires vin','commentaires domaine']);
   T('import souple : « tarif TTC » = prix, « Q disponible » = quantité, commentaires jamais domaine',mh['tarif TTC']==='price'&&mh['Q disponible']==='qty'&&!Object.values(mh).includes('dom'),JSON.stringify(mh));
   const rs=I.lireFeuilleLibre([['ROUGE 75cl'],['X',20,'Bourgogne','Berthaut-Gerbet "les Prielles"',2023,10,'Note Cellar Tracker 91 : très beau vin de longue garde'],['X',27,'Hautes Cotes de Nuits','SYLVIE ESMONIN',2023,4,'Commentaire long']],'Bourgogne');
@@ -164,6 +164,29 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   T('vins étrangers : Riesling, Tokaji → Étranger', C.chiffres([{qty:1,region:'Riesling',color:'Blanc',grape:'',name:'a'},{qty:1,region:'Tokaji',color:'Blanc',grape:'',name:'b'}],2026).regions.some(x=>x[0]==='Étranger'&&x[1]===2));
 }
 { const C = await import('../chiffres.js'); T('repérage : « Pays d’Hérault » → Languedoc-Roussillon, « Vin des Allobroges » → Savoie', C.chiffres([{qty:1,region:"Pays d’Hérault",color:'Rouge',grape:'',name:'a'},{qty:1,region:'Vin des Allobroges',color:'Rouge',grape:'',name:'b'}],2026).regions.map(x=>x[0]).sort().join('|')==='Languedoc-Roussillon|Sud-Ouest, Jura, Savoie'); }
+{ // apogée : règle du sommelier (1.13.0)
+  const A = await import('../apogee.js');
+  const ap = (w, y) => A.apogee(w, y);
+  const t1 = ap({ name: 'Champagne Brut', color: 'Pétillant', region: 'Champagne', year: '' }, 2026);
+  T('apogée : sans millésime → prêt à boire', t1.sansMillesime && t1.statut === 'Prêt à boire', JSON.stringify(t1));
+  const t2 = ap({ name: 'Château Bouscaut', color: 'Rouge', region: 'Pessac-Léognan', year: 2015 }, 2026);
+  T('apogée : Bordeaux rouge 2015 → +8 ans, pic 2023, urgence en 2026', t2.pic === 2023 && t2.statut === 'Urgence' && t2.ans === 8, JSON.stringify(t2));
+  const t3 = ap({ name: 'Morgon Côte du Py', color: 'Rouge', region: 'Beaujolais', year: 2023 }, 2026);
+  T('apogée : Beaujolais 2023 → +4 ans, pic 2027, prêt à boire en 2026', t3.pic === 2027 && t3.statut === 'Prêt à boire', JSON.stringify(t3));
+  const t4 = ap({ name: 'Gosset Grand Rosé', color: 'Rosé', region: 'Champagne', year: 2025 }, 2026);
+  T('apogée : rosé 2025 → +2 ans, prêt à boire', t4.pic === 2027 && t4.statut === 'Prêt à boire', JSON.stringify(t4));
+  const t5 = ap({ name: 'Château de Fargues', color: 'Blanc', region: 'Sauternes', year: 2015, grape: 'Sémillon' }, 2026);
+  T('apogée : Sauternes 2015 → liquoreux +20 ans, à garder en 2026', t5.pic === 2035 && t5.statut === 'À garder', JSON.stringify(t5));
+  const t6 = ap({ name: 'Château Latour', color: 'Rouge', region: 'Pauillac', year: 2016 }, 2026);
+  T('apogée : premier grand cru 2016 → +15 ans, à garder en 2026', t6.pic === 2031 && t6.statut === 'À garder' && t6.ans === 15, JSON.stringify(t6));
+  const t7 = ap({ name: 'Chardonnay Vin de France', color: 'Blanc', region: 'Vin de France', year: 2024 }, 2026);
+  T('apogée : VDF blanc 2024 → +2 ans (léger), pic 2026', t7.pic === 2026 && t7.ans === 2, JSON.stringify(t7));
+  const t8 = ap({ name: 'Meursault Les Charmes', color: 'Blanc', region: 'Meursault', year: 2022 }, 2026);
+  T('apogée : blanc de Bourgogne 2022 → +8 ans, à garder en 2026', t8.pic === 2030 && t8.statut === 'À garder', JSON.stringify(t8));
+  const t9 = ap({ name: 'Rioja Gran Reserva', color: 'Rouge', region: 'Rioja', year: 2010 }, 2026);
+  T('apogée : étranger prestige (gran reserva) → +15 ans', t9.ans === 15, JSON.stringify(t9));
+  T('apogée : phrase de la fiche contient le pic et la fenêtre', /Apogée estimée 2031 \(entre 2029 et 2033\)/.test(A.apogeeTexte(t6)), A.apogeeTexte(t6));
+}
 console.log(out.join('\n'));
 const mw=L.normalizeWine({name:'Chassagne-Montrachet',dom:'Paul Jouard',year:2012,loc:'Casier B'});
 console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz',false],['',true]].map(([q,e])=>(L.matchesQuery(mw,q)===e?'PASS':'FAIL')+' recherche « '+q+' »').join('\n'));
