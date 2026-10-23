@@ -173,13 +173,16 @@ export function bibleEntry(w, bible) {
   if (!Array.isArray(cell) || typeof cell[0] !== 'number') return null;
   return { q: cell[0], from: cell[1], to: cell[2], f: cell[3] };
 }
-// Remplit la période de garde depuis la bible, uniquement si la fiche n'en a pas. Retourne true si modifiée.
+// Bible d'abord, à l'entrée d'un vin : la garde vient de la bible, sauf une garde saisie par l'utilisateur (origine « user »).
+// Retourne true si la fiche a changé.
 export function prefillFromBible(w, bible) {
-  if (w.from || w.to) return false;
   const e = bibleEntry(w, bible);
   if (!e) return false;
-  w.from = e.from; w.to = e.to;
-  w.src = { ...w.src, from: 'bible', to: 'bible' };
+  const src = { ...(w.src || {}) }; let ch = false;
+  if (src.from !== 'user' && w.from !== e.from) { w.from = e.from; src.from = 'bible'; ch = true; }
+  if (src.to !== 'user' && w.to !== e.to) { w.to = e.to; src.to = 'bible'; ch = true; }
+  if (!ch) return false;
+  w.src = src;
   if (!w.conf) w.conf = 'estimée';
   return true;
 }

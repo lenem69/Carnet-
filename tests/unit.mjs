@@ -113,8 +113,10 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   T('bible : format valide', L.bibleValid(B) && !L.bibleValid({ v: 2, rows: [] }) && !L.bibleValid(null));
   const w1 = L.normalizeWine({ name: 'Cuvée', region: 'Chablis', color: 'Blanc', year: 2015 });
   T('bible : pré-remplit la garde d’une fiche sans garde', L.prefillFromBible(w1, B) && w1.from === 2018 && w1.to === 2030 && w1.src.from === 'bible' && w1.conf === 'estimée', JSON.stringify(w1));
-  const w2 = L.normalizeWine({ name: 'Cuvée', region: 'Chablis', color: 'Blanc', year: 2015, from: 2020, to: 2025 });
-  T('bible : ne touche pas une garde déjà saisie', !L.prefillFromBible(w2, B) && w2.from === 2020 && !w2.src.from, JSON.stringify(w2));
+  const w2 = L.normalizeWine({ name: 'Cuvée', region: 'Chablis', color: 'Blanc', year: 2015, from: 2020, to: 2025, src: { from: 'user', to: 'user' } });
+  T('bible : ne touche pas une garde saisie par l’utilisateur', !L.prefillFromBible(w2, B) && w2.from === 2020 && w2.src.from === 'user', JSON.stringify(w2));
+  const w2b = L.normalizeWine({ name: 'Cuvée', region: 'Chablis', color: 'Blanc', year: 2015, from: 2010, to: 2012 });
+  T('bible : remplace une garde sans origine (la bible d’abord)', L.prefillFromBible(w2b, B) && w2b.from === 2018 && w2b.to === 2030, JSON.stringify(w2b));
   const w3 = L.normalizeWine({ name: 'Cuvée', region: 'Jurançon sec', color: 'Blanc', year: 2015 });
   T('bible : Blanc avec sec et doux pour la même appellation → ne devine pas', !L.prefillFromBible(w3, B) && !w3.to, JSON.stringify(w3));
   const w4 = L.normalizeWine({ name: 'Cuvée', region: 'Ambiguë', color: 'Blanc', year: 2015 });
@@ -250,6 +252,29 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
     const a = L.applyAi(JSON.parse(JSON.stringify(w)), d, now);
     const b = ctx.self.FondIA.appliquer(JSON.parse(JSON.stringify(w)), d, now);
     T('fond de tâche = logique de la page : ' + w.name, JSON.stringify(a) === JSON.stringify(b), JSON.stringify([a, b]));
+  }
+  console.log(out.slice(o0).join('\n'));
+}
+// La bible d'abord : la copie de fond.js doit donner le même résultat que logic.js
+{
+  const o0 = out.length;
+  const vm = await import('vm');
+  const code = fs.readFileSync(new URL('../fond.js', import.meta.url), 'utf8');
+  const ctx = { self: {}, indexedDB: {}, fetch: null, console };
+  vm.runInNewContext(code, ctx);
+  const B = { v: 1, rows: [{ a: 'Chablis', c: 'B', y: { '2015': [4, 2018, 2030, 'A'] } }] };
+  const cas = [
+    { name: 'A', region: 'Chablis', color: 'Blanc', year: 2015, from: 2010, to: 2012 },
+    { name: 'B', region: 'Chablis', color: 'Blanc', year: 2015, from: 2020, to: 2025, src: { from: 'user', to: 'user' } },
+    { name: 'C', region: 'Chablis', color: 'Blanc', year: 2015 },
+  ];
+  for (const raw of cas) {
+    const a = L.normalizeWine(JSON.parse(JSON.stringify(raw)));
+    const b = L.normalizeWine(JSON.parse(JSON.stringify(raw)));
+    const ra = L.prefillFromBible(a, B);
+    const rb = ctx.self.FondIA.bibleGarde(b, B);
+    const pick = w => JSON.stringify({ from: w.from, to: w.to, src: w.src, conf: w.conf });
+    T('bible de fond = logique de la page : ' + raw.name, ra === rb && pick(a) === pick(b), JSON.stringify([pick(a), pick(b)]));
   }
   console.log(out.slice(o0).join('\n'));
 }

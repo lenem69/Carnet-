@@ -1,24 +1,25 @@
-// Passe IA en arrière-plan, exécutée par le service worker (script classique, chargé par sw.js).
-// Elle fonctionne appli fermée (tâche de fond Chrome Android). Elle lit la clé et les vins dans IndexedDB,
-// partage les quotas avec la page (meta « autoFill ») et ne réécrit un vin qu'après l'avoir relu.
-// La logique de mise à jour (appliquer) doit rester identique à logic.js (applyAi) : voir tests/unit.mjs.
+// Passe de fond, exécutée par le service worker (script classique, chargé par sw.js).
+// Elle fonctionne appli fermée (tâche de fond Chrome Android). Règle : la bible d'abord (sans jeton), puis une recherche web
+// par vin avec Gemini, un vin à la fois. Elle lit la clé et les vins dans IndexedDB, partage les quotas avec la page
+// (meta « autoFill ») et ne réécrit un vin qu'après l'avoir relu.
+// La logique (appliquer, bibleGarde) doit rester identique à logic.js : voir tests/unit.mjs.
 (function () {
   const DB = 'cave-a-vin';
-  const ORDER = ['gemini', 'openai', 'anthropic'];
-  const MODELE = { gemini: 'gemini-3.5-flash-lite', openai: 'gpt-4o-mini', anthropic: 'claude-haiku-5-5' };
-  const BASE_OPENAI = 'https://api.openai.com/v1';
-  const MAX_APPELS = 4, ESSAIS = 2, VERROU_MS = 5 * 60e3;
+  const MAX_JOUR = 20;        // vins recherchés par jour (quota gratuit Gemini : la vraie limite est celle de Google)
+  const PAR_PASSE = 2;        // vins par passe de fond
+  const ESSAIS = 2, VERROU_MS = 5 * 60e3;
   const CHAMPS = ['grape', 'story', 'pairings', 'from', 'to'];
+  const COULEUR_BIBLE = { Rouge: ['R'], Blanc: ['B', 'D'], Pétillant: ['E'] };
   const vide = v => v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length);
   const str = v => (v === null || v === undefined ? '' : String(v).trim());
+  const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
   const num = v => {
     if (v === null || v === undefined || v === '') return '';
     const n = parseInt(String(v).trim(), 10);
     return Number.isNaN(n) ? '' : n;
   };
 
-  // Mise à jour d'une fiche (copie). Un champ saisi par l'utilisateur n'est jamais écrit ; tout le reste l'est
-  // (y compris les anciennes fiches sans origine : décision de l'utilisateur, option B).
+  // Mise à jour d'une fiche (copie). Un champ saisi par l'utilisateur n'est jamais écrit ; le reste l'est (option B).
   function appliquer(w, d, now) {
     const src = { ...(w.src || {}) };
     const p = {
@@ -37,6 +38,30 @@
     if (d.sources && d.sources.length) w.sources = d.sources;
     w.aiPass = now || Date.now(); w.updated = w.aiPass;
     return w;
+  }
+
+  // Bible (même règle que logic.js) : la garde vient de la bible, sauf une garde saisie par l'utilisateur.
+  function bibleEntry(w, bible) {
+    if (!bible || bible.v !== 1 || !Array.isArray(bible.rows) || !w.region || !w.year) return null;
+    const want = COULEUR_BIBLE[w.color];
+    if (!want) return null;
+    const nom = norm(w.region);
+    const rows = bible.rows.filter(r => r && norm(r.a) === nom && want.includes(r.c));
+    if (rows.length !== 1) return null;
+    const cell = rows[0].y && rows[0].y[String(w.year)];
+    if (!Array.isArray(cell) || typeof cell[0] !== 'number') return null;
+    return { from: cell[1], to: cell[2] };
+  }
+  function bibleGarde(w, bible) {
+    const e = bibleEntry(w, bible);
+    if (!e) return false;
+    const src = { ...(w.src || {}) }; let ch = false;
+    if (src.from !== 'user' && w.from !== e.from) { w.from = e.from; src.from = 'bible'; ch = true; }
+    if (src.to !== 'user' && w.to !== e.to) { w.to = e.to; src.to = 'bible'; ch = true; }
+    if (!ch) return false;
+    w.src = src;
+    if (!w.conf) w.conf = 'estimée';
+    return true;
   }
 
   function ouvrir() {
@@ -66,6 +91,9 @@
       q.onsuccess = () => res(q.result || []); q.onerror = () => rej(q.error);
     });
   }
+  async function lireBible() {
+    try { const r = await fetch('bible/bible.json'); return r.ok ? await r.json() : null; } catch (e) { return null; }
+  }
 
   // Heure de la prochaine remise à zéro des quotas Gemini (9 h UTC).
   function prochaineRemise(now) {
@@ -74,18 +102,17 @@
     return d.getTime();
   }
 
-  function codeErreur(r, j) {
-    const msg = (j && j.error && (j.error.message || j.error.type)) || '';
-    if (r.status === 429) return { code: 'rate_limited', message: msg };
-    if (r.status === 401 || r.status === 403 || /api[ _-]?key|authentication|unauthori/i.test(msg)) return { code: 'bad_key', message: msg };
-    if (r.status === 404 || (/model/i.test(msg) && r.status === 400)) return { code: 'bad_model', message: msg };
-    return { code: 'server', message: r.status + (msg ? ' ' + msg : '') };
-  }
   async function http(url, init) {
     let r;
     try { r = await fetch(url, init); } catch (e) { throw { code: 'network' }; }
     let j = null; try { j = await r.json(); } catch (e) { j = null; }
-    if (!r.ok) throw codeErreur(r, j);
+    if (!r.ok) {
+      const msg = (j && j.error && (j.error.message || j.error.type)) || '';
+      if (r.status === 429) throw { code: 'rate_limited', message: msg };
+      if (r.status === 401 || r.status === 403 || /api[ _-]?key|authentication|unauthori/i.test(msg)) throw { code: 'bad_key', message: msg };
+      if (r.status === 404 || (/model/i.test(msg) && r.status === 400)) throw { code: 'bad_model', message: msg };
+      throw { code: 'server', message: r.status + (msg ? ' ' + msg : '') };
+    }
     return j;
   }
   function extraire(t) {
@@ -93,54 +120,43 @@
     if (i >= 0 && j > i) { try { return JSON.parse(s.slice(i, j + 1)); } catch (e) { /* illisible */ } }
     throw { code: 'invalid_json' };
   }
-
-  // Même demande en lot que ai.js (makeFiches) : 10 vins par appel.
-  function consigne(vins) {
-    const annee = new Date().getFullYear();
-    return 'Tu es un sommelier expert de 30 ans d’expérience, qui connaît les grands guides (RVF, Bettane+Desseauve, Parker, Decanter). Pour chaque vin de la liste, complète ou corrige si besoin : g=cépages, s=histoire de la cuvée et du millésime en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ' + annee + '), p=4 accords mets courts, c="estimée". Vins : ' +
-      JSON.stringify(vins.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region }))) +
-      '. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"c":"estimée"}]} avec une entrée par vin.';
-  }
-  async function appeler(prov, c, vins) {
-    const texte = consigne(vins);
-    let t;
-    if (prov === 'gemini') {
-      const j = await http('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(c.model || MODELE.gemini) + ':generateContent', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': c.key },
-        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: texte }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.2 } }),
-      });
-      const cand = j.candidates && j.candidates[0];
-      t = cand && cand.content && cand.content.parts ? cand.content.parts.map(p => p.text || '').join('') : '';
-    } else if (prov === 'openai') {
-      const base = /^https:\/\//.test(c.base || '') ? c.base : BASE_OPENAI;
-      const j = await http(base + '/chat/completions', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + c.key },
-        body: JSON.stringify({ model: c.model || MODELE.openai, messages: [{ role: 'user', content: texte }], response_format: { type: 'json_object' }, temperature: 0.2 }),
-      });
-      t = j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
-    } else {
-      const j = await http('https://api.anthropic.com/v1/messages', {
-        method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': c.key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-        body: JSON.stringify({ model: c.model || MODELE.anthropic, max_tokens: 4096, messages: [{ role: 'user', content: texte }] }),
-      });
-      t = (j.content || []).filter(p => p.type === 'text').map(p => p.text).join('');
+  // Sites réellement consultés par Gemini (https, 5 au maximum, sans doublon).
+  function sourcesWeb(cand) {
+    const ch = (cand && cand.groundingMetadata && cand.groundingMetadata.groundingChunks) || [];
+    const vus = new Set(); const res = [];
+    for (const x of ch) {
+      const w = x && x.web;
+      if (!w || !/^https:\/\//i.test(w.uri || '') || vus.has(w.uri)) continue;
+      vus.add(w.uri); res.push({ t: str(w.title).slice(0, 80) || 'Source', u: w.uri });
+      if (res.length >= 5) break;
     }
+    return res;
+  }
+
+  // Une recherche web par vin, avec la demande la plus courte possible (jetons limités).
+  async function rechercheGemini(c, w) {
+    const annee = new Date().getFullYear();
+    const texte = 'Vin : ' + JSON.stringify({ n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region }) +
+      '. Nous sommes en ' + annee + '. Cherche sur le web (site du domaine, guides, cavistes) : cépage, histoire de la cuvée en une phrase, 4 accords mets-vins, fenêtre de garde (f = début, t = fin). ' +
+      'Réponds uniquement par {"g":"","s":"","f":0,"t":0,"p":[],"c":"vérifiée ou estimée"}. « vérifiée » seulement si les pages consultées confirment cette cuvée et ce millésime.';
+    const j = await http('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(c.model || 'gemini-3.5-flash-lite') + ':generateContent', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': c.key },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: texte }] }], tools: [{ google_search: {} }], generationConfig: { temperature: 0.2, maxOutputTokens: 700 } }),
+    });
+    const cand = j.candidates && j.candidates[0];
+    const t = cand && cand.content && cand.content.parts ? cand.content.parts.map(p => p.text || '').join('') : '';
     if (!t) throw { code: 'invalid_json' };
     const d = extraire(t);
-    const items = Array.isArray(d) ? d : d && Array.isArray(d.items) ? d.items : null;
-    if (!items) throw { code: 'invalid_json' };
-    const out = new Map();
-    for (const x of items) {
-      if (!x || x.id == null) continue;
-      out.set(String(x.id), {
-        grape: String(x.g || ''), story: String(x.s || ''), from: x.f, to: x.t,
-        pairings: Array.isArray(x.p) ? x.p.map(String) : [], conf: 'estimée',
-      });
-    }
-    return out;
+    const sources = sourcesWeb(cand);
+    return {
+      grape: String(d.g || ''), story: String(d.s || ''), from: d.f, to: d.t,
+      pairings: Array.isArray(d.p) ? d.p.map(String) : [],
+      conf: sources.length && /v[ée]rifi/i.test(String(d.c || '')) ? 'vérifiée' : 'estimée',
+      sources,
+    };
   }
 
-  // Une passe : quotas partagés avec la page, un appel au plus, écriture seulement après relecture du vin.
+  // Une passe : bible sur toute la cave, puis au plus PAR_PASSE recherches, dans la limite du jour (partagée avec la page).
   async function passeIA() {
     let db;
     try { db = await ouvrir(); } catch (e) { return { ok: false, why: 'base' }; }
@@ -154,46 +170,66 @@
       const jour = new Date(now).toISOString().slice(0, 10);
       const q = { ...auto, tries: { ...(auto.tries || {}) } };
       if (q.day !== jour) { q.day = jour; q.calls = 0; }
-      if (now < (q.pauseUntil || 0) || (q.calls || 0) >= MAX_APPELS) return { ok: false, why: 'quota' };
-      const prov = ORDER.find(p => cfg[p] && cfg[p].key);
-      if (!prov) return { ok: false, why: 'pas_de_cle' };
-      const vins = (await lireVins(db)).filter(w => !w.aiPass && (q.tries[w.id] || 0) < ESSAIS)
-        .sort((a, b) => (b.qty > 0) - (a.qty > 0)).slice(0, 10);
-      if (!vins.length) return { ok: true, n: 0 };
+      const c = cfg.gemini;
+      if (!c || !c.key) return { ok: false, why: 'pas_de_cle' };
+
+      // 1) La bible d'abord, sur toute la cave : aucun jeton.
+      const bible = await lireBible();
+      let cave = await lireVins(db);
+      const bibleMaj = [];
+      for (const w of cave) {
+        const copie = JSON.parse(JSON.stringify(w));
+        if (bibleGarde(copie, bible)) bibleMaj.push(copie);
+      }
+      if (bibleMaj.length) {
+        const tx = db.transaction('wines', 'readwrite'); const st = tx.objectStore('wines');
+        bibleMaj.forEach(w => st.put(w));
+        await fin(tx);
+        const ids = new Map(bibleMaj.map(w => [String(w.id), w]));
+        cave = cave.map(w => ids.get(String(w.id)) || w);
+      }
+
+      // 2) Une recherche web par vin, dans la limite du jour.
+      if (now < (q.pauseUntil || 0) || (q.calls || 0) >= MAX_JOUR) {
+        await ecrireMeta(db, 'autoFill', q);
+        return { ok: true, n: 0, bible: bibleMaj.length, why: 'quota' };
+      }
+      const vins = cave.filter(w => !w.aiPass && w.qty > 0 && (q.tries[w.id] || 0) < ESSAIS)
+        .sort((a, b) => (b.qty > 0) - (a.qty > 0)).slice(0, Math.min(PAR_PASSE, MAX_JOUR - (q.calls || 0)));
+      if (!vins.length) {
+        await ecrireMeta(db, 'autoFill', q);
+        return { ok: true, n: 0, bible: bibleMaj.length };
+      }
 
       await ecrireMeta(db, 'passeVerrou', now);
-      q.calls = (q.calls || 0) + 1;
-      let res = null, mises = 0, erreur = null;
-      try { res = await appeler(prov, cfg[prov], vins); }
-      catch (e) { erreur = e; }
-      if (res) {
-        // Relecture : on n'écrit que sur les vins tels qu'ils sont maintenant (une modification entre-temps est gardée).
-        const actuels = new Map((await lireVins(db)).map(w => [String(w.id), w]));
-        const tx = db.transaction('wines', 'readwrite'); const st = tx.objectStore('wines');
-        for (const v of vins) {
-          const d = res.get(String(v.id));
-          if (!d) { q.tries[v.id] = (q.tries[v.id] || 0) + 1; continue; }
-          const cur = actuels.get(String(v.id));
-          if (!cur || cur.aiPass) continue;
-          st.put(appliquer(JSON.parse(JSON.stringify(cur)), d, now)); mises++;
-        }
+      let mises = 0, erreur = null;
+      for (const v of vins) {
+        q.calls = (q.calls || 0) + 1;
+        let d = null;
+        try { d = await rechercheGemini(c, v); }
+        catch (e) { erreur = e; q.tries[v.id] = (q.tries[v.id] || 0) + 1; break; }
+        // Relecture avant écriture : une modification faite entre-temps est gardée.
+        const cur = (await lireVins(db)).find(w => String(w.id) === String(v.id));
+        if (!cur || cur.aiPass) continue;
+        const tx = db.transaction('wines', 'readwrite');
+        tx.objectStore('wines').put(appliquer(JSON.parse(JSON.stringify(cur)), d, now));
         await fin(tx);
-        q.pauseUntil = 0;
-      } else {
-        vins.forEach(v => { q.tries[v.id] = (q.tries[v.id] || 0) + 1; });
-        const code = erreur && erreur.code;
+        mises++;
+      }
+      if (erreur) {
+        const code = erreur.code;
         if (code === 'rate_limited') { q.pauseUntil = prochaineRemise(now); q.pauseWhy = 'limite de l’IA atteinte'; }
         else if (['bad_key', 'bad_model', 'bad_base', 'no_key'].includes(code)) { q.pauseUntil = now + 864e5; q.pauseWhy = 'clé ou modèle d’IA à vérifier'; }
         else { q.pauseUntil = now + 30 * 6e4; q.pauseWhy = 'connexion ou serveur indisponible'; }
-      }
-      await ecrireMeta(db, 'passeVerrou', 0);
+      } else q.pauseUntil = 0;
       if (mises) q.lastOk = now;
       await ecrireMeta(db, 'autoFill', q);
-      if (mises && self.clients) {
+      await ecrireMeta(db, 'passeVerrou', 0);
+      if ((mises || bibleMaj.length) && self.clients) {
         const liste = await self.clients.matchAll({ includeUncontrolled: true });
-        liste.forEach(c => c.postMessage({ type: 'PASSE_IA_FIN', n: mises }));
+        liste.forEach(x => x.postMessage({ type: 'PASSE_IA_FIN', n: mises }));
       }
-      return { ok: !erreur, n: mises, why: erreur ? (erreur.code || 'erreur') : '' };
+      return { ok: !erreur, n: mises, bible: bibleMaj.length, why: erreur ? (erreur.code || 'erreur') : '' };
     } catch (e) {
       return { ok: false, why: (e && e.code) || 'erreur' };
     } finally {
@@ -203,5 +239,5 @@
   }
 
   self.passeIA = passeIA;
-  self.FondIA = { appliquer };
+  self.FondIA = { appliquer, bibleGarde };
 })();

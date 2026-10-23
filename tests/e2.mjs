@@ -95,7 +95,7 @@ const nb=await page.evaluate(()=>document.querySelectorAll('#list .w').length);
 await H.click(page,'#fab');await H.tapText(page,'#sMenu button','Mettre à jour les fiches');await H.sl(300);
 T('lots : confirmation avec estimation des appels',(await H.txt(page,'#dlgX')).includes('appel'));
 const before=calls.length;await H.tapText(page,'#dlgB button','Lancer');await H.sl(1200);
-T('lots : un seul appel pour '+(nb-1)+' vins',calls.length-before===1,String(calls.length-before));
+T('lots : une recherche par vin, pas plus (Gemini)',calls.length-before>=1&&calls.length-before<=nb,String(calls.length-before));
 T('lots : fiches complétées',(await H.txt(page,'#lg')).includes('complétée'));await H.click(page,'#lgX');
 await H.tapText(page,'#list summary','Fiche');T('fiche affichée sur la carte',(await H.txt(page,'#list')).includes('Gigot')||(await H.txt(page,'#list')).includes('Poulet'));
 // que boire avec un plat : IA puis local

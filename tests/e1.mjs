@@ -5,7 +5,7 @@ const {page,errs}=await H.newPage(b);
 await page.goto(H.URL0);await H.sl(1200);
 T('démarrage : cave vide affichée',(await H.txt(page,'#list')).includes('Votre cave est vide'));
 {const t=await H.txt(page,'#list');T('cave vide : toutes les fonctions proposées (photos, tableur, restauration, guide)',['Scanner une étiquette','Importer des photos','Importer un tableur','Saisie manuelle','Restaurer une sauvegarde','Guide'].every(x=>t.includes(x)),t)}
-T('version affichée côté page',await page.evaluate(()=>self.APP_VERSION)==='1.17.0');
+T('version affichée côté page',await page.evaluate(()=>self.APP_VERSION)==='1.18.0');
 {const q1=await H.txt(page,'#quoteText');const Q=await page.evaluate(async()=>(await import('./quotes.js')).QUOTES);
 T('citation : affichée et issue de la liste (300)',Q.length===300&&Q.includes(q1)&&q1.length>10,q1);
 T('citation : bloc visible sous l’en-tête',await page.$eval('.quote',e=>e.getBoundingClientRect().height>40)&&await page.evaluate(()=>document.querySelector('header.top').compareDocumentPosition(document.querySelector('.quote'))&4));
@@ -20,14 +20,14 @@ await page.evaluate(()=>{window.__sh=null;navigator.share=async d=>{window.__sh=
 await page.$eval('#ct-msg',e=>{e.value='Le bouton + ne répond plus'});
 await page.evaluate(()=>document.querySelector('#ct-share').click());await H.sl(300);
 const sh=await page.evaluate(()=>window.__sh);
-T('aide et contact : message partagé avec version et appareil, sans donnée de cave',!!sh&&sh.text.includes('[Bug]')&&sh.text.includes('Le bouton + ne répond plus')&&sh.text.includes('version 1.17.0')&&sh.text.includes('Appareil :')&&!/vin|bouteille/i.test(sh.text.replace('Ma cave','')),JSON.stringify(sh));
+T('aide et contact : message partagé avec version et appareil, sans donnée de cave',!!sh&&sh.text.includes('[Bug]')&&sh.text.includes('Le bouton + ne répond plus')&&sh.text.includes('version 1.18.0')&&sh.text.includes('Appareil :')&&!/vin|bouteille/i.test(sh.text.replace('Ma cave','')),JSON.stringify(sh));
 T('publier : message vide refusé',await page.evaluate(()=>{document.querySelector('#ct-msg').value='';document.querySelector('#ct-pub').click();return true})&&(await H.sl(200),(await H.txt(page,'#toasts')).includes('Écrivez d’abord')));
 await page.$eval('#ct-msg',e=>{e.value='Le bouton + ne répond plus'});
 await page.evaluate(()=>{window.__rf=window.fetch;window.__fx=[];window.fetch=(function(o){return function(u,i){if(String(u).includes('formResponse')){window.__fx.push({u:String(u),m:i&&i.method,mode:i&&i.mode,c:i&&i.credentials,b:i&&String(i.body)});return Promise.resolve(new Response(null))}return o.apply(this,arguments)}})(window.fetch)});
 await page.evaluate(()=>document.querySelector('#ct-pub').click());await H.sl(400);
 const fx=await page.evaluate(()=>window.__fx);
 T('publier : envoi direct au formulaire Google, sans quitter l’appli (POST, sans cookies)',fx.length===1&&fx[0].u==='https://docs.google.com/forms/d/e/1FAIpQLSfOirVg2Xykiv6DvPS1jNM5NQJSpnW0ajhbdP1gD3bKap1QDw/formResponse'&&fx[0].m==='POST'&&fx[0].mode==='no-cors'&&fx[0].c==='omit',JSON.stringify(fx));
-T('publier : champ « Votre message » rempli avec le message, la version et l’appareil',fx.length===1&&decodeURIComponent(fx[0].b.replace(/\+/g,' ')).startsWith('entry.1804718778=[Bug] Le bouton + ne répond plus')&&fx[0].b.includes('1.17.0'),fx[0]&&fx[0].b);
+T('publier : champ « Votre message » rempli avec le message, la version et l’appareil',fx.length===1&&decodeURIComponent(fx[0].b.replace(/\+/g,' ')).startsWith('entry.1804718778=[Bug] Le bouton + ne répond plus')&&fx[0].b.includes('1.18.0'),fx[0]&&fx[0].b);
 T('publier : confirmation affichée et fenêtre fermée',(await H.txt(page,'#toasts')).includes('Requête publiée')&&!(await H.shown(page,'#sContact')),await H.txt(page,'#toasts'));
 await page.evaluate(()=>document.querySelector('#bContact').click());await H.sl(300);
 T('publier : message effacé après envoi',(await page.$eval('#ct-msg',e=>e.value))==='');

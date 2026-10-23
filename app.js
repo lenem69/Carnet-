@@ -410,6 +410,7 @@ async function saveForm() {
     if (!old) { errToast('Ce vin n’existe plus.'); closeSheet('sForm'); return; }
     const src = L.editSrc(old, f);
     const nw = L.normalizeWine({ ...old, ...f, src, check: false, conf: S.formExtra.conf || old.conf, sources: S.formExtra.sources, updated: now });
+    L.prefillFromBible(nw, S.bible);
     Object.assign(old, nw);
     const ok = await persist(() => store.putWines([old]));
     finishSave(old, ok, '« ' + old.name + ' » modifié.');
@@ -418,7 +419,8 @@ async function saveForm() {
   const src = L.editSrc(null, f);
   const nw = L.normalizeWine({ ...f, src, id: uid(), conf: S.formExtra.conf, sources: S.formExtra.sources, check: false, created: now, updated: now });
   // Tampon : la bible remplit la période de garde tant que l'IA n'a pas de crédit ; l'IA pourra la corriger.
-  if (!nw.from && !nw.to) L.prefillFromBible(nw, S.bible);
+  // La bible d'abord : la garde vient de la bible, sauf une garde saisie par l'utilisateur.
+  L.prefillFromBible(nw, S.bible);
   const dup = S.wines.find(w => L.keyOf(w) === L.keyOf(nw));
   if (dup) {
     const c = await ask('Déjà dans votre cave', `« ${dup.name}${dup.year ? ' ' + dup.year : ''} » existe déjà (${dup.qty} bouteille(s)).`, [
@@ -614,18 +616,22 @@ async function enrichAll() {
   const todo = S.wines.filter(w => !w.aiPass);
   if (!todo.length) { toast('Toutes les fiches ont déjà été mises à jour par l’IA.'); return; }
   if (!requireAI()) return;
-  const calls = Math.ceil(todo.length / 10);
+  const gemini = AI.configured().includes('gemini');
+  const calls = gemini ? todo.length : Math.ceil(todo.length / 10);
   const c = await ask('Mettre à jour les fiches', `${todo.length} vin(s) à vérifier, soit environ ${calls} appel(s) à l’IA (10 vins par appel). Vous pourrez arrêter à tout moment.`, [
     { label: 'Lancer', value: 'go' }, { label: 'Annuler', value: null, kind: 'o' }]);
   if (c !== 'go') return;
-  const groups = []; for (let i = 0; i < todo.length; i += 10) groups.push(todo.slice(i, i + 10));
-  const log = openLog('Fiches en cours…', groups.map((g, i) => `Vins ${i * 10 + 1} à ${i * 10 + g.length}`), 'Les fiches sont enregistrées au fur et à mesure.');
+  const taille = gemini ? 1 : 10;
+  const groups = []; for (let i = 0; i < todo.length; i += taille) groups.push(todo.slice(i, i + taille));
+  const log = openLog('Fiches en cours…', groups.map(g => g.map(w => w.name).join(', ').slice(0, 60)), 'Les fiches sont enregistrées au fur et à mesure.');
   let done = 0;
   for (let i = 0; i < groups.length; i++) {
     if (log.stopped) { for (let j = i; j < groups.length; j++) log.set(j, 'skip', 'Non traité (arrêté)'); break; }
     log.set(i, 'run', 'Rédaction des fiches…');
     try {
-      const res = await AI.makeFiches(groups[i], { signal: log.signal, onWait: s => log.set(i, 'run', `Limite de l’IA atteinte, nouvel essai dans ${s} s…`) });
+      let res;
+      if (gemini) { res = new Map([[String(groups[i][0].id), await AI.makeFiche(groups[i][0], { signal: log.signal, only: 'gemini' })]]); }
+      else res = await AI.makeFiches(groups[i], { signal: log.signal, onWait: s => log.set(i, 'run', `Limite de l’IA atteinte, nouvel essai dans ${s} s…`) });
       const changed = [];
       for (const w of groups[i]) { const d = res.get(String(w.id)); if (d) changed.push([w, copieIA(w, d)]); }
       Stats.track('fiches_ia', changed.length);
@@ -1077,11 +1083,11 @@ async function showNews() {
 /* ============ Fiches complétées automatiquement (en arrière-plan) ============ */
 // Économe : 1 appel = 10 vins, 4 appels par jour au plus, jamais pendant une saisie, pause jusqu'à la remise à zéro des quotas
 // (minuit heure du Pacifique ≈ 9 h UTC) dès que l'IA signale une limite. Le tout sans message : l'état se lit dans Réglages.
-const AUTO_MAX_CALLS = 4, AUTO_TRIES = 2;
+const AUTO_MAX_CALLS = 20, AUTO_TRIES = 2;
 const AUTO_DELAY = self.__AUTO_DELAY ?? 20000, AUTO_EVERY = self.__AUTO_EVERY ?? 180000;
 let auto = { on: true, day: '', calls: 0, pauseUntil: 0, pauseWhy: '', tries: {} };
 let autoBusy = false;
-const autoTodo = () => S.wines.filter(w => !w.aiPass && (auto.tries[w.id] || 0) < AUTO_TRIES).sort((a, b) => (b.qty > 0) - (a.qty > 0));
+const autoTodo = () => S.wines.filter(w => !w.aiPass && w.qty > 0 && (auto.tries[w.id] || 0) < AUTO_TRIES).sort((a, b) => (b.qty > 0) - (a.qty > 0));
 function nextQuotaReset(now = Date.now()) {
   const d = new Date(now); d.setUTCHours(9, 0, 0, 0);
   if (d.getTime() <= now) d.setUTCDate(d.getUTCDate() + 1);
@@ -1105,6 +1111,10 @@ const iPhone = () => /iPhone|iPad|iPod/.test(navigator.userAgent);
 async function initAuto() {
   AI.syncCfg();
   initFond();
+  // La bible d'abord, sur toute la cave : aucun jeton.
+  const bibleMaj = [];
+  for (const w of S.wines) { const c = JSON.parse(JSON.stringify(w)); if (L.prefillFromBible(c, S.bible)) bibleMaj.push(c); }
+  if (bibleMaj.length) { if (await persist(() => store.putWines(bibleMaj))) bibleMaj.forEach(c => remplace(S.wines.find(x => x.id === c.id), c)); render(); }
   try { const m = await store.getMeta('autoFill'); if (m && typeof m === 'object') auto = { ...auto, ...m, tries: { ...(m.tries || {}) } }; } catch (e) { /* valeurs par défaut */ }
   // Sur iPhone, pas de tâche de fond : un rappel discret, au plus une fois par jour, s’il reste beaucoup de fiches à vérifier.
   const jour = new Date().toISOString().slice(0, 10);
@@ -1144,24 +1154,18 @@ async function autoStep() {
     if (verrou && Date.now() - verrou < 5 * 6e4 * 1) return;
   } catch (e) { /* lecture impossible : on attend le prochain tour */ return; }
   if (now < auto.pauseUntil || auto.calls >= AUTO_MAX_CALLS) return;
-  const group = autoTodo().slice(0, 10);
-  if (!group.length) return;
+  // Recherche web automatique : Gemini seulement (les autres fournisseurs n'ont pas de recherche web ici).
+  if (!AI.configured().includes('gemini')) return;
+  const w = autoTodo()[0];
+  if (!w) return;
   autoBusy = true; auto.calls++;
   store.setMeta('passeVerrou', Date.now()).catch(() => {});
   try {
-    const res = await AI.makeFiches(group, { noRetry: true });
-    const changed = [];
-    for (const w of group) {
-      const d = res.get(String(w.id));
-      if (d) changed.push([w, copieIA(w, d)]);
-      else auto.tries[w.id] = (auto.tries[w.id] || 0) + 1;
-    }
-    if (changed.length) {
-      auto.lastOk = Date.now();
-      Stats.track('fiches_ia', changed.length);
-      if (await persist(() => store.putWines(changed.map(x => x[1])))) { changed.forEach(([w, c]) => remplace(w, c)); render(); }
-      else changed.forEach(([w]) => { auto.tries[w.id] = (auto.tries[w.id] || 0) + 1; });
-    }
+    const d = await AI.makeFiche(w, { noRetry: true, only: 'gemini' });
+    const c = copieIA(w, d);
+    Stats.track('fiches_ia');
+    if (await persist(() => store.putWines([c]))) { remplace(w, c); auto.lastOk = Date.now(); render(); }
+    else auto.tries[w.id] = (auto.tries[w.id] || 0) + 1;
     auto.pauseUntil = 0;
   } catch (e) {
     const code = e && e.code;

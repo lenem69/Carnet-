@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.18.0': ['Fiches : la bible est appliquée d’abord à l’entrée de chaque vin, puis l’IA recherche sur le web et complète la fiche, un vin à la fois (Gemini). Vos saisies restent intactes.'],
   '1.17.0': ['Les fiches se mettent à jour toutes seules : sur Android, Chrome lance la mise à jour de fond environ deux fois par jour, même appli fermée. Sur iPhone, elle se fait à l’ouverture de l’appli. L’IA peut aussi reprendre les anciennes fiches ; vos saisies récentes restent intactes.'],
   '1.16.0': ['Fiches : l’IA peut corriger les cépages, histoires, accords et gardes, sauf ce que vous avez saisi vous-même. Chaque vin est vérifié une fois, après son enregistrement.'],
   '1.15.0': ['Journal de dégustation : sur la fiche de chaque vin, notez une dégustation sur 5 étoiles, avec la date et un commentaire. La moyenne s’affiche sur la carte.'],

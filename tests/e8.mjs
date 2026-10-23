@@ -6,6 +6,7 @@ let mode='ok';
 const ai=async c=>{
   if(mode==='429')return {status:429,json:{error:{message:'Resource exhausted'}}};
   if(mode==='empty')return G({items:[]});
+  if(!JSON.stringify(c.body).includes('Pour chaque vin'))return G({g:'Gamay',s:'Une belle cuvée.',f:2026,t:2031,p:['Poulet rôti','Fromages'],c:'estimée'});
   const ids=[...(JSON.stringify(c.body).matchAll(/\\"id\\":\\"?([\w-]+)/g))].map(m=>m[1]);
   return G({items:[...new Set(ids)].map(id=>({id,g:'Gamay',s:'Une belle cuvée.',f:2026,t:2031,p:['Poulet rôti','Fromages'],c:'estimée'}))})};
 const wine=(i,extra={})=>({id:'w'+i,name:'Vin '+i,dom:'Dom '+i,year:2020,color:'Rouge',region:'X',grape:'',qty:2,price:'',loc:'',from:'',to:'',story:'',note:'',pairings:[],check:false,conf:'',sources:[],created:i,updated:i,...extra});
@@ -13,23 +14,24 @@ async function mk(n,opts={}){
   const r=await H.newPage(b,{ai});
   await r.page.evaluateOnNewDocument(o=>{window.__AUTO_DELAY=o.delay;window.__AUTO_EVERY=o.every},{delay:opts.delay??600,every:opts.every??700});
   await r.page.goto(H.URL0);await H.sl(900);
-  if(opts.key!==false)await H.setAI(r.page,'gemini','AIzaTEST');
-  await r.page.evaluate(async(ws)=>{const s=await import('./store.js');const L=await import('./logic.js');await s.replaceAll(ws.map(L.normalizeWine))},Array.from({length:n},(_,i)=>wine(i)));
+  if(opts.key!==false)await H.setAI(r.page,'gemini','AIzaTEST');else await r.page.evaluate(()=>{try{localStorage.removeItem('cave-ai')}catch(e){}});
+  await r.page.evaluate(async(ws)=>{const s=await import('./store.js');const L=await import('./logic.js');await s.replaceAll(ws.map(L.normalizeWine));await s.setMeta('autoFill',{on:true,day:'',calls:0,tries:{},pauseUntil:0,pauseWhy:''});await s.setMeta('passeVerrou',0)},Array.from({length:n},(_,i)=>wine(i)));
   await r.page.reload();await H.sl(1200);
   return r}
 const wines=page=>page.evaluate(async()=>{const s=await import('./store.js');return s.allWines?await s.allWines():[]});
 const done=page=>page.evaluate(async()=>{const s=await import('./store.js');const w=await s.allWines();return w.filter(x=>x.story&&x.pairings.length&&x.from).length});
 
 // 1. remplissage transparent, 10 vins par appel
-let {page,errs,calls}=await mk(25);
+let {page,errs,calls}=await mk(25,{every:60});
 await H.sl(2500);
 const n1=await done(page);
 T('fiches complétées sans action de l’utilisateur',n1>=10,String(n1));
-T('un appel = au plus 10 vins',calls.length>=1&&calls.every(c=>(JSON.stringify(c.body).match(/\\"id\\"/g)||[]).length<=11));
+T('un appel = un vin (recherche par vin)',calls.length>=1&&calls.every(c=>!JSON.stringify(c.body).includes('Pour chaque vin')));
 T('aucun message ni fenêtre pendant le travail',!(await H.shown(page,'#sDlg'))&&!(await H.shown(page,'#sLog')));
 await H.sl(3500);
-T('limite de 4 appels par jour respectée',calls.length<=4,String(calls.length));
-T('25 vins : 3 appels suffisent',(await done(page))===25&&calls.length===3,calls.length+' appels, '+await done(page));
+T('limite de 20 recherches par jour respectée',calls.length<=20,String(calls.length));
+await H.sl(1500);
+T('25 vins : 20 recherches lancées le premier jour, au moins 19 fiches écrites (la 20e peut attendre)',(await done(page))>=19&&calls.length===20,calls.length+' appels, '+await done(page));
 T('aucune erreur (remplissage)',errs.length===0,errs.join('|'));
 await page.close();
 
@@ -64,7 +66,7 @@ await page.close();mode='ok';
 ({page,errs}=await mk(0));await H.sl(1500);
 await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('seenVersion','1.11.0')});
 await page.reload();await H.sl(1500);
-T('mise à jour : fenêtre des nouveautés affichée',(await H.shown(page,'#sDlg'))&&/Mise à jour 1.17.0/.test(await H.txt(page,'#dlgT')),await H.txt(page,'#dlgT'));
+T('mise à jour : fenêtre des nouveautés affichée',(await H.shown(page,'#sDlg'))&&/Mise à jour 1.18.0/.test(await H.txt(page,'#dlgT')),await H.txt(page,'#dlgT'));
 const nx=await H.txt(page,'#dlgX');
 T('résumé : points des versions manquées, pas ceux déjà vus',/Apogée/.test(nx)&&/Journal de dégustation/.test(nx)&&!/Onglet « Magic »/.test(nx)&&!/Publier ma requête/.test(nx)&&!/Choix automatique de l’IA/.test(nx),nx);
 await H.tapText(page,'#dlgB button','Compris');await H.sl(300);
