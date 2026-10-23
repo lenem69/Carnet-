@@ -7,13 +7,15 @@ import { reconnaitre, reperage, estEtranger } from './chiffres.js';
 export const REGLES = {
   champagne: { ans: 10, label: 'champagne millésimé' },
   liquoreux: { ans: 20, label: 'vin liquoreux' },
-  prestige: { ans: 15, label: 'grand cru, premier cru ou grand vin' },
+  prestige: { ans: 15, label: 'grand cru ou grand vin' },
+  premierCru: { ans: 12, label: 'premier cru' },
   cremant: { ans: 4, label: 'crémant ou mousseux' },
   rose: { ans: 2, label: 'rosé' },
   leger: { ans: 2, label: 'vin léger (IGP, Vin de France)' },
   rougeLeger: { ans: 4, label: 'rouge léger (Beaujolais, Loire)' },
   blancSec: { ans: 4, label: 'blanc sec' },
-  blancBourgogne: { ans: 8, label: 'blanc de Bourgogne' },
+  blancBourgogne: { ans: 6, label: 'blanc de Bourgogne village' },
+  blancBourgogneRegional: { ans: 4, label: 'blanc de Bourgogne régional' },
   rougeStructure: { ans: 8, label: 'rouge structuré (Bordeaux, Rhône, Bourgogne)' },
   rougeCourant: { ans: 6, label: 'rouge courant' },
   autre: { ans: 4, label: 'vin courant' },
@@ -21,7 +23,8 @@ export const REGLES = {
 
 // Mots-clés sur le nom, le domaine, le cépage et la région (texte normalisé : minuscules, sans accents).
 const LIQUOREUX = /\bsauternes|barsac|monbazillac|layon|quarts? de chaume|bonnezeaux|tokaj|liquoreux|moelleux|vin de paille|pedro ximenez|\bporto\b|\bport\b|madere|vin jaune|jurancon|vendanges tardives|beerenauslese|eiswein|ice wine/;
-const PRESTIGE = /grand cru|grands crus|premier cru|1er cru|chateauneuf|hermitage|cote rotie|cornas|barolo|barbaresco|brunello|gran reserva|chateau (margaux|latour|lafite|mouton|haut[ -]brion|petrus|cheval blanc|ausone|angelus)|mouton rothschild|montrachet|romanee|chambertin|musigny|echezeaux|richebourg/;
+const PREMIER_CRU = /premier cru|1er cru/;
+const PRESTIGE = /grand cru|grands crus|chateauneuf|hermitage|cote rotie|cornas|barolo|barbaresco|brunello|gran reserva|chateau (margaux|latour|lafite|mouton|haut[ -]brion|petrus|cheval blanc|ausone|angelus)|mouton rothschild|montrachet|romanee|chambertin|musigny|echezeaux|richebourg/;
 const VIN_LEGER = /\bigp\b|indication geographique|pays d.oc|vin de france|\bvdf\b|vin de pays|vin de table/;
 
 const ANNEE_MIN = 1900; const ANNEE_MAX = 2035;
@@ -44,6 +47,7 @@ export function apogee(w, annee = new Date().getFullYear()) {
   if (LIQUOREUX.test(texte)) r = REGLES.liquoreux;
   else if (w.color === 'Pétillant' && champagne) r = REGLES.champagne;
   else if (PRESTIGE.test(texte)) r = REGLES.prestige;
+  else if (PREMIER_CRU.test(texte)) r = REGLES.premierCru;
   else if (w.color === 'Pétillant') r = REGLES.cremant;
   else if (w.color === 'Rosé') r = REGLES.rose;
   else if (VIN_LEGER.test(texte)) r = REGLES.leger;
@@ -51,7 +55,11 @@ export function apogee(w, annee = new Date().getFullYear()) {
     if (grande === 'Beaujolais' || grande === 'Vallée de la Loire') r = REGLES.rougeLeger;
     else if (grande === 'Bordeaux' || grande === 'Vallée du Rhône' || grande === 'Bourgogne') r = REGLES.rougeStructure;
     else r = REGLES.rougeCourant;
-  } else if (w.color === 'Blanc') r = grande === 'Bourgogne' ? REGLES.blancBourgogne : REGLES.blancSec;
+  } else if (w.color === 'Blanc') {
+    // Bourgogne régional (« Bourgogne », Aligoté, Hautes-Côtes…) : 4 ans. Village (Meursault, Chablis…) : 6 ans. Inconnu : prudence, régional.
+    const regional = !app || /^bourgogne/.test(norm(app[0]));
+    r = grande === 'Bourgogne' ? (regional ? REGLES.blancBourgogneRegional : REGLES.blancBourgogne) : REGLES.blancSec;
+  }
   else r = REGLES.autre;
 
   const pic = millesime + r.ans;

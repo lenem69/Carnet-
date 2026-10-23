@@ -61,7 +61,7 @@ const rs=[{Domaine:'Lapierre',Cuvée:'Morgon',Millésime:2023,Quantité:1},{Doma
 const a=I.rowsToWines(rs,ex);T('import mode somme : doublon additionné, 1 ligne existante comptée',a.added.length===1&&a.updated.length===1&&a.updated[0].qty===3&&a.existing===1);
 const b=I.rowsToWines(rs,ex,'skip');T('import mode « seulement les nouveaux » : existant intact',b.added.length===1&&b.updated.length===0&&b.existing===1&&ex[0].qty===2);
 const c=I.rowsToWines([...rs,rs[1]],ex,'skip');T('mode skip : doublon interne au fichier toujours additionné',c.added.length===1&&c.added[0].qty===6);}
-{ // import souple : liste de caviste sans en-tête « Nom » (1.13.1)
+{ // import souple : liste de caviste sans en-tête « Nom » (1.13.2)
   const mh=I.mapHeaders(['TVA*','tarif TTC','Millésime','Q disponible','Notes/commentaires vin','commentaires domaine']);
   T('import souple : « tarif TTC » = prix, « Q disponible » = quantité, commentaires jamais domaine',mh['tarif TTC']==='price'&&mh['Q disponible']==='qty'&&!Object.values(mh).includes('dom'),JSON.stringify(mh));
   const rs=I.lireFeuilleLibre([['ROUGE 75cl'],['X',20,'Bourgogne','Berthaut-Gerbet "les Prielles"',2023,10,'Note Cellar Tracker 91 : très beau vin de longue garde'],['X',27,'Hautes Cotes de Nuits','SYLVIE ESMONIN',2023,4,'Commentaire long']],'Bourgogne');
@@ -164,7 +164,7 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   T('vins étrangers : Riesling, Tokaji → Étranger', C.chiffres([{qty:1,region:'Riesling',color:'Blanc',grape:'',name:'a'},{qty:1,region:'Tokaji',color:'Blanc',grape:'',name:'b'}],2026).regions.some(x=>x[0]==='Étranger'&&x[1]===2));
 }
 { const C = await import('../chiffres.js'); T('repérage : « Pays d’Hérault » → Languedoc-Roussillon, « Vin des Allobroges » → Savoie', C.chiffres([{qty:1,region:"Pays d’Hérault",color:'Rouge',grape:'',name:'a'},{qty:1,region:'Vin des Allobroges',color:'Rouge',grape:'',name:'b'}],2026).regions.map(x=>x[0]).sort().join('|')==='Languedoc-Roussillon|Sud-Ouest, Jura, Savoie'); }
-{ // apogée : règle du sommelier (1.13.1)
+{ // apogée : règle du sommelier (1.13.2)
   const A = await import('../apogee.js');
   const ap = (w, y) => A.apogee(w, y);
   const t1 = ap({ name: 'Champagne Brut', color: 'Pétillant', region: 'Champagne', year: '' }, 2026);
@@ -182,7 +182,13 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   const t7 = ap({ name: 'Chardonnay Vin de France', color: 'Blanc', region: 'Vin de France', year: 2024 }, 2026);
   T('apogée : VDF blanc 2024 → +2 ans (léger), pic 2026', t7.pic === 2026 && t7.ans === 2, JSON.stringify(t7));
   const t8 = ap({ name: 'Meursault Les Charmes', color: 'Blanc', region: 'Meursault', year: 2022 }, 2026);
-  T('apogée : blanc de Bourgogne 2022 → +8 ans, à garder en 2026', t8.pic === 2030 && t8.statut === 'À garder', JSON.stringify(t8));
+  T('apogée : blanc de Bourgogne village 2022 (Meursault) → +6 ans, prêt à boire en 2026', t8.pic === 2028 && t8.ans === 6 && t8.statut === 'Prêt à boire', JSON.stringify(t8));
+  const t8b = ap({ name: 'Bourgogne Blanc Domaine X', color: 'Blanc', region: 'Bourgogne', year: 2022 }, 2026);
+  T('apogée : blanc de Bourgogne régional 2022 → +4 ans', t8b.pic === 2026 && t8b.ans === 4, JSON.stringify(t8b));
+  const t8c = ap({ name: 'Nuits-Saint-Georges 1er cru Les Saint-Georges', color: 'Rouge', region: 'Nuits St Georges', year: 2018 }, 2026);
+  T('apogée : premier cru rouge 2018 → +12 ans, à garder en 2026', t8c.ans === 12 && t8c.pic === 2030 && t8c.statut === 'À garder', JSON.stringify(t8c));
+  const t8d = ap({ name: 'Chambertin Grand Cru', color: 'Rouge', region: 'Gevrey-Chambertin', year: 2018 }, 2026);
+  T('apogée : grand cru rouge 2018 → +15 ans (le grand cru prime sur le premier cru)', t8d.ans === 15 && t8d.pic === 2033, JSON.stringify(t8d));
   const t9 = ap({ name: 'Rioja Gran Reserva', color: 'Rouge', region: 'Rioja', year: 2010 }, 2026);
   T('apogée : étranger prestige (gran reserva) → +15 ans', t9.ans === 15, JSON.stringify(t9));
   T('apogée : rappel court sur la carte', A.apogeeCourte(t6)==='Apogée 2031 · à garder' && A.apogeeCourte(t1)==='Prêt à boire (sans millésime)', A.apogeeCourte(t6));

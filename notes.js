@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.13.2': ['Apogée : les premiers crus vieillissent 12 ans, les blancs de Bourgogne villages 6 ans, les régionaux 4 ans.'],
   '1.13.1': ['L’apogée de chaque vin s’affiche directement sur sa carte, sans ouvrir la fiche.'],
   '1.13.0': ['Apogée : la fiche de chaque vin indique sa période optimale de consommation (estimée à partir du millésime, de la couleur et de la région). Les vins sans millésime sont prêts à boire.'],
   '1.12.5': ['Import souple : toutes les feuilles du fichier sont lues, y compris les listes de caviste (prix, quantités, couleurs par section). Les vins ainsi lus sont marqués « à vérifier ».'],
