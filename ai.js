@@ -38,7 +38,40 @@ export function getConfig(provider) {
   const d = PROVIDERS[provider];
   return { key: String(c.key || '').trim(), model: c.model || d.model, base: c.base || d.base || '' };
 }
-export const configured = () => ORDER.filter(p => getConfig(p).key);
+// Clé gratuite partagée (proxy) : utilisée seulement tant que l’appareil n’a pas atteint sa limite du jour, et seulement
+// si aucune clé personnelle n’est saisie. Hors ligne ou désactivée (cave-gratuit = off, pour les tests), elle n’existe pas.
+export const PROXY = 'https://cave-ia.m-jeanfrancois-morin.workers.dev';
+export const LIMITE_GRATUITE = 5;   // vins par jour et par appareil
+let gratuit = { jour: '', vins: 0 };
+let appareil = '';
+const aujourdhui = () => new Date().toISOString().slice(0, 10);
+export async function initGratuit() {
+  try {
+    appareil = (await store.getMeta('appareil')) || '';
+    if (!appareil) {
+      appareil = (globalThis.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
+      await store.setMeta('appareil', appareil);
+    }
+  } catch (e) { /* sans identifiant, la clé gratuite n’est pas proposée */ }
+  try { const g = await store.getMeta('gratuit'); if (g && g.jour === aujourdhui()) gratuit = { jour: g.jour, vins: g.vins || 0 }; } catch (e) { /* compteur à zéro */ }
+  syncCfg();
+}
+const gratuitActif = () => { try { return localStorage.getItem('cave-gratuit') !== 'off'; } catch (e) { return true; } };
+export const gratuitReste = () => Math.max(0, LIMITE_GRATUITE - (gratuit.jour === aujourdhui() ? gratuit.vins : 0));
+// Mode Gemini : « direct » (clé personnelle), « gratuit » (clé partagée, sous la limite) ou '' (aucun).
+const modeGemini = () => { if (getConfig('gemini').key) return 'direct'; return appareil && gratuitActif() && gratuitReste() > 0 ? 'gratuit' : ''; };
+const gratuitBloque = () => !!appareil && gratuitActif() && !getConfig('gemini').key && gratuitReste() === 0;
+// Pour un lot : en mode gratuit, on ne demande que ce qui reste sous la limite du jour.
+export function capGratuit(list) { return modeGemini() === 'gratuit' ? list.slice(0, Math.max(1, gratuitReste())) : list; }
+async function compter(n) {
+  const jour = aujourdhui();
+  if (gratuit.jour !== jour) gratuit = { jour, vins: 0 };
+  // La passe de fond peut avoir compté entre-temps : on repart du compteur enregistré.
+  try { const g = await store.getMeta('gratuit'); if (g && g.jour === jour && g.vins > gratuit.vins) gratuit.vins = g.vins; } catch (e) { /* compteur local */ }
+  gratuit.vins += n;
+  try { await store.setMeta('gratuit', { ...gratuit }); } catch (e) { /* le compteur reste en mémoire pour cette session */ }
+}
+export const configured = () => ORDER.filter(p => (p === 'gemini' ? !!modeGemini() : getConfig(p).key));
 export function getSettings() {
   const r = readRaw();
   const provider = r.provider || configured()[0] || 'gemini';
@@ -56,8 +89,10 @@ export function setSettings(s) {
 // Copie des clés dans IndexedDB (sur le téléphone seulement) : le service worker en a besoin pour la passe de fond.
 export function syncCfg() {
   try { store.setMeta('aiCfg', readRaw().list).catch(() => {}); } catch (e) { /* sans effet */ }
+  try { store.setMeta('gratuitOn', gratuitActif()).catch(() => {}); } catch (e) { /* sans effet */ }
 }
 export const ready = () => configured().length > 0;
+export const limiteAtteinte = () => gratuitBloque();
 
 // Fournisseurs mis de côté un moment (crédits épuisés, clé refusée…), pour ne pas les réessayer à chaque demande.
 function cooled() {
@@ -80,6 +115,7 @@ export function usable() {
 
 export const ERR = {
   no_key: 'Aucune IA configurée. Ajoutez une clé dans Réglages (⚙).',
+  limite_gratuite: 'Limite du jour atteinte avec la clé d’essai. Pour continuer, ajoutez votre propre clé gratuite dans Réglages (⚙) : la marche à suivre y est expliquée pas à pas.',
   bad_key: 'Clé IA refusée. Vérifiez-la dans Réglages (⚙).',
   bad_model: 'Modèle IA introuvable. Corrigez le nom du modèle dans Réglages (⚙).',
   rate_limited: 'Limite d’utilisation de l’IA atteinte (par minute ou par jour). Réessayez plus tard.',
@@ -160,7 +196,7 @@ export function webSources(cand) {
 }
 
 async function callOnce(s, prompt, images, signal, out) {
-  if (!s.key) throw { code: 'no_key' };
+  if (!s.key && !s.gratuit) throw { code: 'no_key' };
   const b64 = [];
   for (const im of images) b64.push(await toB64(im));
   if (s.provider === 'anthropic') {
@@ -189,9 +225,9 @@ async function callOnce(s, prompt, images, signal, out) {
   }
   // Gemini ; avec `wantSearch`, il consulte le web (Google Search) avant de répondre.
   const parts = [{ text: prompt }, ...b64.map(d => ({ inline_data: { mime_type: 'image/jpeg', data: d } }))];
-  const call = search => httpJson('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(s.model) + ':generateContent', {
+  const call = search => httpJson((s.gratuit ? PROXY : 'https://generativelanguage.googleapis.com') + '/v1beta/models/' + encodeURIComponent(s.model) + ':generateContent', {
     method: 'POST', signal,
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': s.key },
+    headers: s.gratuit ? { 'Content-Type': 'application/json', 'x-appareil': appareil, 'x-unites': String(s.unites || 1) } : { 'Content-Type': 'application/json', 'x-goog-api-key': s.key },
     body: JSON.stringify(search
       ? { contents: [{ role: 'user', parts }], tools: [{ google_search: {} }], generationConfig: { temperature: 0.2 } }
       : { contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', temperature: 0.2 } }),
@@ -242,19 +278,23 @@ async function callProvider(s, prompt, { images = [], signal, onWait, out } = {}
 // `only` force un fournisseur (test de connexion).
 export async function callJson(prompt, opts = {}) {
   const list = opts.only ? configured().filter(p => p === opts.only) : usable();
-  if (!list.length) throw { code: 'no_key' };
+  if (!list.length) throw { code: gratuitBloque() ? 'limite_gratuite' : 'no_key' };
   let lastErr;
   for (let i = 0; i < list.length; i++) {
     const prov = list[i]; const last = i === list.length - 1;
     const s = { provider: prov, ...getConfig(prov) };
+    if (prov === 'gemini' && !s.key) { s.gratuit = true; s.unites = Math.max(1, opts.unites || 1); }
     s.model = modelFor(prov, opts.task, s.model);
     try {
       const r = await callProvider(s, prompt, opts, last && !opts.noRetry ? cfg.retries : 0);
       uncool(prov); stat('ia_ok');
+      if (s.gratuit) await compter(s.unites);
       if (opts.out) opts.out.provider = prov;
       return r;
     } catch (e) {
       if (e && e.name === 'AbortError') throw e;
+      // la clé partagée est épuisée côté serveur : on le dit comme une limite du jour, pas comme une panne
+      if (s.gratuit && e && e.code === 'rate_limited') e = { code: 'limite_gratuite' };
       lastErr = e;
       const code = e && e.code;
       if (STAT_OF[code]) stat(STAT_OF[code]);
@@ -322,6 +362,7 @@ function ficheFrom(d) {
 
 // 10 vins par appel : 10 fois moins d'appels que vin par vin.
 export async function makeFiches(list, opts) {
+  list = capGratuit(list); opts = { ...(opts || {}), unites: list.length };
   const year = new Date().getFullYear();
   const d = await callJson(`${EXPERT} Pour chaque vin de la liste, complète ou corrige si besoin : g=cépages, s=histoire de la cuvée et du millésime en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ${year}), p=4 accords mets courts, u=liste des champs que tu ne connais pas sûrement parmi "cépage", "histoire", "garde", "accords" (liste vide si tu es sûr), v=[min,max] fourchette indicative du prix en euros d’une bouteille de 75 cl (sans recherche), c="estimée". Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region })))}. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"u":[],"v":[20,40],"c":"estimée"}]} avec une entrée par vin.`, opts);
   const items = Array.isArray(d) ? d : d && Array.isArray(d.items) ? d.items : null;
@@ -333,6 +374,7 @@ export async function makeFiches(list, opts) {
 
 // Recherche web par lot (quelques vins par appel) : une seule requête ; les sources sont partagées par le lot.
 export async function makeFichesWeb(list, opts = {}) {
+  list = capGratuit(list); opts = { ...opts, unites: list.length };
   const year = new Date().getFullYear();
   const out = { wantSearch: true };
   const d = await callJson(`${EXPERT} Utilise la recherche web et croise des sources fiables (site du domaine, guides et revues, cavistes). Pour chaque vin de la liste, complète : g=cépages, s=histoire de la cuvée en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ${year}), p=4 accords mets courts, c="vérifiée" seulement si les pages consultées confirment cette cuvée et ce millésime, sinon "estimée". Ne donne jamais une fenêtre de garde sans base ; en cas de doute, élargis-la. Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region })))}. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"c":"estimée"}]} avec une entrée par vin.`, { ...opts, out });
@@ -371,6 +413,7 @@ export async function avisCave(resume, opts = {}) {
 
 // Valeur indicative : fourchette de prix d'une bouteille de 75 cl par vin, sans recherche web, par lot.
 export async function estimeValeur(list, opts = {}) {
+  list = capGratuit(list); opts = { ...opts, unites: list.length };
   const d = await callJson(`${EXPERT} Pour chaque vin de la liste, donne une fourchette indicative du prix de marché en euros d'une bouteille de 75 cl (min et max), à partir de tes connaissances, sans recherche. Si tu ne connais pas la cuvée, donne une fourchette large et prudente. Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region })))}. Réponds uniquement par {"items":[{"id":"…","min":0,"max":0}]} avec une entrée par vin.`, opts);
   const items = Array.isArray(d) ? d : d && Array.isArray(d.items) ? d.items : null;
   if (!items) throw { code: 'invalid_json' };

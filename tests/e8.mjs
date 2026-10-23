@@ -66,7 +66,7 @@ await page.close();mode='ok';
 ({page,errs}=await mk(0));await H.sl(1500);
 await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('seenVersion','1.16.0')});
 await page.reload();await H.sl(1500);
-T('mise à jour : fenêtre des nouveautés affichée',(await H.shown(page,'#sDlg'))&&/Mise à jour 1.24.0/.test(await H.txt(page,'#dlgT')),await H.txt(page,'#dlgT'));
+T('mise à jour : fenêtre des nouveautés affichée',(await H.shown(page,'#sDlg'))&&/Mise à jour 1.25.0/.test(await H.txt(page,'#dlgT')),await H.txt(page,'#dlgT'));
 const nx=await H.txt(page,'#dlgX');
 T('résumé : points des versions manquées, pas ceux déjà vus',/Magic : l’avis sur l’équilibre/.test(nx)&&/Réglages › Nouvelles versions/.test(nx)&&!/Onglet « Magic »/.test(nx)&&!/Publier ma requête/.test(nx)&&!/Choix automatique de l’IA/.test(nx),nx);
 await H.tapText(page,'#dlgB button','Compris');await H.sl(300);

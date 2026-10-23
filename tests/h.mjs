@@ -17,11 +17,13 @@ export async function newPage(b,{ai,width=390,height=780}={}){
   const calls=[];
   await page.exposeFunction('__aiMock',async(url,headers,body)=>{const c={url,headers,body:body?JSON.parse(body):null};calls.push(c);const r=ai?await ai(c):{status:500,json:{}};return {status:r.status||200,body:JSON.stringify(r.json??{}),delay:r.delay||0}});
   await page.evaluateOnNewDocument(()=>{window.__AUTO_DELAY=1e9;window.__AUTO_EVERY=1e9});
+  // Clé gratuite partagée désactivée par défaut dans les tests (sauf e20) : les anciens tests gardent leur comportement.
+  await page.evaluateOnNewDocument(()=>{try{if(localStorage.getItem('cave-gratuit')===null)localStorage.setItem('cave-gratuit','off')}catch(e){}});
   await page.evaluateOnNewDocument(()=>{
     window.__dl=[];
     const of=window.fetch.bind(window);
     window.fetch=async(input,init={})=>{const url=typeof input==='string'?input:input.url;
-      if(/googleapis\.com|anthropic\.com|api\.example-ai\.com/.test(url)){
+      if(/googleapis\.com|anthropic\.com|api\.example-ai\.com|cave-ia\.m-jeanfrancois-morin\.workers\.dev/.test(url)){
         const sig=init.signal;if(sig&&sig.aborted)throw new DOMException('aborted','AbortError');
         const r=await window.__aiMock(url,init.headers||{},init.body||null);
         await new Promise((res,rej)=>{const t=setTimeout(res,r.delay);if(sig)sig.addEventListener('abort',()=>{clearTimeout(t);rej(new DOMException('aborted','AbortError'))},{once:true})});

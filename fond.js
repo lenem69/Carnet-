@@ -10,6 +10,8 @@
   const LOT = 10;             // vins par appel sans recherche
   const RECH = 5;             // vins par appel de recherche web
   const ESSAIS = 2, VERROU_MS = 5 * 60e3;
+  const PROXY = 'https://cave-ia.m-jeanfrancois-morin.workers.dev';   // clé gratuite partagée (sous limite par appareil)
+  const LIMITE_GRATUITE = 5;  // vins par jour et par appareil, en mode gratuit
   const CHAMPS = ['grape', 'story', 'pairings', 'from', 'to'];
   const COULEUR_BIBLE = { Rouge: ['R'], Blanc: ['B', 'D'], Pétillant: ['E'] };
   const vide = v => v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length);
@@ -147,6 +149,38 @@
     if (i >= 0 && j > i) { try { return JSON.parse(s.slice(i, j + 1)); } catch (e) { /* illisible */ } }
     throw { code: 'invalid_json' };
   }
+  // Adresse et en-têtes Gemini : clé personnelle en direct, ou clé partagée passant par le proxy.
+  function urlGemini(c) {
+    return (c.gratuit ? PROXY : 'https://generativelanguage.googleapis.com') + '/v1beta/models/' + encodeURIComponent(c.model || 'gemini-3.5-flash-lite') + ':generateContent';
+  }
+  function entetesGemini(c, n) {
+    const h = { 'Content-Type': 'application/json' };
+    if (c.gratuit) { h['x-appareil'] = c.appareil; h['x-unites'] = String(Math.max(1, Math.min(10, n || 1))); }
+    else h['x-goog-api-key'] = c.key;
+    return h;
+  }
+  // Clé à utiliser : la personnelle d'abord ; sinon la clé gratuite, tant que l'appareil n'a pas atteint sa limite du jour.
+  async function cleGemini(db, cfg, jour) {
+    const c = cfg.gemini || {};
+    if (c.key) return { key: c.key, model: c.model, gratuit: false };
+    if (cfg.gratuitOn === false) return null;
+    const appareil = await lireMeta(db, 'appareil');
+    if (!appareil) return null;
+    const g = (await lireMeta(db, 'gratuit')) || {};
+    const vins = g.jour === jour ? (g.vins || 0) : 0;
+    return { key: '', model: c.model, gratuit: true, appareil: String(appareil), jour, reste: Math.max(0, LIMITE_GRATUITE - vins) };
+  }
+  // Après un appel réussi en mode gratuit : on compte les vins sur l'appareil (sans jamais faire échouer la passe).
+  async function compteGratuit(db, c, n) {
+    if (!c.gratuit) return;
+    c.reste = Math.max(0, c.reste - n);
+    try {
+      const g = (await lireMeta(db, 'gratuit')) || {};
+      const vins = g.jour === c.jour ? (g.vins || 0) : 0;
+      await ecrireMeta(db, 'gratuit', { jour: c.jour, vins: vins + n });
+    } catch (e) { /* tant pis : au pire un vin de plus compté la prochaine fois */ }
+  }
+
   // Sites réellement consultés par Gemini (https, 5 au maximum, sans doublon).
   function sourcesWeb(cand) {
     const ch = (cand && cand.groundingMetadata && cand.groundingMetadata.groundingChunks) || [];
@@ -167,8 +201,8 @@
     const texte = 'Tu es sommelier expert. Pour chaque vin de la liste, sans recherche web, complète : g=cépages, s=histoire de la cuvée en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ' + annee + '), p=4 accords mets courts, u=liste des champs que tu ne connais pas sûrement parmi "cépage", "histoire", "garde", "accords" (liste vide si tu es sûr). Vins : ' +
       JSON.stringify(lot.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region }))) +
       '. Réponds uniquement par {"items":[{"id":"…","g":"","s":"","f":0,"t":0,"p":[],"u":[]}]} avec une entrée par vin.';
-    const j = await http('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(c.model || 'gemini-3.5-flash-lite') + ':generateContent', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': c.key },
+    const j = await http(urlGemini(c), {
+      method: 'POST', headers: entetesGemini(c, lot.length),
       body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: texte }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 4000, responseMimeType: 'application/json' } }),
     });
     const cand = j.candidates && j.candidates[0];
@@ -196,8 +230,8 @@
     const texte = 'Tu es sommelier expert. Pour chaque vin de la liste, donne une fourchette indicative du prix de marché en euros d’une bouteille de 75 cl (min et max), à partir de tes connaissances, sans recherche. Si tu ne connais pas la cuvée, donne une fourchette large et prudente. Vins : ' +
       JSON.stringify(lot.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region }))) +
       '. Réponds uniquement par {"items":[{"id":"…","min":0,"max":0}]} avec une entrée par vin.';
-    const j = await http('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(c.model || 'gemini-3.5-flash-lite') + ':generateContent', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': c.key },
+    const j = await http(urlGemini(c), {
+      method: 'POST', headers: entetesGemini(c, lot.length),
       body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: texte }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 1500, responseMimeType: 'application/json' } }),
     });
     const cand = j.candidates && j.candidates[0];
@@ -220,8 +254,8 @@
     const texte = 'Tu es sommelier. Utilise la recherche web et croise des sources fiables (site du domaine, guides, cavistes). Nous sommes en ' + annee + '. Pour chaque vin de la liste, complète : g=cépages, s=histoire de la cuvée en une phrase, f=année de début de garde, t=année de fin de garde, p=4 accords mets-vins. c="vérifiée" seulement si les pages consultées confirment cette cuvée et ce millésime, sinon "estimée". Vins : ' +
       JSON.stringify(lot.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region }))) +
       '. Réponds uniquement par {"items":[{"id":"…","g":"","s":"","f":0,"t":0,"p":[],"c":""}]} avec une entrée par vin.';
-    const j = await http('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(c.model || 'gemini-3.5-flash-lite') + ':generateContent', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': c.key },
+    const j = await http(urlGemini(c), {
+      method: 'POST', headers: entetesGemini(c, lot.length),
       body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: texte }] }], tools: [{ google_search: {} }], generationConfig: { temperature: 0.2, maxOutputTokens: 2500 } }),
     });
     const cand = j.candidates && j.candidates[0];
@@ -260,8 +294,8 @@
       const jour = new Date(now).toISOString().slice(0, 10);
       const q = { ...auto, tries: { ...(auto.tries || {}) } };
       if (q.day !== jour) { q.day = jour; q.calls = 0; }
-      const c = cfg.gemini;
-      if (!c || !c.key) return { ok: false, why: 'pas_de_cle' };
+      const c = await cleGemini(db, cfg, jour);
+      if (!c) return { ok: false, why: 'pas_de_cle' };
 
       // 1) La bible d'abord, sur toute la cave : aucun jeton.
       const bible = await lireBible();
@@ -283,17 +317,17 @@
         await ecrireMeta(db, 'autoFill', q);
         return { ok: true, n: 0, bible: bibleMaj.length, why: 'quota' };
       }
-      const restant = () => Math.min(MAX_PASSE - appels, MAX_JOUR - (q.calls || 0));
+      const restant = () => Math.min(MAX_PASSE - appels, MAX_JOUR - (q.calls || 0), c.gratuit ? c.reste : Infinity);
 
       await ecrireMeta(db, 'passeVerrou', now);
 
       // 2) IA sans recherche : vins jamais passés, par lots de LOT.
       const aFaire = cave.filter(w => !w.aiPass && w.qty > 0 && (q.tries[w.id] || 0) < ESSAIS);
       for (let i = 0; i < aFaire.length && restant() > 0 && !erreur; i += LOT) {
-        const lot = aFaire.slice(i, i + LOT);
+        const lot = aFaire.slice(i, i + Math.min(LOT, restant()));
         q.calls = (q.calls || 0) + 1; appels++;
         let res = null;
-        try { res = await lotGemini(c, lot); }
+        try { res = await lotGemini(c, lot); await compteGratuit(db, c, lot.length); }
         catch (e) { erreur = e; break; }
         // Relecture avant écriture : une modification faite entre-temps est gardée.
         const frais = await lireVins(db);
@@ -313,10 +347,10 @@
       if (!erreur) {
         const sansValeur = cave.filter(w => w.aiPass && !w.estim && w.qty > 0 && (q.tries[w.id] || 0) < ESSAIS);
         for (let i = 0; i < sansValeur.length && restant() > 0 && !erreur; i += LOT) {
-          const lot = sansValeur.slice(i, i + LOT);
+          const lot = sansValeur.slice(i, i + Math.min(LOT, restant()));
           q.calls = (q.calls || 0) + 1; appels++;
           let res = null;
-          try { res = await lotValeur(c, lot); }
+          try { res = await lotValeur(c, lot); await compteGratuit(db, c, lot.length); }
           catch (e) { erreur = e; break; }
           const frais = await lireVins(db);
           for (const v of lot) {
@@ -340,10 +374,10 @@
         const aChercher = cave.filter(w => w.aiPass && !w.aiSearch && w.qty > 0 && doutesOf(w).length && (q.tries[w.id] || 0) < ESSAIS)
           .sort((a, b) => (b.qty > 0) - (a.qty > 0));
         for (let i = 0; i < aChercher.length && restant() > 0 && !erreur; i += RECH) {
-          const lot = aChercher.slice(i, i + RECH);
+          const lot = aChercher.slice(i, i + Math.min(RECH, restant()));
           q.calls = (q.calls || 0) + 1; appels++;
           let res = null;
-          try { res = await rechercheLot(c, lot); }
+          try { res = await rechercheLot(c, lot); await compteGratuit(db, c, lot.length); }
           catch (e) { erreur = e; lot.forEach(v => { q.tries[v.id] = (q.tries[v.id] || 0) + 1; }); break; }
           const frais = await lireVins(db);
           for (const v of lot) {

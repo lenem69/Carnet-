@@ -656,9 +656,18 @@ function remplace(w, c) { const i = S.wines.indexOf(w); if (i >= 0) S.wines[i] =
 
 function requireAI() {
   if (AI.ready()) return true;
+  if (AI.limiteAtteinte()) { limiteWindow(); return false; }
   errToast(AI.ERR.no_key);
   openSettings();
   return false;
+}
+// Fenêtre affichée quand la limite du jour est atteinte et qu'aucune clé personnelle n'est saisie.
+async function limiteWindow() {
+  await whenFree();
+  const c = await ask('Limite du jour atteinte',
+    'Vous avez utilisé les fiches gratuites d’aujourd’hui. La limite se remet à zéro chaque jour. Pour continuer tout de suite, ajoutez votre propre clé gratuite Gemini dans ⚙ Réglages : la marche à suivre y est expliquée pas à pas.',
+    [{ label: 'Plus tard', value: 'plus', kind: 'o' }, { label: 'Ouvrir Réglages', value: 'reglages' }]);
+  if (c === 'reglages') openSettings();
 }
 
 /* ============ Suivi des traitements longs ============ */
@@ -712,7 +721,7 @@ async function scanFiles(files) {
     } catch (e) {
       if (e && e.name === 'AbortError') { log.set(i, 'skip', 'Arrêté'); continue; }
       fails++; log.set(i, 'err', AI.errText(e));
-      if (e && (e.code === 'rate_limited' || e.code === 'bad_key' || e.code === 'no_key' || e.code === 'bad_model' || e.code === 'network')) {
+      if (e && (e.code === 'rate_limited' || e.code === 'limite_gratuite' || e.code === 'bad_key' || e.code === 'no_key' || e.code === 'bad_model' || e.code === 'network')) {
         for (let j = i + 1; j < files.length; j++) log.set(j, 'skip', 'Non traité');
         break;
       }
@@ -794,7 +803,7 @@ async function valeurCaveIA() {
     } catch (e) {
       if (e && e.name === 'AbortError') { log.set(i, 'skip', 'Arrêté'); continue; }
       log.set(i, 'err', AI.errText(e));
-      if (e && ['rate_limited', 'bad_key', 'no_key', 'bad_model', 'network'].includes(e.code)) { for (let j = i + 1; j < groups.length; j++) log.set(j, 'skip', 'Non traité'); break; }
+      if (e && ['rate_limited', 'limite_gratuite', 'bad_key', 'no_key', 'bad_model', 'network'].includes(e.code)) { for (let j = i + 1; j < groups.length; j++) log.set(j, 'skip', 'Non traité'); break; }
     }
   }
   log.finish(`Terminé : ${done} bouteille(s) estimée(s). Relancez plus tard pour les autres.`);
@@ -830,7 +839,7 @@ async function enrichAll() {
     } catch (e) {
       if (e && e.name === 'AbortError') { log.set(i, 'skip', 'Arrêté'); continue; }
       log.set(i, 'err', AI.errText(e));
-      if (e && ['rate_limited', 'bad_key', 'no_key', 'bad_model', 'network'].includes(e.code)) { for (let j = i + 1; j < groups.length; j++) log.set(j, 'skip', 'Non traité'); break; }
+      if (e && ['rate_limited', 'limite_gratuite', 'bad_key', 'no_key', 'bad_model', 'network'].includes(e.code)) { for (let j = i + 1; j < groups.length; j++) log.set(j, 'skip', 'Non traité'); break; }
     }
   }
   log.finish(`Terminé : ${done} fiche(s) complétée(s). Relancez plus tard pour les autres.`);
@@ -994,7 +1003,7 @@ async function openSettings() {
   renderAiChoices(s.provider);
   fillAiFields(s.provider);
   $('#ai-key').type = 'password'; $('#ai-show').textContent = 'Voir';
-  $('#ai-guide').hidden = AI.ready();
+  $('#ai-guide').hidden = !!AI.getConfig('gemini').key;
   $('#st-ver').textContent = VERSION;
   $('#st-auto').checked = auto.on; $('#st-auto-info').textContent = autoStatus();
   $('#st-maj').onclick = () => { closeSheet('sSet'); enrichAll(); };
@@ -1033,7 +1042,7 @@ function saveAi(silent) {
   if (v.key && /\s/.test(v.model.trim())) { errToast('Nom de modèle invalide : il ne contient jamais d’espace (exemple : ' + (AI.PROVIDERS[v.provider].model || 'gpt-4o-mini') + ').'); return false; }
   try { AI.setSettings(v); } catch (e) { errToast('Enregistrement des réglages impossible (stockage du navigateur bloqué).'); return false; }
   renderAiChoices(v.provider);
-  $('#ai-guide').hidden = AI.ready();
+  $('#ai-guide').hidden = !!AI.getConfig('gemini').key;
   if (!silent) toast(v.key ? '✅ Réglages IA enregistrés.' : 'Clé retirée pour ce fournisseur.');
   return true;
 }
@@ -1183,7 +1192,8 @@ function bind() {
   $('#ai-prov').onchange = () => fillAiFields($('#ai-prov').value);
   AI.hooks.onSwitch = (from, to, e) => toast(`${AI.PROVIDERS[from].label.split(' ')[0]} indisponible (${AI.errText(e).replace(/\.$/, '').slice(0, 60)}) : ${AI.PROVIDERS[to].label.split(' ')[0]} prend le relais.`);
   $('#ai-show').onclick = () => { const k = $('#ai-key'); const show = k.type === 'password'; k.type = show ? 'text' : 'password'; $('#ai-show').textContent = show ? 'Masquer' : 'Voir'; };
-  $('#ai-open').onclick = () => { try { window.open('https://aistudio.google.com/apikey', '_blank', 'noopener,noreferrer'); } catch (e) { errToast('Ouvrez aistudio.google.com dans votre navigateur.'); } };
+  $('#ai-open').onclick = () => { try { window.open('https://aistudio.google.com/app/apikey', '_blank', 'noopener,noreferrer'); } catch (e) { errToast('Ouvrez aistudio.google.com dans votre navigateur.'); } };
+  $('#ai-copy').onclick = async () => { try { await navigator.clipboard.writeText('https://aistudio.google.com/app/apikey'); toast('Adresse copiée. Collez-la dans votre navigateur.'); } catch (e) { errToast('Copie impossible : sélectionnez l’adresse dans le texte et copiez-la.'); } };
   $('#ai-paste').onclick = async () => {
     try {
       const t = ((await navigator.clipboard.readText()) || '').trim();
@@ -1358,7 +1368,6 @@ async function initFond() {
 }
 const iPhone = () => /iPhone|iPad|iPod/.test(navigator.userAgent);
 async function initAuto() {
-  AI.syncCfg();
   initFond();
   // La bible d'abord, sur toute la cave : aucun jeton.
   const bibleMaj = [];
@@ -1436,7 +1445,7 @@ async function autoStep() {
     auto.pauseUntil = 0;
   } catch (e) {
     const code = e && e.code;
-    if (code === 'rate_limited') { auto.pauseUntil = nextQuotaReset(); auto.pauseWhy = 'limite de l’IA atteinte'; }
+    if (code === 'rate_limited' || code === 'limite_gratuite') { auto.pauseUntil = nextQuotaReset(); auto.pauseWhy = 'limite de l’IA atteinte'; }
     else if (['bad_key', 'bad_model', 'bad_base', 'no_key'].includes(code)) {
       auto.pauseUntil = now + 864e5; auto.pauseWhy = 'clé ou modèle d’IA à vérifier';
       errToast('Fiches automatiques en pause : ' + AI.errText(e));
@@ -1569,6 +1578,6 @@ async function boot() {
   render();
   store.protect();
   initSW();
-  (async () => { await loadBible(); await showBienvenue(); await showNews(); await initStats(); initAuto(); })();
+  (async () => { await AI.initGratuit(); await loadBible(); await showBienvenue(); await showNews(); await initStats(); initAuto(); })();
 }
 boot();

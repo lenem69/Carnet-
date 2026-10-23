@@ -2,7 +2,7 @@
    Polices système uniquement : aucune dépendance externe, fonctionne hors connexion. */
 :root {
   --bg: #f8f4f3; --card: #ffffff; --tx: #2a1d20; --mu: #6f5f63; --ac: #7b1e3a; --acx: #ffffff;
-  --bd: #e6dadd; --soft: #f1e8ea; --ok: #2e7d4f; --wa: #a35f00; --bad: #a3282d;
+  --bd: #e6dadd; --soft: #f1e8ea; --or: #d9a94f; --orf: #f7eccf; --ortx: #5c1428; --orbr: #f2d487; --ok: #2e7d4f; --wa: #a35f00; --bad: #a3282d;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --vvt: 0px; --vvh: 100%;
@@ -43,9 +43,16 @@ p { margin: 4px 0; }
 .banner.info { border-left-color: var(--ac); }
 .banner p { margin: 0; flex: 1 1 200px; font-size: 14px; }
 
-.tabs { display: flex; gap: 6px; margin-bottom: 10px; }
-.tab { flex: 1; min-height: 44px; border-radius: 10px; border: 1px solid var(--bd); background: var(--card); font-weight: 600; }
-.tab.on { background: var(--ac); color: var(--acx); border-color: var(--ac); }
+.tabs { display: flex; gap: 8px; margin: 2px 0 12px; }
+/* Les trois boutons du moteur de l’appli : plus hauts, plus gras, couleur or pour les distinguer des filtres. */
+.tab {
+  flex: 1; min-height: 54px; padding: 6px 4px; border-radius: 12px;
+  border: 1.5px solid var(--or); background: var(--orf); color: var(--ortx);
+  font-size: 16px; font-weight: 800; letter-spacing: .01em; line-height: 1.15;
+  box-shadow: 0 3px 0 var(--or); transition: transform .08s ease, box-shadow .08s ease;
+}
+.tab:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--or); }
+.tab.on { background: var(--ac); color: var(--orbr); border-color: var(--ac); box-shadow: inset 0 -4px 0 var(--or); }
 
 .tools { display: flex; gap: 8px; }
 .tools input { flex: 1; min-width: 0; }
