@@ -31,6 +31,34 @@
   </button>
 </header>
 
+<!-- Première visite sur téléphone, hors appli installée -->
+<div id="landing" hidden role="dialog" aria-modal="true" aria-labelledby="ldT">
+  <div class="ld">
+    <h1 id="ldT">Ma cave</h1>
+    <p class="mu">Installez l’appli sur votre écran d’accueil : elle s’ouvre comme une vraie appli, même sans réseau.</p>
+    <div id="ld-ios" hidden>
+      <div class="tuto" aria-hidden="true">
+        <div class="tb"><span class="tbar">aA &nbsp;&nbsp; ⬆ <i>Partager</i></span></div>
+        <div class="tmenu"><div class="ti t1">Partager</div><div class="ti t2">Sur l’écran d’accueil</div><div class="ti t3">Ajouter</div></div>
+      </div>
+      <ol class="steps">
+        <li>Touchez <b>Partager</b> (⬆) en bas de l’écran.</li>
+        <li>Touchez <b>Sur l’écran d’accueil</b>.</li>
+        <li>Touchez <b>Ajouter</b> en haut à droite.</li>
+      </ol>
+    </div>
+    <div id="ld-and" hidden>
+      <div class="stack"><button class="btn" id="ld-install" type="button">Installer l’appli</button></div>
+      <ol class="steps" id="ld-and-steps">
+        <li>Touchez le menu ⋮ du navigateur (en haut à droite).</li>
+        <li>Touchez <b>Installer l’appli</b> ou <b>Ajouter à l’écran d’accueil</b>.</li>
+      </ol>
+    </div>
+    <div class="stack"><button class="btn o" id="ld-skip" type="button">Continuer sans installer</button></div>
+    <p class="mu small">Vous pourrez installer l’appli plus tard depuis le bandeau.</p>
+  </div>
+</div>
+
 <main>
   <section class="quote" aria-label="Citation sur le vin">
     <span class="qm" aria-hidden="true">“</span>

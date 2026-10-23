@@ -1093,8 +1093,8 @@ async function showStatsPreview() {
 /* ============ Installation ============ */
 // Android : bouton « Installer » natif. iPhone (Safari) : pas-à-pas animé. Déjà installée : rien.
 let deferredInstall = null;
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; renderInstall(); });
-window.addEventListener('appinstalled', () => { deferredInstall = null; renderInstall(); });
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; renderInstall(); updateLandingInstall(); });
+window.addEventListener('appinstalled', () => { deferredInstall = null; renderInstall(); updateLandingInstall(); });
 function isStandalone() {
   try { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; } catch (e) { return false; }
 }
@@ -1117,6 +1117,36 @@ function renderInstall() {
   $('#inst-off').onclick = () => { try { localStorage.setItem('cave-install-off', '1'); } catch (e) { /* */ } renderInstall(); };
 }
 
+// Première visite sur téléphone (navigateur, pas l’appli installée) : écran d’installation avant l’appli.
+function isPhone() { return /Android|iPhone|iPad|iPod/.test(navigator.userAgent || ''); }
+function showLanding() {
+  if (!isPhone() || isStandalone()) return;
+  try { if (localStorage.getItem('cave-landing-ok') === '1') return; } catch (e) { /* stockage bloqué : on montre l’écran */ }
+  const ios = isIphoneSafari();
+  $('#landing').hidden = false;
+  $('#ld-ios').hidden = !ios;
+  $('#ld-and').hidden = ios;
+  updateLandingInstall();
+}
+function updateLandingInstall() {
+  const b = $('#ld-install');
+  if (!b) return;
+  b.hidden = !deferredInstall;
+  $('#ld-and-steps').hidden = !!deferredInstall;
+}
+function closeLanding() {
+  try { localStorage.setItem('cave-landing-ok', '1'); } catch (e) { /* */ }
+  $('#landing').hidden = true;
+}
+function bindLanding() {
+  $('#ld-skip').onclick = closeLanding;
+  $('#ld-install').onclick = async () => {
+    if (!deferredInstall) { closeLanding(); return; }
+    try { deferredInstall.prompt(); await deferredInstall.userChoice; } catch (e) { errToast('Installation impossible ici : utilisez le menu du navigateur › « Installer l’appli ».'); }
+    deferredInstall = null; renderInstall(); updateLandingInstall();
+  };
+}
+
 /* ============ Démarrage ============ */
 async function boot() {
   fitViewport();
@@ -1124,6 +1154,8 @@ async function boot() {
   showQuote();
   render();
   renderInstall();
+  bindLanding();
+  showLanding();
   await store.open();
   try {
     const raw = await store.allWines();

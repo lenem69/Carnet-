@@ -192,6 +192,13 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 .chiffres .legende .lk { flex: 1; }
 .chiffres .sw { width: 12px; height: 12px; border-radius: 3px; flex: none; }
 
+/* Écran d'accueil (première visite) */
+#landing:not([hidden]) { position: fixed; inset: 0; z-index: 60; background: var(--bg); overflow-y: auto; padding: 24px 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
+#landing .ld { max-width: 520px; margin: 0 auto; }
+#landing h1 { margin: 8px 0 4px; font-size: 30px; }
+#landing .tuto { margin-top: 14px; }
+#landing .steps { margin-top: 12px; }
+#landing .stack { margin: 12px 0; }
 /* Onboarding : installation, options repliées, tutoriel animé */
 #installBox:not([hidden]) { margin-bottom: 12px; }
 #installBox .inst { background: var(--card); border: 1px solid var(--bd); border-left: 4px solid var(--ac); border-radius: 12px; padding: 12px; }
