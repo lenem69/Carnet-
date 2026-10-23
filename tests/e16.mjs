@@ -33,8 +33,8 @@ T('valeur : estimation affichée après estimation',t.includes('≈')&&t.include
 await H.tapText(page,'.tab','Ma cave');await H.sl(400);
 const entete=await H.txt(page,'.stats');
 T('en-tête : « valeur estimée » (et non valeur d’achat)',entete.includes('valeur estimée')&&!entete.includes('valeur d’achat'),entete);
-await page.click('#sVbtn');await H.sl(300);
-T('en-tête : montant caché d’un geste',(await H.txt(page,'#sV'))==='•••');
+await page.evaluate(()=>{const e=[...document.querySelectorAll('.stat span')].find(x=>x.textContent==='valeur estimée');e.click();});await H.sl(300);
+T('en-tête : montant caché d’un geste (toucher le libellé aussi)',(await H.txt(page,'#sV'))==='•••');
 await page.click('#sVbtn');await H.sl(300);
 T('en-tête : montant réaffiché',(await H.txt(page,'#sV')).includes('€'));
 T('aucune erreur JavaScript',errs.length===0,errs.join(' | '));
