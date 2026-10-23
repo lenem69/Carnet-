@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.10.0': ['Les nouvelles fiches reçoivent une période de garde indicative (bible des vins) ; vos saisies ne sont jamais modifiées.'],
   '1.9.0': ['Nouvel onglet « Chiffres » : la répartition de votre cave, couleurs, régions, cépages, et l’année où vos bouteilles sont à boire.'],
   '1.8.3': ['Le bandeau « Nouvelle version prête » ne recouvre plus le contenu, et ses messages s’affichent sous lui.'],
   '1.8.1': ['Les fenêtres d’information s’affichent l’une après l’autre, sans se superposer.'],

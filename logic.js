@@ -2,7 +2,7 @@
 import { norm, num, price, uid } from './util.js';
 
 export const COLORS = ['Rouge', 'Blanc', 'Rosé', 'Pétillant', 'Autre'];
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export function normColor(v) {
   const s = norm(v);
@@ -48,6 +48,8 @@ export function normalizeWine(raw) {
     note: str(raw.note),
     check: raw.check === true,
     // v3 : « connue » (auto-déclaré par le modèle, non vérifié) devient « estimée » ; « vérifiée » exige des sources web.
+    // v4 : d'où vient la période de garde (user | ai | bible) ; sert à laisser l'IA corriger la bible.
+    src: origins(raw.src),
     conf: raw.conf === 'vérifiée' ? 'vérifiée' : raw.conf === 'connue' || raw.conf === 'estimée' ? 'estimée' : '',
     sources: toSources(raw.sources),
     created: Number(raw.created) || now,
@@ -59,6 +61,43 @@ export function normalizeWine(raw) {
 function toSources(v) {
   if (!Array.isArray(v)) return [];
   return v.filter(x => x && typeof x.u === 'string' && /^https:\/\//i.test(x.u)).slice(0, 5).map(x => ({ t: str(x.t).slice(0, 80) || 'Source', u: x.u }));
+}
+
+const ORIGINS = ['user', 'ai', 'bible'];
+function origins(v) {
+  const o = {};
+  if (v && typeof v === 'object') for (const k of ['from', 'to']) if (ORIGINS.includes(v[k])) o[k] = v[k];
+  return o;
+}
+
+// Bible : { v: 1, rows: [{ a: appellation, c: couleur R/B/D/E, y: { '2015': [qualité, apogée début, apogée fin, fiabilité] } }] }
+export function bibleValid(j) {
+  return !!j && j.v === 1 && Array.isArray(j.rows) && j.rows.length > 0
+    && j.rows.every(r => r && typeof r.a === 'string' && typeof r.c === 'string' && r.y && typeof r.y === 'object');
+}
+const COLOR_BIBLE = { Rouge: ['R'], Blanc: ['B', 'D'], Pétillant: ['E'] };
+// Entrée de la bible pour une fiche, seulement si la correspondance est claire : appellation exacte et couleur sans ambiguïté.
+export function bibleEntry(w, bible) {
+  if (!bibleValid(bible) || !w || !w.region || !w.year) return null;
+  const want = COLOR_BIBLE[w.color];
+  if (!want) return null;
+  const name = norm(w.region);
+  const rows = bible.rows.filter(r => norm(r.a) === name && want.includes(r.c));
+  // Blanc : « B » (sec) ou « D » (doux) : si les deux existent pour cette appellation, on ne devine pas.
+  if (rows.length !== 1) return null;
+  const cell = rows[0].y[String(w.year)];
+  if (!Array.isArray(cell) || typeof cell[0] !== 'number') return null;
+  return { q: cell[0], from: cell[1], to: cell[2], f: cell[3] };
+}
+// Remplit la période de garde depuis la bible, uniquement si la fiche n'en a pas. Retourne true si modifiée.
+export function prefillFromBible(w, bible) {
+  if (w.from || w.to) return false;
+  const e = bibleEntry(w, bible);
+  if (!e) return false;
+  w.from = e.from; w.to = e.to;
+  w.src = { ...w.src, from: 'bible', to: 'bible' };
+  if (!w.conf) w.conf = 'estimée';
+  return true;
 }
 
 export const keyOf = w => norm([w.name, w.dom, w.year].join('|'));

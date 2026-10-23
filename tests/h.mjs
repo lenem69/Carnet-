@@ -5,6 +5,7 @@ export const URL0='http://localhost:8123/cave/';
 export function deploy(version){fs.rmSync(SITE,{recursive:true,force:true});fs.mkdirSync(path.join(SITE,'cave'),{recursive:true});
   for(const f of fs.readdirSync(APP)){const p=path.join(APP,f);if(fs.statSync(p).isDirectory()||/^(CLAUDE\.md|\.gitignore|README.*)$/.test(f))continue;fs.copyFileSync(p,path.join(SITE,'cave',f))}
   {const ap=path.join(SITE,'cave','app.js');fs.writeFileSync(ap,fs.readFileSync(ap,'utf8').replace(/const STATS_POST = '[^']*';/,"const STATS_POST = '';"))}
+  {const bd=path.join(APP,'bible');if(fs.existsSync(bd)){fs.mkdirSync(path.join(SITE,'cave','bible'),{recursive:true});for(const f of fs.readdirSync(bd))fs.copyFileSync(path.join(bd,f),path.join(SITE,'cave','bible',f))}}
   if(version)fs.writeFileSync(path.join(SITE,'cave','version.js'),`self.APP_VERSION = '${version}';\n`)}
 async function exe(){if(process.env.CHROME_PATH)return {p:process.env.CHROME_PATH,args:[]};if(fs.existsSync('/opt/pw-browsers/chromium'))return {p:'/opt/pw-browsers/chromium',args:[]};const c=(await import('@sparticuz/chromium')).default;return {p:await c.executablePath(),args:c.args}}
 export async function browser(){const e=await exe();return puppeteer.launch({executablePath:e.p,args:[...e.args,'--no-sandbox'],headless:true})}

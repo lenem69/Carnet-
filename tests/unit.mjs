@@ -86,6 +86,32 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   T('chiffres : cave vide',chiffres([],2026).portrait.includes('vide')&&chiffres([],2026).bouteilles===0);
   T('chiffres : ADN non vide',c.adn.length>=2&&c.adn[0].startsWith('Couleur dominante'),JSON.stringify(c.adn));
 }
+// Bible des vins : pré-remplissage de la garde (logic.js)
+{
+  const B = { v: 1, date: '2026-10-01', rows: [
+    { a: 'Chablis', c: 'B', y: { '2015': [4, 2018, 2030, 'B'] } },
+    { a: 'Jurançon sec', c: 'B', y: { '2015': [3, 2017, 2024, 'B'] } },
+    { a: 'Jurançon sec', c: 'D', y: { '2015': [5, 2019, 2030, 'B'] } },
+    { a: 'Ambiguë', c: 'B', y: { '2015': [3, 2017, 2020, 'B'] } },
+    { a: 'Ambiguë', c: 'D', y: { '2015': [3, 2017, 2020, 'B'] } },
+  ] };
+  T('bible : format valide', L.bibleValid(B) && !L.bibleValid({ v: 2, rows: [] }) && !L.bibleValid(null));
+  const w1 = L.normalizeWine({ name: 'Cuvée', region: 'Chablis', color: 'Blanc', year: 2015 });
+  T('bible : pré-remplit la garde d’une fiche sans garde', L.prefillFromBible(w1, B) && w1.from === 2018 && w1.to === 2030 && w1.src.from === 'bible' && w1.conf === 'estimée', JSON.stringify(w1));
+  const w2 = L.normalizeWine({ name: 'Cuvée', region: 'Chablis', color: 'Blanc', year: 2015, from: 2020, to: 2025 });
+  T('bible : ne touche pas une garde déjà saisie', !L.prefillFromBible(w2, B) && w2.from === 2020 && !w2.src.from, JSON.stringify(w2));
+  const w3 = L.normalizeWine({ name: 'Cuvée', region: 'Jurançon sec', color: 'Blanc', year: 2015 });
+  T('bible : Blanc avec sec et doux pour la même appellation → ne devine pas', !L.prefillFromBible(w3, B) && !w3.to, JSON.stringify(w3));
+  const w4 = L.normalizeWine({ name: 'Cuvée', region: 'Ambiguë', color: 'Blanc', year: 2015 });
+  T('bible : deux lignes possibles pour une couleur → rien', !L.prefillFromBible(w4, B) && !w4.from, JSON.stringify(w4));
+  const w5 = L.normalizeWine({ name: 'Cuvée', region: 'Chablis', color: 'Rouge', year: 2015 });
+  T('bible : couleur non couverte (Rouge pour Chablis) → rien', !L.prefillFromBible(w5, B), JSON.stringify(w5));
+  const w6 = L.normalizeWine({ name: 'Cuvée', region: 'Chablis', color: 'Blanc', year: 2016 });
+  T('bible : millésime absent → rien', !L.prefillFromBible(w6, B) && !w6.from);
+  T('bible : sans bible valable → rien', !L.prefillFromBible(L.normalizeWine({ name: 'Cuvée', region: 'Chablis', color: 'Blanc', year: 2015 }), null));
+  const n = L.normalizeWine({ name: 'x', src: { from: 'bible', to: 'bible' } });
+  T('origines : valeurs inconnues écartées, src conservé', JSON.stringify(n.src) === '{}' || (n.src && n.src.from === 'bible'), JSON.stringify(n.src));
+}
 console.log(out.join('\n'));
 const mw=L.normalizeWine({name:'Chassagne-Montrachet',dom:'Paul Jouard',year:2012,loc:'Casier B'});
 console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz',false],['',true]].map(([q,e])=>(L.matchesQuery(mw,q)===e?'PASS':'FAIL')+' recherche « '+q+' »').join('\n'));

@@ -22,7 +22,7 @@ const PAGE = 100;
 const BACKUP_DAYS = 60;
 const S = {
   wines: [], tab: 'cave', filt: 'Tous', sort: 'name', q: '', limit: PAGE, bmode: 'year',
-  editId: null, formExtra: {}, lastBackup: 0, update: null, ready: false, highlight: null, title: 'Ma cave',
+  editId: null, formExtra: {}, lastBackup: 0, update: null, ready: false, highlight: null, title: 'Ma cave', bible: null,
 };
 const DEFAULT_TITLE = 'Ma cave';
 
@@ -54,6 +54,26 @@ window.addEventListener('unhandledrejection', e => {
 });
 
 const SAVE_FAIL = 'Enregistrement impossible : la mémoire du téléphone est pleine ou bloquée. Ces modifications ne sont PAS conservées. Faites vite « Sauvegarder ma cave ».';
+// Bible des vins : une fois par jour au plus, depuis le même site ; copie locale gardée pour le hors connexion.
+const BIBLE_URL = 'bible/bible.json';
+const BIBLE_EVERY = 864e5;
+async function loadBible() {
+  let local = null;
+  try { local = JSON.parse((await store.getMeta('bible')) || 'null'); } catch (e) { local = null; }
+  if (L.bibleValid(local)) S.bible = local;
+  const last = Number(await store.getMeta('bibleAt')) || 0;
+  if (S.bible && Date.now() - last < BIBLE_EVERY) return;
+  try {
+    const r = await fetch(BIBLE_URL, { cache: 'no-cache' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const txt = await r.text();
+    const j = JSON.parse(txt);
+    if (!L.bibleValid(j)) throw new Error('format');
+    if (!local || j.date !== local.date) { await store.setMeta('bible', txt); S.bible = j; }
+    await store.setMeta('bibleAt', Date.now());
+  } catch (e) { console.warn('Bible non mise à jour :', e.message); }
+}
+
 async function persist(op) {
   try { await op(); return true; }
   catch (e) { console.error(e); Stats.track('err_enreg'); errToast(SAVE_FAIL); return false; }
@@ -132,6 +152,7 @@ function card(w, mode, why) {
     w.conf === 'estimée' ? '<span class="tag wa">fiche estimée</span>' : '',
     w.conf === 'vérifiée' ? '<span class="tag ok">fiche vérifiée</span>' : '',
     st ? `<span class="tag ${st.cls}">${st.label}${w.from || w.to ? ' (' + (w.from || '…') + '–' + (w.to || '…') + ')' : ''}</span>` : '',
+    w.src && w.src.from === 'bible' ? '<span class="tag">apogée d’après la bible</span>' : '',
     w.qty <= 0 ? '<span class="tag">plus en cave</span>' : '',
   ].filter(Boolean).join(' · ');
   const hasFiche = w.story || w.pairings.length || w.note || w.sources.length;
@@ -295,13 +316,19 @@ async function saveForm() {
   if (S.editId) {
     const old = S.wines.find(w => w.id === S.editId);
     if (!old) { errToast('Ce vin n’existe plus.'); closeSheet('sForm'); return; }
-    const nw = L.normalizeWine({ ...old, ...f, check: false, conf: S.formExtra.conf || old.conf, sources: S.formExtra.sources, updated: now });
+    const src = { ...(old.src || {}) };
+    if (f.from !== old.from) src.from = 'user';
+    if (f.to !== old.to) src.to = 'user';
+    const nw = L.normalizeWine({ ...old, ...f, src, check: false, conf: S.formExtra.conf || old.conf, sources: S.formExtra.sources, updated: now });
     Object.assign(old, nw);
     const ok = await persist(() => store.putWines([old]));
     finishSave(old, ok, '« ' + old.name + ' » modifié.');
     return;
   }
-  const nw = L.normalizeWine({ ...f, id: uid(), conf: S.formExtra.conf, sources: S.formExtra.sources, check: false, created: now, updated: now });
+  const src = { ...(f.from !== '' ? { from: 'user' } : {}), ...(f.to !== '' ? { to: 'user' } : {}) };
+  const nw = L.normalizeWine({ ...f, src, id: uid(), conf: S.formExtra.conf, sources: S.formExtra.sources, check: false, created: now, updated: now });
+  // Tampon : la bible remplit la période de garde tant que l'IA n'a pas de crédit ; l'IA pourra la corriger.
+  if (!nw.from && !nw.to) L.prefillFromBible(nw, S.bible);
   const dup = S.wines.find(w => L.keyOf(w) === L.keyOf(nw));
   if (dup) {
     const c = await ask('Déjà dans votre cave', `« ${dup.name}${dup.year ? ' ' + dup.year : ''} » existe déjà (${dup.qty} bouteille(s)).`, [
@@ -408,8 +435,11 @@ function ficheMsg(d) {
 function applyFiche(w, d) {
   if (!w.grape && d.grape) w.grape = d.grape;
   if (!w.story && d.story) w.story = d.story;
-  if (!w.from && num(d.from) !== '') w.from = num(d.from);
-  if (!w.to && num(d.to) !== '') w.to = num(d.to);
+  // L'IA complète une garde vide, ou corrige une garde venant de la bible ; jamais une saisie de l'utilisateur.
+  const src = { ...(w.src || {}) };
+  if ((!w.from || src.from === 'bible') && num(d.from) !== '') { w.from = num(d.from); src.from = 'ai'; }
+  if ((!w.to || src.to === 'bible') && num(d.to) !== '') { w.to = num(d.to); src.to = 'ai'; }
+  w.src = src;
   if (w.from && w.to && w.from > w.to) [w.from, w.to] = [w.to, w.from];
   if (!w.pairings.length && d.pairings.length) w.pairings = d.pairings.map(String).filter(Boolean);
   w.conf = w.conf === 'vérifiée' ? 'vérifiée' : d.conf;
@@ -1067,6 +1097,6 @@ async function boot() {
   render();
   store.protect();
   initSW();
-  (async () => { await showNews(); await initStats(); initAuto(); })();
+  (async () => { await loadBible(); await showNews(); await initStats(); initAuto(); })();
 }
 boot();
