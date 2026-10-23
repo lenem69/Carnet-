@@ -1,0 +1,23 @@
+// iPhone : mode plein écran, zones sûres, pas de zoom au double toucher.
+import {start} from './server.mjs';import * as H from './h.mjs';
+H.deploy();const srv=await start(8123);const b=await H.browser();
+const S=H.suite('iPhone');const T=S.T;
+const r=await H.newPage(b,{});const page=r.page;
+await page.goto(H.URL0);await H.sl(1200);
+const m=await page.evaluate(()=>{const g=n=>document.querySelector('meta[name="'+n+'"]')?.content||'';return {cap:g('apple-mobile-web-app-capable'),web:g('mobile-web-app-capable'),bar:g('apple-mobile-web-app-status-bar-style'),titre:g('apple-mobile-web-app-title'),vp:g('viewport'),robots:g('robots'),ref:g('referrer')};});
+T('plein écran iPhone déclaré',m.cap==='yes'&&m.web==='yes',JSON.stringify(m));
+T('barre d’état claire',m.bar==='default',m.bar);
+T('nom sous l’icône',m.titre==='Ma cave',m.titre);
+T('zones sûres activées (viewport-fit=cover)',/viewport-fit=cover/.test(m.vp),m.vp);
+T('discrétion conservée',/noindex/.test(m.robots)&&m.ref==='no-referrer');
+const css=await page.evaluate(async()=>(await fetch('styles.css')).text());
+T('bouton + au-dessus de la zone sûre du bas',/#fab\s*\{[^}]*safe-area-inset-bottom/.test(css));
+T('pied de fenêtre au-dessus de la zone sûre du bas',/\.ft\s*\{[^}]*safe-area-inset-bottom/.test(css));
+T('haut de page sous la zone sûre',/padding-top:\s*env\(safe-area-inset-top/.test(css));
+const ta=await page.evaluate(()=>getComputedStyle(document.documentElement).touchAction);
+T('pas de zoom au double toucher',ta==='manipulation',ta);
+const fs=await page.evaluate(()=>{const i=document.querySelector('#search, input');return i?parseFloat(getComputedStyle(i).fontSize):0;});
+T('champs de saisie ≥ 16 px (pas de zoom automatique sur iPhone)',fs>=16,fs);
+S.out.forEach(l=>console.log(l));
+console.log(`\n${S.out.filter(l=>l.startsWith('PASS')).length} réussis, ${S.out.filter(l=>l.startsWith('FAIL')).length} échec(s)`);
+await b.close();srv.close?.();process.exit(S.out.some(l=>l.startsWith('FAIL'))?1:0);

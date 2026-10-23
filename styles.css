@@ -10,7 +10,7 @@
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
 body {
   margin: 0 auto; max-width: 680px; background: var(--bg); color: var(--tx);
   font: 16px/1.45 var(--font);
