@@ -124,7 +124,7 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 @keyframes spn { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .sp { animation: none; border-top-color: var(--ac); } }
 
-#toasts { position: fixed; z-index: 40; left: 0; right: 0; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none;
+#toasts { position: fixed; z-index: 40; left: 0; right: 0; top: calc(8px + env(safe-area-inset-top, 0px) + var(--upd-h, 0px)); display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none;
   padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
 .toast { pointer-events: auto; width: 100%; max-width: 640px; background: var(--ac); color: var(--acx); border-radius: 12px; padding: 10px 8px 10px 14px; font-size: 14px; display: flex; gap: 8px; align-items: center; box-shadow: 0 6px 16px rgb(0 0 0 / .25); }
 .toast.err { background: var(--bad); color: #fff; }
@@ -170,3 +170,15 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 .chk { display: flex; align-items: center; gap: 10px; font-size: 16px; color: var(--tx); }
 .chk input { width: 22px; height: 22px; flex: 0 0 auto; }
 #dlgX { white-space: pre-line; }
+
+/* Ma cave en chiffres */
+.chiffres { padding-bottom: 24px; }
+.chiffres .portrait { font-size: 17px; font-weight: 600; margin: 4px 0 8px; }
+.chiffres .ch { font-size: 15px; margin: 18px 0 6px; }
+.chiffres .bar { display: grid; grid-template-columns: minmax(70px, 1fr) 2fr 40px; gap: 8px; align-items: center; font-size: 14px; margin: 4px 0; }
+.chiffres .bar i { display: block; height: 10px; border-radius: 5px; background: var(--ac); }
+.chiffres .bar b { text-align: right; font-variant-numeric: tabular-nums; }
+.chiffres .frise { display: flex; align-items: flex-end; gap: 2px; height: 120px; border-bottom: 1px solid var(--bd); }
+.chiffres .fcol { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; min-width: 0; }
+.chiffres .fcol i { display: block; background: var(--ac); border-radius: 2px 2px 0 0; min-height: 2px; }
+.chiffres .fcol span { font-size: 10px; height: 14px; text-align: center; overflow: visible; white-space: nowrap; }

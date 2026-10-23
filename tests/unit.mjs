@@ -66,6 +66,26 @@ T('fiabilité : « connue » (ancien format) → estimée',n('connue').conf==='e
 const w=L.normalizeWine({name:'A',sources:[{t:'ok',u:'https://a.fr/x'},{t:'mauvais',u:'http://a.fr'},{t:'js',u:'javascript:alert(1)'},null,...Array(8).fill({t:'z',u:'https://z.fr'})]});
 T('sources : https seulement, 5 au maximum',w.sources.length===5&&w.sources.every(x=>x.u.startsWith('https://')));
 T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({name:'B'}).sources.length===0);}
+// Ma cave en chiffres (chiffres.js)
+{
+  const { chiffres } = await import('../chiffres.js');
+  const ws=[
+    L.normalizeWine({name:'A',region:'Margaux',grape:'Merlot',color:'Rouge',year:2015,qty:2,price:30,from:2020,to:2026}),
+    L.normalizeWine({name:'B',region:'Margaux',grape:'Cabernet',color:'Rouge',year:2010,qty:1,price:50,from:2018,to:2030}),
+    L.normalizeWine({name:'C',region:'Chablis',grape:'Chardonnay',color:'Blanc',year:2022,qty:3}),
+    L.normalizeWine({name:'D',region:'Sancerre',grape:'Sauvignon',color:'Blanc',year:2021,qty:0,price:20,from:2021,to:2025}),
+  ];
+  const c=chiffres(ws,2026,20);
+  T('chiffres : bouteilles et références (qty 0 exclue)',c.bouteilles===6&&c.references===3,JSON.stringify([c.bouteilles,c.references]));
+  T('chiffres : portrait',c.portrait.includes('6 bouteilles')&&c.portrait.includes('3 références'),c.portrait);
+  T('chiffres : répartition couleur',c.couleurs.find(x=>x[0]==='Rouge')[1]===3&&c.couleurs.find(x=>x[0]==='Blanc')[1]===3,JSON.stringify(c.couleurs));
+  T('chiffres : régions comptées',c.regions.some(x=>x[0]==='Margaux'&&x[1]===3)&&c.regions.some(x=>x[0]==='Chablis'&&x[1]===3),JSON.stringify(c.regions));
+  T('chiffres : frise compte les bouteilles à boire chaque année',c.frise.find(x=>x[0]===2026)[1]===3&&c.frise.find(x=>x[0]===2030)[1]===1&&c.frise.find(x=>x[0]===2031)[1]===0,JSON.stringify(c.frise.slice(4,8)));
+  T('chiffres : sans période de garde comptées à part',c.sansFenetre===3,String(c.sansFenetre));
+  T('chiffres : valeur et bouteilles sans prix',c.valeur.total===2*30+1*50+0&&c.valeur.sansPrix===3,JSON.stringify(c.valeur));
+  T('chiffres : cave vide',chiffres([],2026).portrait.includes('vide')&&chiffres([],2026).bouteilles===0);
+  T('chiffres : ADN non vide',c.adn.length>=2&&c.adn[0].startsWith('Couleur dominante'),JSON.stringify(c.adn));
+}
 console.log(out.join('\n'));
 const mw=L.normalizeWine({name:'Chassagne-Montrachet',dom:'Paul Jouard',year:2012,loc:'Casier B'});
 console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz',false],['',true]].map(([q,e])=>(L.matchesQuery(mw,q)===e?'PASS':'FAIL')+' recherche « '+q+' »').join('\n'));

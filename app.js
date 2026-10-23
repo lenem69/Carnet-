@@ -8,6 +8,7 @@ import { QUOTES } from './quotes.js';
 import { saveFile, readText } from './files.js';
 import * as Stats from './stats.js';
 import * as Notes from './notes.js';
+import { chiffres } from './chiffres.js';
 
 const VERSION = self.APP_VERSION || '?';
 // Formulaire Google de retours (aucune adresse mail n’est publiée dans le code).
@@ -163,6 +164,8 @@ function renderBanners() {
   $('#banners').innerHTML = out.join('');
   // Mise à jour : bandeau plein écran, collé en haut, impossible à manquer.
   $('#updBar').innerHTML = S.update ? `<div class="upd"><span class="ic" aria-hidden="true">⬆️</span><div class="tx"><b>Nouvelle version prête</b><span>Touchez le bouton pour l’installer</span></div><button class="btn" data-b="upd">Mettre à jour</button></div>` : '';
+  // Les messages passent sous la barre de mise à jour : on mesure sa hauteur réelle.
+  document.documentElement.style.setProperty('--upd-h', (S.update ? $('#updBar').offsetHeight : 0) + 'px');
 }
 
 function filtered() {
@@ -215,8 +218,32 @@ function renderDatalists() {
 function render() {
   renderStats(); renderBanners();
   $$('.tab').forEach(b => { const on = b.dataset.t === S.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
-  $('#vCave').hidden = S.tab !== 'cave'; $('#vBoire').hidden = S.tab !== 'boire';
-  if (S.tab === 'cave') renderList(); else renderBoire();
+  $('#vCave').hidden = S.tab !== 'cave'; $('#vBoire').hidden = S.tab !== 'boire'; $('#vChiffres').hidden = S.tab !== 'chiffres';
+  if (S.tab === 'cave') renderList(); else if (S.tab === 'boire') renderBoire(); else renderChiffres();
+}
+// « Ma cave en chiffres » : calcul local, sans IA.
+function renderChiffres() {
+  const c = chiffres(S.wines, YEAR);
+  const bars = (rows, total) => rows.map(([k, n]) => `<div class="bar"><span>${esc(k)}</span><i style="width:${total ? Math.max(4, Math.round(n / total * 100)) : 0}%"></i><b>${n}</b></div>`).join('') || '<p class="mu small">Rien à afficher.</p>';
+  const maxF = Math.max(1, ...c.frise.map(x => x[1]));
+  const frise = c.frise.map(([y, n]) => `<div class="fcol" title="${y} : ${n} bouteille${n > 1 ? 's' : ''}"><i style="height:${Math.round(n / maxF * 100)}%"></i><span>${y % 5 === 0 || y === YEAR ? String(y).slice(2) : ''}</span></div>`).join('');
+  $('#vChiffres').innerHTML = `
+    <p class="portrait">${esc(c.portrait)}</p>
+    ${c.bouteilles ? `
+    <h3 class="ch">Couleurs</h3>${bars(c.couleurs.map(([k, n]) => [k, n]), c.bouteilles)}
+    <h3 class="ch">Régions</h3>${bars(c.regions, c.bouteilles)}
+    <h3 class="ch">Cépages</h3>${bars(c.cepages, c.bouteilles)}
+    <h3 class="ch">Époques des millésimes</h3>${bars(c.decennies, c.bouteilles)}
+    <h3 class="ch">À boire, année par année</h3>
+    <div class="frise">${frise}</div>
+    <p class="mu small">${c.pic ? `Pic en ${c.pic.annee} : ${c.pic.bouteilles} bouteille${c.pic.bouteilles > 1 ? 's' : ''} à boire.` : 'Aucune bouteille avec une période de garde.'}${c.sansFenetre ? ` ${c.sansFenetre} bouteille(s) sans période de garde ne sont pas comptées ici.` : ''}</p>
+    <h3 class="ch">Équilibre</h3>
+    <p class="small">${c.diversite.regions} région(s), ${c.diversite.cepages} cépage(s). La première région pèse ${c.diversite.partRegionTop} % de la cave.</p>
+    <h3 class="ch">Valeur</h3>
+    <p class="small">${c.valeur.total ? `Valeur d’achat connue : ${c.valeur.total.toLocaleString('fr-FR')} €.` : 'Pas de prix renseigné.'}${c.valeur.sansPrix ? ` ${c.valeur.sansPrix} bouteille(s) sans prix.` : ''}</p>
+    <h3 class="ch">En résumé</h3>
+    <ul class="small">${c.adn.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+    <p class="mu small">À boire vite : ${c.aBoireVite} bouteille(s).</p>` : ''}`;
 }
 
 /* ============ Fiche (formulaire) ============ */
