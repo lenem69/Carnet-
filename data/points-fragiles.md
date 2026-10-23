@@ -39,3 +39,11 @@ Chaque automne : nouveau millésime (2026 à l'automne 2027), revérification de
 - Désaccords gardés avec fiabilité plus basse : Sauternes 2008 (4 ou 3 selon la source, fiabilité C), Margaux 2016 et 2022 (4 ou 5), Pessac-Léognan blanc 2007 (4 ou 5), Ventoux 2024 (3 ou 4), Champagne BdB 2015 (3 ou 4), Sauternes 2024 (3 ou 4).
 - 2025 : avis provisoires uniquement (primeurs), jamais au-dessus de la fiabilité B.
 - Limite : une des deux IA n'a pas pu citer de source pour 2025, l'autre a cité des revues et des sites de vente. Les lectures de pages ne sont pas vérifiables de notre côté.
+
+## Zone 10 Loire (23 octobre 2026)
+- Notes posées par groupe (« Muscadet et Gros Plant », « Liquoreux d'Anjou », etc.), pas appellation par appellation : le brief demande de différencier, ce n'est pas fait.
+- Appellations sans millésimes : Cheverny, Cour-Cheverny, Valençay, Jasnières, Orléans, Coteaux du Giennois, Châteaumeillant, Pouilly-sur-Loire, Coteaux de Saumur.
+- Fenêtres d'apogée modélisées (type × qualité), non lues.
+- Prix et garde : connaissance générale, non sourcés.
+- Sources lues : winescholarguild.com, idealwine.com, jancisrobinson.com, vinsdeloire.fr, vins-centre-loire.com, divineloire.fr, thedrinksbusiness.com. Illisibles : Hachette (grille Loire absente), Viniphile (grille en image), La Passion du Vin (pas de données Loire), Vinous et Wine Spectator (cépages seulement), INAO non consulté.
+- Lignes douteuses : Muscadet 2009 (5, une source donne 4) ; Liquoreux d'Anjou 2005/2009/2015 (5, note de groupe) ; Chinon 2005 et 2022 (5) ; Savennières 2010 (5, régional seulement) ; Liquoreux d'Anjou 2024 (3, C, source « poor », à réviser vers 2) ; Sancerre rouge 2024 (2, C) ; Saint-Nicolas-de-Bourgueil 2024 (2, B) ; Touraine rouge 2017 (3, A, gel local, note de région).
