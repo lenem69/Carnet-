@@ -64,7 +64,7 @@ await H.click(page,'#f-save');await H.sl(400);
 T('enregistrer : formulaire fermé',!(await H.shown(page,'#sForm')));
 T('enregistrer : vin listé',(await H.txt(page,'#list')).includes('Morgon 2023'));
 T('enregistrer : message de succès',(await H.txt(page,'#toasts')).includes('enregistré'));
-T('stats : 3 bouteilles, 56 €, 3 à boire vite',(await H.txt(page,'#sB'))==='3'&&(await H.txt(page,'#sV')).replace(/\s/g,'').startsWith('56')&&(await H.txt(page,'#sD'))==='3',(await H.txt(page,'.stats')));
+T('stats : 3 bouteilles, valeur à estimer, 3 à boire vite',(await H.txt(page,'#sB'))==='3'&&(await H.txt(page,'#sV'))==='à estimer'&&(await H.txt(page,'#sD'))==='3',(await H.txt(page,'.stats')));
 T('bandeau sauvegarde apparaît',(await H.txt(page,'#banners')).includes('Aucune sauvegarde'));
 // persistance
 await page.reload();await H.sl(1000);
