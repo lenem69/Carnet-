@@ -218,19 +218,46 @@ function renderList() {
     (items.length > shown.length ? `<button class="btn o more" data-a="more">Afficher plus (${shown.length} sur ${items.length})</button>` : '');
 }
 
+// Fenêtre à consommer : la garde (saisie ou bible) si elle existe, sinon l'apogée calculée par l'appli.
+// null = pas de fenêtre (vin sans millésime ni garde).
+function fenetreDe(w) {
+  if (w.from || w.to) return { from: w.from || null, to: w.to || null };
+  const a = apogee(w, YEAR);
+  return a.sansMillesime ? null : { from: a.from, to: a.to };
+}
+// Copie du vin avec la fenêtre effective, pour le classement seulement (la fiche garde ses données d'origine).
+const avecFenetre = w => { const f = fenetreDe(w); return f ? { ...w, from: f.from, to: f.to } : w; };
+
+// Classement « Avec un plat » : même logique, les résultats renvoient les vins d'origine.
+function classerPlat(dish, n) {
+  const originaux = new Map(S.wines.map(w => [w.id, w]));
+  return L.localPairing(dish, S.wines.map(avecFenetre), YEAR, n).map(r => ({ ...r, w: originaux.get(r.w.id) }));
+}
+
 function renderBoire() {
-  const modes = [['year', 'Cette année'], ['soon', 'À boire vite'], ['dish', 'Avec un plat']];
+  const modes = [['year', 'Cette année'], ['soon', 'À boire vite'], ['apogee', 'Apogée'], ['dish', 'Avec un plat']];
   $('#bchips').innerHTML = modes.map(([k, l]) => `<button class="chip${k === S.bmode ? ' on' : ''}" data-b="${k}">${l}</button>`).join('');
   $('#plat').hidden = S.bmode !== 'dish';
   if (S.bmode === 'dish') return; // résultats rendus par la recherche
   const stock = S.wines.filter(w => w.qty > 0);
-  const list = (S.bmode === 'year' ? stock.filter(w => L.drinkableNow(w, YEAR)) : stock.filter(w => L.urgent(w, YEAR)))
-    .sort((a, b) => (a.to || 9999) - (b.to || 9999));
-  const noWindow = stock.filter(w => !w.from && !w.to).length;
+  let items;
+  if (S.bmode === 'apogee') {
+    // Vins dont la fenêtre d'apogée contient l'année en cours, du pic le plus proche au plus lointain.
+    items = stock.map(w => ({ w, a: apogee(w, YEAR) }))
+      .filter(x => !x.a.sansMillesime && x.a.from <= YEAR && YEAR <= x.a.to)
+      .sort((x, y) => x.a.pic - y.a.pic || (x.w.name || '').localeCompare(y.w.name || '', 'fr'));
+  } else {
+    items = stock.map(w => ({ w, f: fenetreDe(w) }))
+      .filter(x => {
+        if (S.bmode === 'year') return x.f ? (!x.f.from || x.f.from <= YEAR) && (!x.f.to || x.f.to >= YEAR) : true; // sans millésime : prêt à boire
+        return !!(x.f && x.f.to && x.f.to <= YEAR + 1);
+      })
+      .sort((x, y) => ((x.f && x.f.to) || 9999) - ((y.f && y.f.to) || 9999));
+  }
+  const list = items.map(x => x.w);
   const head = list.length ? `<p class="mu small">${list.length} vin${list.length > 1 ? 's' : ''} · ${list.reduce((a, w) => a + w.qty, 0)} bouteille(s)</p>` : '';
-  $('#blist').innerHTML = head + (list.length ? list.map(w => card(w, 'boire')).join('')
-    : `<p class="empty">${S.bmode === 'year' ? 'Aucun vin dans sa période idéale cette année.' : 'Aucun vin proche de sa fin de garde.'}</p>`) +
-    (noWindow ? `<p class="empty small">${noWindow} vin(s) sans années de garde ne sont pas pris en compte.<br><button class="lnk" data-m="enr">Compléter leurs fiches (IA)</button></p>` : '');
+  const vide = { year: 'Aucun vin dans sa période idéale cette année.', soon: 'Aucun vin proche de la fin de sa fenêtre.', apogee: 'Aucun vin à l’apogée cette année.' }[S.bmode];
+  $('#blist').innerHTML = head + (list.length ? list.map(w => card(w, 'boire')).join('') : `<p class="empty">${vide}</p>`);
 }
 
 function renderDatalists() {
@@ -583,14 +610,14 @@ async function findForDish() {
   const stock = S.wines.filter(w => w.qty > 0);
   if (!stock.length) { $('#blist').innerHTML = '<p class="empty">Aucune bouteille en cave.</p>'; return; }
   Stats.track('plat');
-  const local = L.localPairing(dish, S.wines, YEAR, 5);
+  const local = classerPlat(dish, 5);
   const showLocal = note => {
     $('#blist').innerHTML = `<p class="mu small">${note}</p>` + (local.length ? local.map(r => card(r.w, 'boire', r.why)).join('')
       : '<p class="empty">Aucune suggestion : complétez les accords de vos fiches (✨ Fiche) ou configurez une IA dans Réglages.</p>');
   };
   if (!AI.ready()) { showLocal('Suggestions sans IA, d’après les accords enregistrés et la couleur.'); return; }
   // présélection locale : l'IA ne reçoit que 40 vins au plus, quel que soit la taille de la cave
-  const pre = L.localPairing(dish, S.wines, YEAR, 40).map(r => r.w);
+  const pre = classerPlat(dish, 40).map(r => r.w);
   if (pre.length < 40) {
     for (const w of L.sortWines(stock, 'urgent', YEAR)) {
       if (pre.length >= 40) break;
