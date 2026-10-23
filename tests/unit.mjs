@@ -61,7 +61,7 @@ const rs=[{Domaine:'Lapierre',Cuvée:'Morgon',Millésime:2023,Quantité:1},{Doma
 const a=I.rowsToWines(rs,ex);T('import mode somme : doublon additionné, 1 ligne existante comptée',a.added.length===1&&a.updated.length===1&&a.updated[0].qty===3&&a.existing===1);
 const b=I.rowsToWines(rs,ex,'skip');T('import mode « seulement les nouveaux » : existant intact',b.added.length===1&&b.updated.length===0&&b.existing===1&&ex[0].qty===2);
 const c=I.rowsToWines([...rs,rs[1]],ex,'skip');T('mode skip : doublon interne au fichier toujours additionné',c.added.length===1&&c.added[0].qty===6);}
-{ // import souple : liste de caviste sans en-tête « Nom » (1.13.2)
+{ // import souple : liste de caviste sans en-tête « Nom » (1.14.0)
   const mh=I.mapHeaders(['TVA*','tarif TTC','Millésime','Q disponible','Notes/commentaires vin','commentaires domaine']);
   T('import souple : « tarif TTC » = prix, « Q disponible » = quantité, commentaires jamais domaine',mh['tarif TTC']==='price'&&mh['Q disponible']==='qty'&&!Object.values(mh).includes('dom'),JSON.stringify(mh));
   const rs=I.lireFeuilleLibre([['ROUGE 75cl'],['X',20,'Bourgogne','Berthaut-Gerbet "les Prielles"',2023,10,'Note Cellar Tracker 91 : très beau vin de longue garde'],['X',27,'Hautes Cotes de Nuits','SYLVIE ESMONIN',2023,4,'Commentaire long']],'Bourgogne');
@@ -164,7 +164,7 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   T('vins étrangers : Riesling, Tokaji → Étranger', C.chiffres([{qty:1,region:'Riesling',color:'Blanc',grape:'',name:'a'},{qty:1,region:'Tokaji',color:'Blanc',grape:'',name:'b'}],2026).regions.some(x=>x[0]==='Étranger'&&x[1]===2));
 }
 { const C = await import('../chiffres.js'); T('repérage : « Pays d’Hérault » → Languedoc-Roussillon, « Vin des Allobroges » → Savoie', C.chiffres([{qty:1,region:"Pays d’Hérault",color:'Rouge',grape:'',name:'a'},{qty:1,region:'Vin des Allobroges',color:'Rouge',grape:'',name:'b'}],2026).regions.map(x=>x[0]).sort().join('|')==='Languedoc-Roussillon|Sud-Ouest, Jura, Savoie'); }
-{ // apogée : règle du sommelier (1.13.2)
+{ // apogée : règle du sommelier (1.14.0)
   const A = await import('../apogee.js');
   const ap = (w, y) => A.apogee(w, y);
   const t1 = ap({ name: 'Champagne Brut', color: 'Pétillant', region: 'Champagne', year: '' }, 2026);
