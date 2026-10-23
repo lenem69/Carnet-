@@ -1,6 +1,6 @@
 # Bible des vins : points fragiles à retravailler
 
-*Tenu à jour au fil de la constitution (22 octobre 2026). Rien de ce qui est listé ici ne doit être présenté à l'utilisateur comme certain. Les lignes de fiabilité C ne sont pas affichées dans l'appli ; A et B le sont avec la mention « estimation ».*
+*Tenu à jour au fil de la constitution (23 octobre 2026). Bible assemblée : 412 appellations, 5 880 lignes, fiabilité A 23 % / B 52 % / C 24 %. Rien de ce qui est listé ici ne doit être présenté à l'utilisateur comme certain. Les lignes de fiabilité C ne sont pas affichées dans l'appli ; A et B le sont avec la mention « estimation ».*
 
 ## 1. Limites générales (valables pour toutes les zones)
 - **Fenêtres d'apogée** (`apogee_debut`, `apogee_fin`) : **modélisées** par règle (type de vin × qualité), jamais lues dans une source. À remplacer progressivement par des données sourcées (guides de garde, dégustations récentes sur La Passion du Vin / CellarTracker).
@@ -22,10 +22,11 @@
 - **Zone 11 Alsace** (65 % A / 31 % B / 2 % C) : Crémant d'Alsace 2021, 2024, 2025 ; Pinot Noir 2021, 2024, 2025 ; Riesling, Gewurztraminer, Pinot Gris 2025 (provisoire) ; Vendanges Tardives et Sélection de Grains Nobles 2013, 2014, 2022, 2023 (divergences sur le botrytis) ; VT et SGN 2025 en NC ; pages vinsalsace.com 2016 et 2020-2025 illisibles ; Grand Cru traité en bloc (51 lieux-dits non distingués).
 - **Zone 8 Languedoc-Roussillon** (5 % A / 62 % B / 32 % C) : 2025 toutes séries (3, C) ; Corbières et Corbières-Boutenac 2025 en NC (incendie) ; rouges de l'ouest audois 2014 et 2024 ; Fitou 2025 ; Minervois 2024 ; Limoux blanc 2024 ; Picpoul de Pinet 2022 ; vins doux (Banyuls, Maury, Rivesaltes) déduits du Roussillon rouge ; blancs 2005-2009 estimés d'après les rouges ; sous-zones sans source propre en B ; Idealwine 2005-2009 sans analyse, Comptoir des Millésimes illisible.
 - **Zone 9 Provence et Corse** (9 % A / 44 % B / 46 % C, 100 lignes NC) : 2025 en NC partout ; Corse 2005-2007, 2008-2010 et 2014 (NC), 2017 et 2023 ; Patrimonio rouge 2013 ; Bellet 2016 ; Pierrevert, Palette, IGP Méditerranée (toutes années) ; le rosé n'a pas de série (le validateur refuse la couleur Ro dans les millésimes : à décider, c'est pourtant l'essentiel de la Provence) ; Hachette Provence : seule la colonne rouge est lisible ; Bandol 2007 (4), 2016 (5), 2019 (4) divergents.
-- **Zones 10, 13** : à compléter à la réception des rapports des agents.
+- **Zone 13 Sud-Ouest, Jura, Savoie** (A 27, B 528, C 432 sur 987 lignes) : 625 lignes citent seulement « connaissance » ; les sites non lus ont été retirés des sources (viniphile.fr, vinsetmillesimes.com, lacompagniedesbonnesbouteilles.fr, safer-occitanie.com, thedrinksbusiness.com, lagazettefrance.fr) ; les rouges du Sud-Ouest recopiaient la note régionale Hachette à toutes les appellations ; Arbois blanc 2017 passait en A alors que macommune le décrit comme très difficile (corrigé) ; Hachette Jura et Savoie : colonnes vides ; Viniphile en image ; Jancis Robinson sans millésimes ; Bugey, Seyssel, crémants en NC ou quasi ; la plupart des années 2005-2013, 2025 et Monbazillac non sourcées ; Pécharmant, Monbazillac, Saussignac, Cahors, Madiran, Jurançon : sources partielles (idealwine, Hachette Sud-Ouest 2014-2023, La Passion du Vin en fils de forum).
+- **Zone 10 Loire** : voir la section dédiée plus bas.
 
 ## 3. Questions de structure à trancher
-- Couverture de **Bourgogne régional, Aligoté, Passetoutgrain, Coteaux Bourguignons, Crémant de Bourgogne** (confiée à la zone 13 ; vérifier l'absence de doublons).
+- Couverture **Bourgogne régional, Aligoté, Passe-Tout-Grains, Crémant de Bourgogne** : présente dans le référentiel (zones 3 et 4) ; Coteaux Bourguignons en zone 13. Aucun doublon d'appellation à l'assemblage. Reste à vérifier la qualité des séries de ces appellations, qui sont en grande partie déduites de la région.
 - **« proches » hors zone** : tous les avertissements du validateur doivent se résoudre à l'assemblage.
 - **Alias et graphies** (Morgon, morgon, « Gevrey Chambertin ») : dictionnaire à construire pour la correspondance région → appellation.
 - **Appellations oubliées** : relire la liste INAO complète (IGP majeures, VDN, vins doux naturels, crémants) une fois les 13 zones assemblées.
