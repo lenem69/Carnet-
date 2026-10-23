@@ -65,3 +65,9 @@ export function apogeeTexte(a) {
   if (a.sansMillesime) return 'Sans millésime : prêt à boire.';
   return `Apogée estimée ${a.pic} (entre ${a.from} et ${a.to}) : ${a.statut.toLowerCase()}. Règle : ${a.regle}, +${a.ans} ans après le millésime.`;
 }
+
+// Rappel court affiché sur la carte du vin, sans ouvrir la fiche.
+export function apogeeCourte(a) {
+  if (a.sansMillesime) return 'Prêt à boire (sans millésime)';
+  return `Apogée ${a.pic} · ${a.statut.toLowerCase()}`;
+}

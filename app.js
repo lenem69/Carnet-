@@ -7,7 +7,7 @@ import * as IMP from './importer.js';
 import { saveFile, readText } from './files.js';
 import * as Stats from './stats.js';
 import * as Notes from './notes.js';
-import { apogee, apogeeTexte } from './apogee.js';
+import { apogee, apogeeTexte, apogeeCourte } from './apogee.js';
 import { chiffres } from './chiffres.js';
 import { QUOTES } from './quotes.js';
 
@@ -158,14 +158,16 @@ function card(w, mode, why) {
   ].filter(Boolean).join(' · ');
   const hasFiche = w.story || w.pairings.length || w.note || w.sources.length;
   // Apogée estimée par la règle de l'appli (sans IA) : affichée dans la fiche du vin.
-  const apo = w.name ? apogeeTexte(apogee(w, YEAR)) : '';
+  const apoA = w.name ? apogee(w, YEAR) : null;
+  const apo = apoA ? apogeeTexte(apoA) : '';
+  const apoRappel = apoA ? apogeeCourte(apoA) : '';
   const qty = mode === 'cave'
     ? `<div class="q"><button data-a="m" aria-label="Retirer une bouteille">−</button><b>${w.qty}</b><button data-a="p" aria-label="Ajouter une bouteille">+</button></div>`
     : `<b style="font-size:18px">${w.qty}×</b>`;
   return `<div class="w${w.qty <= 0 ? ' out' : ''}${S.highlight === w.id ? ' hl' : ''}" data-id="${esc(w.id)}">
   ${why ? `<p class="why">💡 ${esc(why)}</p>` : ''}
   <div class="row"><div><h4>${esc(w.name)}${w.year ? ' ' + esc(w.year) : ''}</h4><p>${esc([w.dom, w.region].filter(Boolean).join(' · '))}</p></div>${qty}</div>
-  ${meta ? `<p>${meta}</p>` : ''}${tags ? `<p>${tags}</p>` : ''}
+  ${meta ? `<p>${meta}</p>` : ''}${tags ? `<p>${tags}</p>` : ''}${apoRappel ? `<p class="mu small">${esc(apoRappel)}</p>` : ''}
   ${hasFiche || apo ? `<details><summary>Fiche et accords</summary>${apo ? `<p class="mu small">${esc(apo)}</p>` : ''}${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}</details>` : ''}
   <div class="acts">${!w.story && !w.pairings.length ? '<button class="lnk" data-a="gen">✨ Fiche (IA)</button>' : ''}<button class="lnk" data-a="e">Modifier</button>${mode === 'cave' ? '<button class="lnk" data-a="d">Supprimer</button>' : ''}</div>
 </div>`;
