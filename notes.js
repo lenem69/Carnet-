@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.8.3': ['Le bandeau « Nouvelle version prête » ne recouvre plus le contenu de l’appli.', 'Les messages courts s’affichent en bas de l’écran.'],
   '1.8.2': ['Le bandeau « Nouvelle version prête » est mieux présenté : le bouton passe sous le texte.'],
   '1.8.1': ['Les fenêtres d’information s’affichent l’une après l’autre, sans se superposer.'],
   '1.8.0': ['Les fiches incomplètes se complètent toutes seules en arrière-plan (réglable dans Réglages).', 'Statistiques anonymes facultatives pour améliorer l’appli (vous choisissez).'],

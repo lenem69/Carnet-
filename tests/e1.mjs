@@ -5,7 +5,7 @@ const {page,errs}=await H.newPage(b);
 await page.goto(H.URL0);await H.sl(1200);
 T('démarrage : cave vide affichée',(await H.txt(page,'#list')).includes('Votre cave est vide'));
 {const t=await H.txt(page,'#list');T('cave vide : toutes les fonctions proposées (photos, tableur, restauration, guide)',['Scanner une étiquette','Importer des photos','Importer un tableur','Saisie manuelle','Restaurer une sauvegarde','Guide'].every(x=>t.includes(x)),t)}
-T('version affichée côté page',await page.evaluate(()=>self.APP_VERSION)==='1.8.2');
+T('version affichée côté page',await page.evaluate(()=>self.APP_VERSION)==='1.8.3');
 {const q1=await H.txt(page,'#quoteText');const Q=await page.evaluate(async()=>(await import('./quotes.js')).QUOTES);
 T('citation : affichée et issue de la liste (300)',Q.length===300&&Q.includes(q1)&&q1.length>10,q1);
 T('citation : bloc visible sous l’en-tête',await page.$eval('.quote',e=>e.getBoundingClientRect().height>40)&&await page.evaluate(()=>document.querySelector('header.top').compareDocumentPosition(document.querySelector('.quote'))&4));
@@ -27,7 +27,7 @@ await page.evaluate(()=>{window.__rf=window.fetch;window.__fx=[];window.fetch=(f
 await page.evaluate(()=>document.querySelector('#ct-pub').click());await H.sl(400);
 const fx=await page.evaluate(()=>window.__fx);
 T('publier : envoi direct au formulaire Google, sans quitter l’appli (POST, sans cookies)',fx.length===1&&fx[0].u==='https://docs.google.com/forms/d/e/1FAIpQLSfOirVg2Xykiv6DvPS1jNM5NQJSpnW0ajhbdP1gD3bKap1QDw/formResponse'&&fx[0].m==='POST'&&fx[0].mode==='no-cors'&&fx[0].c==='omit',JSON.stringify(fx));
-T('publier : champ « Votre message » rempli avec le message, la version et l’appareil',fx.length===1&&decodeURIComponent(fx[0].b.replace(/\+/g,' ')).startsWith('entry.1804718778=[Bug] Le bouton + ne répond plus')&&fx[0].b.includes('1.8.2'),fx[0]&&fx[0].b);
+T('publier : champ « Votre message » rempli avec le message, la version et l’appareil',fx.length===1&&decodeURIComponent(fx[0].b.replace(/\+/g,' ')).startsWith('entry.1804718778=[Bug] Le bouton + ne répond plus')&&fx[0].b.includes('1.8.3'),fx[0]&&fx[0].b);
 T('publier : confirmation affichée et fenêtre fermée',(await H.txt(page,'#toasts')).includes('Requête publiée')&&!(await H.shown(page,'#sContact')),await H.txt(page,'#toasts'));
 await page.evaluate(()=>document.querySelector('#bContact').click());await H.sl(300);
 T('publier : message effacé après envoi',(await page.$eval('#ct-msg',e=>e.value))==='');

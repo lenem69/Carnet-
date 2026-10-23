@@ -124,7 +124,7 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 @keyframes spn { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .sp { animation: none; border-top-color: var(--ac); } }
 
-#toasts { position: fixed; z-index: 40; left: 0; right: 0; top: calc(8px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none;
+#toasts { position: fixed; z-index: 40; left: 0; right: 0; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none;
   padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); }
 .toast { pointer-events: auto; width: 100%; max-width: 640px; background: var(--ac); color: var(--acx); border-radius: 12px; padding: 10px 8px 10px 14px; font-size: 14px; display: flex; gap: 8px; align-items: center; box-shadow: 0 6px 16px rgb(0 0 0 / .25); }
 .toast.err { background: var(--bad); color: #fff; }
@@ -155,16 +155,17 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 .credit .lnk { margin-top: 6px; }
 
 /* Bandeau de mise à jour : plein écran, collé en haut */
-#updBar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; margin: 0 -16px; }
+#updBar { margin: 0 -16px; }
 #updBar:empty { display: none; }
-#updBar .upd { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; background: var(--ac); color: var(--acx); padding: 12px 16px; box-shadow: 0 4px 14px rgba(0, 0, 0, .35); }
+#updBar .upd { display: flex; align-items: center; gap: 10px; background: var(--ac); color: var(--acx); padding: 10px 16px; }
 #updBar .ic { font-size: 26px; line-height: 1; }
-#updBar .tx { flex: 1 1 160px; display: flex; flex-direction: column; min-width: 0; }
-#updBar .tx b { font-size: 17px; }
+#updBar .tx { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
+#updBar .tx b { font-size: 16px; }
 #updBar .tx span { font-size: 13px; opacity: .9; }
-#updBar .btn { width: auto; flex: 1 1 100%; background: var(--acx); color: var(--ac); border: 0; font-weight: 700; padding: 12px 16px; white-space: nowrap; animation: updpulse 1.6s ease-in-out infinite; }
+#updBar .btn { width: auto; flex: 0 0 auto; background: var(--acx); color: var(--ac); border: 0; font-weight: 700; padding: 10px 14px; min-height: 44px; white-space: nowrap; animation: updpulse 1.6s ease-in-out infinite; }
 @keyframes updpulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, .55); } 50% { box-shadow: 0 0 0 9px rgba(255, 255, 255, 0); } }
 @media (prefers-reduced-motion: reduce) { #updBar .btn { animation: none; } }
+@media (max-width: 360px) { #updBar .tx span { display: none; } }
 
 .chk { display: flex; align-items: center; gap: 10px; font-size: 16px; color: var(--tx); }
 .chk input { width: 22px; height: 22px; flex: 0 0 auto; }
