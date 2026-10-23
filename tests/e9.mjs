@@ -15,7 +15,7 @@ T('écran des chiffres affiché, autres vues masquées',await page.$eval('#vChif
 const t=await H.txt(page,'#vChiffres');
 T('portrait : 3 bouteilles pour 2 références',t.includes('3 bouteilles')&&t.includes('2 références'),t.slice(0,200));
 T('régions (anneaux) et statuts affichés',t.includes('Bordeaux')&&t.includes('Bourgogne')&&t.includes('Prêt à boire')&&t.includes('À garder')&&t.includes('Urgence'),t.slice(0,300));
-T('appellations affichées avec leur région',t.includes('Margaux')&&t.includes('Chablis'),t.slice(0,300));
+T('pas de classement par appellations (redondant avec les régions)',!t.includes('Appellations'),t.slice(0,300));
 T('pas de « En résumé » ni de citation',!t.includes('En résumé'),t.slice(0,80));
 T('valeur d’achat connue : 78 €',t.includes('78'),t.slice(0,400));
 await H.tapText(page,'.tab','Ma cave');await H.sl(400);

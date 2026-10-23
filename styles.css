@@ -162,7 +162,8 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 .chiffres { padding-bottom: 24px; }
 .chiffres .portrait { font-size: 17px; font-weight: 600; margin: 4px 0 8px; }
 .chiffres .ch { font-size: 15px; margin: 18px 0 6px; }
-.chiffres .bar { display: grid; grid-template-columns: minmax(70px, 1fr) 2fr 40px; gap: 8px; align-items: center; font-size: 14px; margin: 4px 0; }
+.chiffres .bar { display: grid; grid-template-columns: minmax(0, 42%) minmax(0, 1fr) 36px; gap: 8px; align-items: center; font-size: 14px; margin: 4px 0; }
+.chiffres .bar > span { min-width: 0; }
 .chiffres .bar i { display: block; height: 10px; border-radius: 5px; background: var(--ac); }
 .chiffres .bar b { text-align: right; font-variant-numeric: tabular-nums; }
 .chiffres .frise { display: flex; align-items: flex-end; gap: 2px; height: 120px; border-bottom: 1px solid var(--bd); }

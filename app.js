@@ -276,7 +276,6 @@ function renderChiffres() {
     ${st.sans ? `<p class="mu small">${st.sans} bouteille(s) sans période de garde, non classées.</p>` : ''}
     <h3 class="ch">Couleurs</h3>${donut(c.couleurs, c.bouteilles, 'Couleurs')}
     <h3 class="ch">Régions</h3>${donut(c.regions, c.bouteilles, 'Régions')}
-    <h3 class="ch">Appellations</h3>${bars(c.appellations, c.bouteilles, true)}
     <h3 class="ch">Cépages</h3>${bars(c.cepages, c.bouteilles)}
     <h3 class="ch">Époques des millésimes</h3>${bars(c.decennies, c.bouteilles)}
     <h3 class="ch">À boire, année par année</h3>
