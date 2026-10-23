@@ -400,6 +400,7 @@ function render() {
   $$('.tab').forEach(b => { const on = b.dataset.t === S.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
   $('#vCave').hidden = S.tab !== 'cave'; $('#vBoire').hidden = S.tab !== 'boire'; $('#vChiffres').hidden = S.tab !== 'chiffres'; document.querySelector('.stats').hidden = S.tab === 'chiffres';
   if (S.tab === 'cave') renderList(); else if (S.tab === 'boire') renderBoire(); else renderChiffres();
+  avisSiChange();
 }
 // « Magic » : tableau de bord de la cave. Calcul local, sans IA.
 const PALETTE = ['#7b1e3a', '#b5545f', '#d68c96', '#e9c2c8', '#5b4a4f', '#9b8b90', '#c9bcc0', '#3d2c31'];
@@ -422,10 +423,17 @@ const pct = (n, total) => (total ? Math.round((n / total) * 100) : 0);
 function bilanHtml(c) {
   const v = L.valeurEstimee(S.wines);
   const reste = v.bouteilles - v.couverts;
+  const titre = prenomMem ? `Avis sur l’équilibre de votre cave, ${esc(prenomMem)}` : 'Avis sur l’équilibre de votre cave';
+  let avisHtml;
+  if (avisEnCours) avisHtml = '<span class="mu">Lecture de la cave…</span>';
+  else if (avisMem && avisMem.texte) avisHtml = `${esc(avisMem.texte)}<br><span class="mu small">Avis du ${new Date(avisMem.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} · impression, sans vérification${avisMem.erreur ? ' · mise à jour impossible : ' + esc(avisMem.erreur) : ''}</span>`;
+  else if (avisMem && avisMem.erreur) avisHtml = `<span class="mu">Pas encore d’avis : ${esc(avisMem.erreur)}</span>`;
+  else avisHtml = `<span class="mu">${AI.ready() ? 'Un avis apparaîtra après l’ajout ou la suppression d’un vin.' : 'Avis disponible avec une IA configurée dans Réglages.'}</span>`;
   return `<div class="bilan">
+    <p><b>${titre}</b></p>
+    <p id="avisIA" class="small">${avisHtml}</p>
     <p><b>Équilibre</b> ${esc(L.equilibre(c))}</p>
-    <p id="avisIA" class="mu small"></p>
-    <button class="lnk" data-act="avis" type="button">Avis de l’IA sur l’équilibre</button>
+    <button class="lnk" data-act="avis" type="button">Actualiser l’avis</button>
     <p><b>Valeur estimée</b> ${v.couverts ? `≈ ${fmtEur(v.total)}` : 'pas encore estimée'}</p>
     <p class="mu small">${v.couverts ? `${v.couverts} bouteille(s) sur ${v.bouteilles} estimée(s). ` : ''}Estimation indicative : peu de prix d’achat sont saisis, donc elle repose sur les connaissances de l’IA, sans vérification.</p>
     ${reste ? `<button class="lnk" data-act="valeur" type="button">Estimer la valeur (IA)</button>` : ''}
@@ -717,16 +725,50 @@ async function scanFiles(files) {
 }
 
 /* ============ Fiches par lots ============ */
-async function avisCaveIA() {
-  if (!requireAI()) return;
-  const out = $('#avisIA');
-  out.textContent = 'Lecture de la cave…';
+// Avis sur l’équilibre : relancé seulement quand un vin est ajouté ou supprimé, en fond. Sans crédit, l’avis précédent reste affiché.
+let avisMem = null;          // { texte, date, cle, erreur } (sauvegardé dans la base de l’appli)
+let avisEnCours = false;
+let avisCleVue = null;       // empreinte de la cave à la dernière demande
+let avisTimer = null;
+let prenomMem = '';
+const cleCave = () => {
+  const s = S.wines.map(w => w.id).sort().join('|');
+  let h = 5381; for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return S.wines.length + ':' + h.toString(36);
+};
+const renderSiMagic = () => { if (S.tab === 'chiffres') renderChiffres(); };
+function avisSiChange() {
+  if (!S.wines.length || !AI.ready()) return;
+  const cle = cleCave();
+  if (cle === avisCleVue) return;
+  avisCleVue = cle;
+  clearTimeout(avisTimer);
+  avisTimer = setTimeout(() => genererAvis(false), 2500);
+}
+async function genererAvis(manuel) {
+  if (avisEnCours || !S.wines.length || !AI.ready()) return;
+  avisEnCours = true; renderSiMagic();
+  const cle = cleCave();
   try {
+    await whenFree();
     const c = chiffres(S.wines, YEAR);
     const resume = { bouteilles: c.bouteilles, references: c.references, couleurs: c.couleurs, regions: c.regions.slice(0, 5), cepages: c.cepages.slice(0, 5), statuts: c.statuts, lecture: L.equilibre(c) };
-    const avis = await AI.avisCave(resume);
-    out.textContent = 'Avis de l’IA (impression, sans vérification) : ' + avis;
-  } catch (e) { out.textContent = ''; errToast(AI.errText(e)); }
+    const texte = await AI.avisCave(resume);
+    avisMem = { texte, date: Date.now(), cle, erreur: '' };
+  } catch (e) {
+    // Sans crédit ou en panne : on garde l’avis précédent et on dit pourquoi
+    const msg = AI.errText(e);
+    avisMem = { ...(avisMem || {}), cle, erreur: msg };
+    if (manuel) errToast(msg);
+  }
+  try { await store.setMeta('avis', avisMem); } catch (e) { console.error(e); }
+  avisEnCours = false; renderSiMagic();
+  // la cave a changé pendant la lecture : on relance une fois
+  if (cleCave() !== cle) { clearTimeout(avisTimer); avisTimer = setTimeout(() => genererAvis(false), 2500); }
+}
+function avisForce() {
+  if (!requireAI()) return;
+  genererAvis(true);
 }
 
 // Valeur : seulement les vins pas encore estimés, par lots de 10 (sans recherche web).
@@ -1099,7 +1141,7 @@ function bind() {
   // Magic : toucher une case ouvre la liste des vins concernés.
   $('#vChiffres').onclick = e => {
     const a = e.target.closest('[data-act]');
-    if (a && a.dataset.act === 'avis') { avisCaveIA(); return; }
+    if (a && a.dataset.act === 'avis') { avisForce(); return; }
     if (a && a.dataset.act === 'valeur') { valeurCaveIA(); return; }
     const b = e.target.closest('[data-goto]'); if (!b) return;
     S.statut = b.dataset.goto; S.tab = 'cave'; S.filt = 'Tous'; S.q = ''; $('#q').value = ''; S.limit = PAGE;
@@ -1252,7 +1294,7 @@ async function showBienvenue() {
     };
     $('#bvOk').onclick = async () => {
       const prenom = $('#bvPrenom').value.trim().slice(0, 30);
-      try { await store.setMeta('bienvenue', { prenom, date: Date.now() }); } catch (e) { /* le prénom n'est pas enregistré : le message reste affiché */ }
+      try { await store.setMeta('bienvenue', { prenom, date: Date.now() }); prenomMem = prenom; } catch (e) { /* le prénom n'est pas enregistré : le message reste affiché */ }
       montrerMessage(prenom);
     };
     $('#bvPasse').onclick = () => { closeSheet('sBienv'); };
@@ -1500,6 +1542,10 @@ async function boot() {
       await store.setMeta('schema', L.SCHEMA_VERSION);
     }
     S.wines = list;
+    avisMem = (await store.getMeta('avis').catch(() => null)) || null;
+    prenomMem = ((await store.getMeta('bienvenue').catch(() => null)) || {}).prenom || '';
+    // point de départ : pas d’appel à l’ouverture, seulement quand la cave changera
+    avisCleVue = avisMem && avisMem.cle ? avisMem.cle : cleCave();
     S.lastBackup = (await store.getMeta('lastBackup')) || 0;
     S.title = (await store.getMeta('title')) || DEFAULT_TITLE;
     renderTitle();
