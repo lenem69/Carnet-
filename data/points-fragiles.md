@@ -48,3 +48,10 @@ Chaque automne : nouveau millésime (2026 à l'automne 2027), revérification de
 - Prix et garde : connaissance générale, non sourcés.
 - Sources lues : winescholarguild.com, idealwine.com, jancisrobinson.com, vinsdeloire.fr, vins-centre-loire.com, divineloire.fr, thedrinksbusiness.com. Illisibles : Hachette (grille Loire absente), Viniphile (grille en image), La Passion du Vin (pas de données Loire), Vinous et Wine Spectator (cépages seulement), INAO non consulté.
 - Lignes douteuses : Muscadet 2009 (5, une source donne 4) ; Liquoreux d'Anjou 2005/2009/2015 (5, note de groupe) ; Chinon 2005 et 2022 (5) ; Savennières 2010 (5, régional seulement) ; Liquoreux d'Anjou 2024 (3, C, source « poor », à réviser vers 2) ; Sancerre rouge 2024 (2, C) ; Saint-Nicolas-de-Bourgueil 2024 (2, B) ; Touraine rouge 2017 (3, A, gel local, note de région).
+
+## Zone 13 : intégration de la vérification par une seconde IA (23 octobre, 2e passe)
+- Intégré : Monbazillac, Pécharmant, Saussignac, Cahors, Madiran, Jurançon sec et moelleux, Arbois, Côtes du Jura, L'Étoile, Château-Chalon, Crémant du Jura, et une ligne de Roussette de Savoie (2014).
+- Non intégré, à demander : le reste de la Roussette de Savoie, Vin de Savoie, Crémant de Savoie, Seyssel, Bugey, Pétillants du Bugey, Bugey-Cerdon, Coteaux Bourguignons, Pacherenc du Vic-Bilh, Béarn/Tursan/Saint-Mont, Irouléguy, Bergerac et satellites, Gaillac, Marmandais, Aveyron et Quercy, IGP Comté Tolosan, liquoreux du Sud-Ouest.
+- Lignes à « potentiel » et non qualité : Château-Chalon 2020 (5) : le guide note le potentiel, non la qualité du vin.
+- Sources annoncées mais non vérifiables de notre côté : millesimes.fr, vin-de-cahors.fr, irqualim.fr, vin-malin.fr, reussir.fr, terredevins.com. Elles sont inscrites comme lues par l'autre IA, pas par nous.
+- Plusieurs notes reposent sur une seule source (guide Figaro, ligne régionale) : fiabilité B, à consolider.
