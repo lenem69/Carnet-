@@ -119,6 +119,15 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   const n = L.normalizeWine({ name: 'x', src: { from: 'bible', to: 'bible' } });
   T('origines : valeurs inconnues écartées, src conservé', JSON.stringify(n.src) === '{}' || (n.src && n.src.from === 'bible'), JSON.stringify(n.src));
 }
+// Quantité écrite dans le nom (import Excel)
+{
+  T('quantité dans le nom : « 2 bouteilles de blanc » → 2 et « blanc »', L.splitQty('2 bouteilles de blanc etc',1).qty===2 && L.splitQty('2 bouteilles de blanc etc',1).name==='blanc etc');
+  T('quantité dans le nom : « 3 x Syrah » avec colonne vide → 3', L.splitQty('3 x Syrah','').qty===3 && L.splitQty('3 x Syrah','').name==='Syrah');
+  T('quantité dans le nom : colonne différente et non 1 → colonne gardée', L.splitQty('2 bouteilles de Rouge',5).qty===5);
+  T('quantité dans le nom : nom « 2 Hommes » non modifié', L.splitQty('Château 2 Hommes',1).name==='Château 2 Hommes');
+  T('quantité dans le nom : seulement « 2 bouteilles » → inchangé', L.splitQty('2 bouteilles',1).name==='2 bouteilles');
+  T('normalisation : fiche importée avec 2 bouteilles dans le nom', L.normalizeWine({name:'2 bouteilles de blanc etc',qty:1,color:'Blanc'}).qty===2);
+}
 console.log(out.join('\n'));
 const mw=L.normalizeWine({name:'Chassagne-Montrachet',dom:'Paul Jouard',year:2012,loc:'Casier B'});
 console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz',false],['',true]].map(([q,e])=>(L.matchesQuery(mw,q)===e?'PASS':'FAIL')+' recherche « '+q+' »').join('\n'));

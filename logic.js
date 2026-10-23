@@ -2,7 +2,7 @@
 import { norm, num, price, uid } from './util.js';
 
 export const COLORS = ['Rouge', 'Blanc', 'Rosé', 'Pétillant', 'Autre'];
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export function normColor(v) {
   const s = norm(v);
@@ -24,11 +24,25 @@ function toList(v) {
 
 // Transforme n'importe quelle entrée (ancienne version, sauvegarde, import, IA) en fiche propre.
 // Renvoie null si la fiche n'a ni nom ni domaine.
+// Quantité écrite dans le nom (« 2 bouteilles de blanc… », « 3 x Syrah ») : on la sort du nom.
+// Elle devient la quantité si la colonne quantité est vide, égale à 1, ou égale à ce nombre.
+const QTY_PREFIX = /^\s*(\d{1,3})\s*(?:x|×|bouteilles?|btl|bt|flacons?)\s*(?:de\s+|d['’]\s*)?/i;
+export function splitQty(name, qty) {
+  const m = QTY_PREFIX.exec(String(name || ''));
+  if (!m) return { name, qty };
+  const n = parseInt(m[1], 10);
+  const rest = String(name).slice(m[0].length).trim();
+  if (!rest || n < 1) return { name, qty };
+  return { name: rest, qty: (qty === '' || qty === 1 || qty === n) ? n : qty };
+}
 export function normalizeWine(raw) {
   if (!raw || typeof raw !== 'object') return null;
-  const name = str(raw.name) || str(raw.dom);
+  let name = str(raw.name) || str(raw.dom);
   if (!name) return null;
-  const q = num(raw.qty);
+  const q0 = num(raw.qty);
+  const sq = str(raw.name) ? splitQty(name, q0 === '' ? 1 : q0) : { name, qty: q0 };
+  name = sq.name;
+  const q = sq.qty;
   const now = Date.now();
   return {
     id: str(raw.id) || uid(),

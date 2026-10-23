@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.12.2': ['Import : « 2 bouteilles de… » dans le nom devient une quantité de 2 (et le nom est nettoyé). Vos fiches existantes sont corrigées automatiquement.'],
   '1.12.1': ['Ouvrir le lien depuis le navigateur affiche d’abord comment installer l’appli, avec un bouton « Continuer sans installer ».'],
   '1.12.0': ['Installation simplifiée : bouton « Installer » sur Android, pas-à-pas animé sur iPhone.', 'Clé Gemini : bouton « Obtenir ma clé gratuite » ; modèle et adresse repliés dans « Options avancées ».', 'Bouton « Signaler un problème » en bas de page.'],
   '1.11.0': ['L’onglet « Magic » (ex-Chiffres) : anneaux pour les couleurs et les régions, et trois statuts : Prêt à boire, À garder, Urgence.', 'Cépages fusionnés (« 100 % Syrah » = « Syrah ») ; régions classées du plus général au plus précis.', 'Thème clair en permanence ; le bloc « En résumé » est retiré de Magic, et les trois chiffres du haut n’y sont plus répétés.'],
