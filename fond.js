@@ -396,6 +396,7 @@
       if (erreur) {
         const code = erreur.code;
         if (code === 'rate_limited') { q.pauseUntil = prochaineRemise(now); q.pauseWhy = 'limite de l’IA atteinte'; }
+        else if (c.gratuit && ['bad_key', 'bad_model', 'server'].includes(code)) { q.pauseUntil = now + 30 * 6e4; q.pauseWhy = 'service gratuit indisponible'; }
         else if (['bad_key', 'bad_model', 'bad_base', 'no_key'].includes(code)) { q.pauseUntil = now + 864e5; q.pauseWhy = 'clé ou modèle d’IA à vérifier'; }
         else { q.pauseUntil = now + 30 * 6e4; q.pauseWhy = 'connexion ou serveur indisponible'; }
       } else q.pauseUntil = 0;

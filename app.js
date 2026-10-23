@@ -31,6 +31,9 @@ const DEFAULT_TITLE = 'Ma cave';
 /* ============ Messages ============ */
 function toast(msg, opt = {}) {
   const box = $('#toasts');
+  // un même message déjà affiché n’est pas répété
+  const deja = [...box.children].find(c => c.firstChild && c.firstChild.textContent === msg);
+  if (deja) return deja;
   const el = document.createElement('div');
   el.className = 'toast' + (opt.kind === 'err' ? ' err' : '');
   el.setAttribute('role', opt.kind === 'err' ? 'alert' : 'status');
@@ -721,7 +724,7 @@ async function scanFiles(files) {
     } catch (e) {
       if (e && e.name === 'AbortError') { log.set(i, 'skip', 'Arrêté'); continue; }
       fails++; log.set(i, 'err', AI.errText(e));
-      if (e && (e.code === 'rate_limited' || e.code === 'limite_gratuite' || e.code === 'bad_key' || e.code === 'no_key' || e.code === 'bad_model' || e.code === 'network')) {
+      if (e && (e.code === 'rate_limited' || e.code === 'limite_gratuite' || e.code === 'service_gratuit' || e.code === 'bad_key' || e.code === 'no_key' || e.code === 'bad_model' || e.code === 'network')) {
         for (let j = i + 1; j < files.length; j++) log.set(j, 'skip', 'Non traité');
         break;
       }
@@ -803,7 +806,7 @@ async function valeurCaveIA() {
     } catch (e) {
       if (e && e.name === 'AbortError') { log.set(i, 'skip', 'Arrêté'); continue; }
       log.set(i, 'err', AI.errText(e));
-      if (e && ['rate_limited', 'limite_gratuite', 'bad_key', 'no_key', 'bad_model', 'network'].includes(e.code)) { for (let j = i + 1; j < groups.length; j++) log.set(j, 'skip', 'Non traité'); break; }
+      if (e && ['rate_limited', 'limite_gratuite', 'service_gratuit', 'bad_key', 'no_key', 'bad_model', 'network'].includes(e.code)) { for (let j = i + 1; j < groups.length; j++) log.set(j, 'skip', 'Non traité'); break; }
     }
   }
   log.finish(`Terminé : ${done} bouteille(s) estimée(s). Relancez plus tard pour les autres.`);
@@ -839,7 +842,7 @@ async function enrichAll() {
     } catch (e) {
       if (e && e.name === 'AbortError') { log.set(i, 'skip', 'Arrêté'); continue; }
       log.set(i, 'err', AI.errText(e));
-      if (e && ['rate_limited', 'limite_gratuite', 'bad_key', 'no_key', 'bad_model', 'network'].includes(e.code)) { for (let j = i + 1; j < groups.length; j++) log.set(j, 'skip', 'Non traité'); break; }
+      if (e && ['rate_limited', 'limite_gratuite', 'service_gratuit', 'bad_key', 'no_key', 'bad_model', 'network'].includes(e.code)) { for (let j = i + 1; j < groups.length; j++) log.set(j, 'skip', 'Non traité'); break; }
     }
   }
   log.finish(`Terminé : ${done} fiche(s) complétée(s). Relancez plus tard pour les autres.`);
@@ -1446,6 +1449,7 @@ async function autoStep() {
   } catch (e) {
     const code = e && e.code;
     if (code === 'rate_limited' || code === 'limite_gratuite') { auto.pauseUntil = nextQuotaReset(); auto.pauseWhy = 'limite de l’IA atteinte'; }
+    else if (code === 'service_gratuit') { auto.pauseUntil = now + 30 * 6e4; auto.pauseWhy = 'service gratuit indisponible'; }
     else if (['bad_key', 'bad_model', 'bad_base', 'no_key'].includes(code)) {
       auto.pauseUntil = now + 864e5; auto.pauseWhy = 'clé ou modèle d’IA à vérifier';
       errToast('Fiches automatiques en pause : ' + AI.errText(e));

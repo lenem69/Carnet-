@@ -117,6 +117,7 @@ export const ERR = {
   no_key: 'Aucune IA configurée. Ajoutez une clé dans Réglages (⚙).',
   limite_gratuite: 'Limite du jour atteinte avec la clé d’essai. Pour continuer, ajoutez votre propre clé gratuite dans Réglages (⚙) : la marche à suivre y est expliquée pas à pas.',
   bad_key: 'Clé IA refusée. Vérifiez-la dans Réglages (⚙).',
+  service_gratuit: 'Le service gratuit est momentanément indisponible. Réessayez plus tard, ou ajoutez votre propre clé gratuite dans ⚙ Réglages.',
   bad_model: 'Modèle IA introuvable. Corrigez le nom du modèle dans Réglages (⚙).',
   rate_limited: 'Limite d’utilisation de l’IA atteinte (par minute ou par jour). Réessayez plus tard.',
   network: 'Pas de connexion à l’IA. Vérifiez votre réseau.',
@@ -130,8 +131,9 @@ export const ERR = {
 };
 export function errText(e) {
   const c = (e && e.code) || '';
-  if (ERR[c]) return ERR[c];
   const m = (e && e.message) || '';
+  if (c === 'service_gratuit') return ERR[c] + (m ? ' (' + String(m).slice(0, 120) + ')' : '');
+  if (ERR[c]) return ERR[c];
   return 'Erreur inattendue' + (c || m ? ' [' + [c, m].filter(Boolean).join(' – ') + ']' : '') + '.';
 }
 
@@ -170,7 +172,8 @@ async function httpJson(url, init) {
   try { r = await fetch(url, init); }
   catch (e) { if (e && e.name === 'AbortError') throw e; throw { code: 'network' }; }
   let j = null; try { j = await r.json(); } catch (e) { j = null; }
-  const msg = (j && j.error && (j.error.message || j.error.type)) || '';
+  const raw = j && j.error;
+  const msg = (typeof raw === 'string' ? raw : raw && (raw.message || raw.type)) || '';
   if (!r.ok) {
     if (r.status === 429) throw { code: 'rate_limited', message: msg };
     if (r.status === 401 || r.status === 403 || /api[ _-]?key|authentication|unauthori/i.test(msg)) throw { code: 'bad_key', message: msg };
@@ -295,6 +298,8 @@ export async function callJson(prompt, opts = {}) {
       if (e && e.name === 'AbortError') throw e;
       // la clé partagée est épuisée côté serveur : on le dit comme une limite du jour, pas comme une panne
       if (s.gratuit && e && e.code === 'rate_limited') e = { code: 'limite_gratuite' };
+      // refus ou panne du service gratuit : ce n’est pas la clé de l’utilisateur, on ne lui demande donc pas de la vérifier
+      else if (s.gratuit && e && ['bad_key', 'bad_model', 'server'].includes(e.code)) e = { code: 'service_gratuit', message: e.message || '' };
       lastErr = e;
       const code = e && e.code;
       if (STAT_OF[code]) stat(STAT_OF[code]);
