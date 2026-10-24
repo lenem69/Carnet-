@@ -768,17 +768,19 @@ async function scanFiles(files) {
       const d = res.d;
       const w = L.normalizeWine({ ...d, qty: 1, check: d.lecture !== 'haute' });
       const label = [w.name, w.dom, w.year].filter(Boolean).join(' · ');
+      // Durée de la lecture (photo + IA), pour juger la vitesse ; « lecture précise » si le modèle léger a hésité.
+      const tm = d.timing ? ` (${((d.timing.prep + d.timing.appel) / 1000).toFixed(1).replace('.', ',')} s${d.timing.precis ? ', lecture précise' : ''})` : '';
       const ex = S.wines.find(x => L.keyOf(x) === L.keyOf(w));
       if (ex) {
         ex.qty += 1; ex.updated = Date.now(); dups++;
         const ok = await persist(() => store.putWines([ex]));
-        log.set(i, ok ? 'dup' : 'err', ok ? `Déjà en cave : ${label} (${ex.qty} bouteilles)` : 'Lu, mais non enregistré (mémoire pleine)');
+        log.set(i, ok ? 'dup' : 'err', ok ? `Déjà en cave : ${label} (${ex.qty} bouteilles)${tm}` : 'Lu, mais non enregistré (mémoire pleine)');
       } else if (files.length === 1) {
-        single = w; log.set(i, 'ok', 'Reconnu : ' + label);
+        single = w; log.set(i, 'ok', 'Reconnu : ' + label + tm);
       } else {
         S.wines.push(w); added++;
         const ok = await persist(() => store.putWines([w]));
-        log.set(i, ok ? 'ok' : 'err', ok ? 'Ajouté : ' + label + (w.check ? ' (à vérifier)' : '') : 'Lu, mais non enregistré (mémoire pleine)');
+        log.set(i, ok ? 'ok' : 'err', ok ? 'Ajouté : ' + label + (w.check ? ' (à vérifier)' : '') + tm : 'Lu, mais non enregistré (mémoire pleine)');
       }
       render();
     } catch (e) {

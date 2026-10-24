@@ -33,14 +33,14 @@ const G=o=>({json:{candidates:[{content:{parts:[{text:JSON.stringify(o)}]}}]}});
 }
 // ---------- Scan rapide ----------
 {
-  const calls=[];let refuse=false;
+  const calls=[];let refuse=false;let lect='haute';
   const ai=async c=>{calls.push({t:Date.now(),think:c.body.generationConfig&&c.body.generationConfig.thinkingConfig,model:c.url});
     if(refuse&&c.body.generationConfig.thinkingConfig)return {status:400,json:{error:{message:'Invalid argument'}}};
-    return {...G({name:'Cuvée Test',dom:'Domaine Test',year:2019,color:'Rouge',region:'Cornas',grape:'Syrah',lecture:'haute'}),delay:500}};
+    return {...G({name:'Cuvée Test',dom:'Domaine Test',year:2019,color:'Rouge',region:'Cornas',grape:'Syrah',lecture:lect==='auto'?(c.url.includes('lite')?'moyenne':'haute'):lect}),delay:500}};
   const r=await H.newPage(b,{ai});const page=r.page;const errs=[];page.on('pageerror',e=>errs.push(e.message));
   await page.goto(H.URL0);await H.sl(900);await H.setAI(page,'gemini','AIzaTEST');await page.reload();await H.sl(1200);
   await H.click(page,'#fab');await H.pickFiles(page,()=>H.tapText(page,'#sMenu button','Scanner une étiquette'),['fixtures/lab.png']);await H.sl(1800);
-  T('scan : réflexion réduite demandée (thinkingLevel low)',calls.length===1&&calls[0].think&&calls[0].think.thinkingLevel==='low',JSON.stringify(calls[0]));
+  T('scan : modèle le plus léger d’abord, réflexion minimale, un seul appel si la lecture est sûre',calls.length===1&&calls[0].model.includes('gemini-3.5-flash-lite')&&calls[0].think&&calls[0].think.thinkingLevel==='minimal',JSON.stringify(calls[0]));
   const f1=await page.evaluate(()=>document.querySelector('#f-name')?.value||document.querySelector('#fT')?.textContent);
   T('scan : étiquette reconnue, formulaire de vérification ouvert',/Cuvée Test|Vérifier/.test(f1||''),f1);
   // le service refuse le réglage : nouvel essai sans, sans erreur visible
@@ -49,6 +49,13 @@ const G=o=>({json:{candidates:[{content:{parts:[{text:JSON.stringify(o)}]}}]}});
   T('scan : réglage refusé → nouvel essai sans, le scan réussit',calls.length===2&&calls[0].think&&!calls[1].think,JSON.stringify(calls.map(c=>c.think)));
   const f2=await page.evaluate(()=>document.querySelector('#f-name')?.value||'');
   T('scan : résultat affiché malgré le repli',/Cuvée Test/.test(f2),f2);
+  // lecture douteuse du modèle léger : une seconde lecture avec le modèle précis, une seule fois
+  await page.reload();await H.sl(1200);calls.length=0;refuse=false;lect='auto';
+  await H.click(page,'#fab');await H.pickFiles(page,()=>H.tapText(page,'#sMenu button','Scanner une étiquette'),['fixtures/lab.png']);await H.sl(2600);
+  T('scan : lecture douteuse → 2e lecture avec le modèle précis (3.8, réflexion low)',calls.length===2&&calls[0].model.includes('flash-lite')&&calls[1].model.includes('gemini-3.8-flash')&&calls[1].think&&calls[1].think.thinkingLevel==='low',JSON.stringify(calls.map(c=>[c.model.slice(-40),c.think])));
+  const lg=await page.evaluate(()=>document.querySelector('#sLog')?.textContent||'');
+  T('scan : durée affichée dans le compte rendu, « lecture précise » signalée',/\(\d+,\d s, lecture précise\)/.test(lg),lg.slice(0,300));
+  lect='haute';
   await page.close();
   // deux photos : la seconde est lue pendant que la première est traitée (clé personnelle)
   const r2=await H.newPage(b,{ai});const p2=r2.page;calls.length=0;refuse=false;
@@ -58,6 +65,20 @@ const G=o=>({json:{candidates:[{content:{parts:[{text:JSON.stringify(o)}]}}]}});
   const w2=await p2.evaluate(async()=>{const s=await import('./store.js');const a=await s.allWines();return a.map(w=>w.qty)});
   T('2 photos du même vin : un seul vin, 2 bouteilles (doublon détecté dans l’ordre)',w2.length===1&&w2[0]===2,JSON.stringify(w2));
   T('aucune erreur JavaScript (scan)',errs.length===0,errs.join(' / '));
+}
+// service gratuit partagé : un seul appel autorisé, donc jamais de seconde lecture (lecture douteuse → à vérifier)
+{
+  const calls=[];
+  const ai=async c=>{calls.push(c.url);return {...G({name:'Cuvée Test',dom:'Domaine Test',year:2019,color:'Rouge',region:'Cornas',grape:'Syrah',lecture:'moyenne'}),delay:100}};
+  const r=await H.newPage(b,{ai});const pg=r.page;
+  await pg.goto(H.URL0);await H.sl(900);
+  await pg.evaluate(async()=>{localStorage.removeItem('cave-ai');localStorage.setItem('cave-gratuit','on');const s=await import('./store.js');await s.replaceAll([]);await s.setMeta('gratuit',{jour:new Date().toISOString().slice(0,10),vins:0})});
+  await pg.reload();await H.sl(1500);
+  await H.click(pg,'#fab');await H.pickFiles(pg,()=>H.tapText(pg,'#sMenu button','Scanner une étiquette'),['fixtures/lab.png']);await H.sl(1800);
+  T('service gratuit : un seul appel même si la lecture est douteuse',calls.length===1&&/cave-ia/.test(calls[0]),JSON.stringify(calls));
+  const f=await pg.evaluate(()=>document.querySelector('#f-name')?.value||'');
+  T('service gratuit : fiche à vérifier ouverte avec la lecture',/Cuvée Test/.test(f),f);
+  await pg.close();
 }
 S.out.forEach(l=>console.log(l));
 await b.close();srv.close&&srv.close();process.exit(0);

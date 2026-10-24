@@ -93,6 +93,8 @@ export function syncCfg() {
 }
 export const ready = () => configured().length > 0;
 export const limiteAtteinte = () => gratuitBloque();
+// Le service gratuit partagé ne permet qu’un appel : pas de seconde lecture en cas de doute.
+const enGratuit = () => modeGemini() === 'gratuit';
 // L’avis de Magic se prépare tout seul à chaque changement : il ne consomme jamais la clé gratuite, seulement une clé personnelle.
 export const avisPossible = () => configured().some(p => p !== 'gemini' || !!getConfig('gemini').key);
 
@@ -329,11 +331,35 @@ const SCHEMA_FICHE = '{"grape":"cépages","story":"2-3 phrases sur la cuvée, le
 const EXPERT = 'Tu es un sommelier expert de 30 ans d’expérience, qui connaît les grands guides (RVF, Bettane+Desseauve, Parker, Decanter).';
 
 export async function scanLabel(file, opts) {
+  const t0 = performance.now();
   const blob = await shrinkImage(file);
+  const prep = performance.now() - t0;
   // Lecture simple : réflexion minimale et réponse courte, pour la rapidité.
-  const d = await callJson(`Image : photo d’une étiquette de vin. Lis-la sans rien inventer. JSON : ${SCHEMA_LABEL}. Si ce n’est pas une étiquette lisible : {"error":true}.`, { ...opts, images: [blob], task: 'label', out: { think: 'low', maxOut: 500 } });
-  if (!d || typeof d !== 'object' || d.error || !(d.name || d.dom)) throw { code: 'not_label' };
-  return { name: d.name || d.dom, dom: d.dom || '', year: d.year, color: normColor(d.color), region: d.region || '', grape: d.grape || '', lecture: String(d.lecture || '').toLowerCase().startsWith('haute') ? 'haute' : 'douteuse' };
+  const prompt = `Image : photo d’une étiquette de vin. Lis-la sans rien inventer. JSON : ${SCHEMA_LABEL}. Si ce n’est pas une étiquette lisible : {"error":true}.`;
+  const lire = async (task, think) => {
+    const out = { think, maxOut: 500 };
+    const d = await callJson(prompt, { ...opts, images: [blob], task, out });
+    return { d, prov: out.provider };
+  };
+  const ok = d => d && typeof d === 'object' && !d.error && (d.name || d.dom);
+  const sure = d => ok(d) && String(d.lecture || '').toLowerCase().startsWith('haute');
+  // 1) Modèle le plus léger (rapide). 2) Si la lecture est douteuse ou refusée : le modèle précis, une seule fois, pour Gemini
+  // avec le modèle par défaut (jamais un modèle choisi à la main, ni en service gratuit qui n’autorise qu’un appel).
+  const t1 = performance.now();
+  let r = null, err = null, precis = false;
+  try { r = await lire('labelRapide', 'minimal'); } catch (e) { if (!e || e.code !== 'invalid_json') throw e; err = e; }
+  const peutPrecis = !enGratuit() && (r ? r.prov === 'gemini' : getConfig('gemini').key) && getConfig('gemini').model === PROVIDERS.gemini.model && MODELE_TACHE.label.gemini !== PROVIDERS.gemini.model;
+  let appel = performance.now() - t1;
+  if ((!r || !sure(r.d)) && peutPrecis) {
+    const t2 = performance.now();
+    try { r = await lire('label', 'low'); err = null; precis = true; } catch (e) { if (!r) throw e; /* on garde la lecture légère */ }
+    appel += performance.now() - t2;
+  }
+  if (!r) throw err || { code: 'invalid_json' };
+  const d = r.d;
+  if (!ok(d)) throw { code: 'not_label' };
+  return { name: d.name || d.dom, dom: d.dom || '', year: d.year, color: normColor(d.color), region: d.region || '', grape: d.grape || '', lecture: String(d.lecture || '').toLowerCase().startsWith('haute') ? 'haute' : 'douteuse',
+    timing: { prep: Math.round(prep), appel: Math.round(appel), precis } };
 }
 
 export async function makeFiche(w, opts = {}) {
