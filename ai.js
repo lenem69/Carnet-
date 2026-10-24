@@ -97,6 +97,10 @@ export const limiteAtteinte = () => gratuitBloque();
 const enGratuit = () => modeGemini() === 'gratuit';
 // L’avis de Magic se prépare tout seul à chaque changement : il ne consomme jamais la clé gratuite, seulement une clé personnelle.
 export const avisPossible = () => configured().some(p => p !== 'gemini' || !!getConfig('gemini').key);
+// L’appel gratuit du jour est réservé à la lecture d’étiquette : tout le reste (fiches, valeur, accords, avis) demande une clé personnelle.
+export const iaPerso = avisPossible;
+// Clé Gemini personnelle saisie : seule condition pour les fiches automatiques et la recherche web (la clé gratuite partagée n’y sert jamais).
+export const geminiPerso = () => !!getConfig('gemini').key;
 
 // Fournisseurs mis de côté un moment (crédits épuisés, clé refusée…), pour ne pas les réessayer à chaque demande.
 function cooled() {
@@ -119,6 +123,7 @@ export function usable() {
 
 export const ERR = {
   no_key: 'Aucune IA configurée. Ajoutez une clé dans Réglages (⚙).',
+  cle_perso: 'Cette fonction demande votre propre clé gratuite : ajoutez-la dans ⚙ Réglages, la marche à suivre y est expliquée pas à pas. L’IA gratuite du jour sert à lire les étiquettes.',
   limite_gratuite: 'Vous avez utilisé l’IA gratuite d’aujourd’hui (un vin par jour), elle revient demain. Pour l’utiliser sans cette limite, ajoutez votre propre clé gratuite dans ⚙ Réglages : la marche à suivre y est expliquée pas à pas.',
   bad_key: 'Clé IA refusée. Vérifiez-la dans Réglages (⚙).',
   service_gratuit: 'Le service gratuit est momentanément indisponible. Réessayez plus tard, ou ajoutez votre propre clé gratuite dans ⚙ Réglages.',
@@ -292,8 +297,11 @@ async function callProvider(s, prompt, { images = [], signal, onWait, out } = {}
 // on passe tout de suite à la suivante. Le délai d’attente n’est utilisé que s’il ne reste plus d’autre choix.
 // `only` force un fournisseur (test de connexion).
 export async function callJson(prompt, opts = {}) {
-  const list = opts.only ? configured().filter(p => p === opts.only) : usable();
-  if (!list.length) throw { code: gratuitBloque() ? 'limite_gratuite' : 'no_key' };
+  let list = opts.only ? configured().filter(p => p === opts.only) : usable();
+  // Sans clé Gemini personnelle, la clé gratuite partagée ne sert qu’à lire une étiquette (opts.gratuitOk).
+  const sansPerso = !getConfig('gemini').key;
+  if (sansPerso && !opts.gratuitOk) list = list.filter(p => p !== 'gemini');
+  if (!list.length) throw { code: sansPerso && !opts.gratuitOk && !!appareil && gratuitActif() ? 'cle_perso' : gratuitBloque() ? 'limite_gratuite' : 'no_key' };
   let lastErr;
   for (let i = 0; i < list.length; i++) {
     const prov = list[i]; const last = i === list.length - 1;
@@ -338,7 +346,7 @@ export async function scanLabel(file, opts) {
   const prompt = `Image : photo d’une étiquette de vin. Lis-la sans rien inventer. JSON : ${SCHEMA_LABEL}. Si ce n’est pas une étiquette lisible : {"error":true}.`;
   const lire = async (task, think) => {
     const out = { think, maxOut: 500 };
-    const d = await callJson(prompt, { ...opts, images: [blob], task, out });
+    const d = await callJson(prompt, { ...opts, images: [blob], task, out, gratuitOk: true });
     return { d, prov: out.provider };
   };
   const ok = d => d && typeof d === 'object' && !d.error && (d.name || d.dom);

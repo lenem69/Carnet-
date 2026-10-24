@@ -331,6 +331,12 @@
         cave = cave.map(w => ids.get(String(w.id)) || w);
       }
 
+      // L'appel gratuit du jour est réservé à la lecture d'étiquette (page) : jamais utilisé par la passe de fond, qui s'arrête à la bible.
+      if (c.gratuit) {
+        await ecrireMeta(db, 'autoFill', q);
+        return { ok: true, n: 0, bible: bibleMaj.length, why: 'gratuit_reserve' };
+      }
+
       if (now < (q.pauseUntil || 0) || (q.calls || 0) >= MAX_JOUR) {
         await ecrireMeta(db, 'autoFill', q);
         return { ok: true, n: 0, bible: bibleMaj.length, why: 'quota' };

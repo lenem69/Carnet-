@@ -1,15 +1,18 @@
-// Clé gratuite partagée : passe par le proxy avec l’identifiant d’appareil, limite de 1 vin par jour, clé personnelle prioritaire, fenêtre de limite.
+// Clé gratuite partagée : réservée à la lecture d’étiquette ; passe par le proxy avec l’identifiant d’appareil, limite de 1 vin par jour, clé personnelle prioritaire, fenêtre de limite. Fiches, valeur et passe de fond demandent une clé personnelle.
 import {start} from './server.mjs';import * as H from './h.mjs';
 H.deploy();const srv=await start(8123);const b=await H.browser();
 const S=H.suite('Clé gratuite');const T=S.T;
 const PROXY='cave-ia.m-jeanfrancois-morin.workers.dev';
 const G=o=>({json:{candidates:[{content:{parts:[{text:JSON.stringify(o)}]}}]}});
 let mode='ok';
-const ai=async()=>mode==='403'?{status:403,json:{error:'origine_refusee'}}:G({items:[]});
+const ai=async()=>mode==='403'?{status:403,json:{error:'origine_refusee'}}:G({items:[],name:'Cuvée Test',dom:'Domaine Test',year:2019,color:'Rouge',region:'Cornas',grape:'Syrah',lecture:'haute'});
 const r=await H.newPage(b,{ai});const page=r.page;const calls=r.calls;
 const errs=[];page.on('pageerror',e=>errs.push(e.message));
 const lancer=async()=>{await H.click(page,'#fab');await H.sl(300);await H.tapText(page,'#sMenu button','Mettre à jour les fiches');await H.sl(500);const d=await page.evaluate(()=>(document.querySelector('#dlgT')?.textContent||'')+' '+(document.querySelector('#dlgX')?.textContent||'')+' || '+(document.querySelector('#toast,.toast')?.textContent||''));if(!d.includes('Limite du jour')&&!d.includes('Lancer')&&!(await page.evaluate(()=>[...document.querySelectorAll('#dlgB button')].some(b=>b.textContent.includes('Lancer')))))throw new Error('pas de confirmation : '+d);if(!d.includes('Limite du jour'))await page.evaluate(()=>[...document.querySelectorAll('#dlgB button')].find(b=>b.textContent.includes('Lancer')).click());await H.sl(2500);};
 const aujourdhui=()=>new Date().toISOString().slice(0,10);
+const fermer=()=>page.evaluate(()=>document.querySelectorAll('.modal.show').forEach(m=>m.classList.remove('show')));
+const scan=async()=>{await H.click(page,'#fab');await H.pickFiles(page,()=>H.tapText(page,'#sMenu button','Scanner une étiquette'),['fixtures/lab.png']);await H.sl(2200);};
+const texteEcran=()=>page.evaluate(()=>(document.querySelector('#sLog')?.innerText||'')+' || '+(document.querySelector('#toast,.toast')?.textContent||'')+' || '+(document.querySelector('#dlgT')?.textContent||'')+' '+(document.querySelector('#dlgX')?.textContent||''));
 
 await page.goto(H.URL0);await H.sl(900);
 await page.evaluate(async()=>{localStorage.setItem('cave-gratuit','on');localStorage.removeItem('cave-ai');
@@ -19,22 +22,38 @@ await page.evaluate(()=>document.querySelectorAll('.modal.show').forEach(m=>m.cl
 const appareil=await page.evaluate(async()=>{const s=await import('./store.js');return s.getMeta('appareil');});
 T('identifiant d’appareil créé',typeof appareil==='string'&&appareil.length>=16,appareil);
 
-await lancer();
+await scan();
 const c1=calls.find(c=>c.url.includes(PROXY));
-T('sans clé personnelle : appel vers le proxy',!!c1,calls.map(c=>c.url).join(' | '));
+T('sans clé personnelle : la lecture d’étiquette passe par le proxy',!!c1,calls.map(c=>c.url).join(' | '));
 T('appel proxy : identifiant d’appareil et nombre de vins, sans clé Google',c1&&c1.headers['x-appareil']===appareil&&c1.headers['x-unites']==='1'&&!c1.headers['x-goog-api-key'],JSON.stringify(c1&&c1.headers));
 const cpt=await page.evaluate(async()=>{const s=await import('./store.js');return s.getMeta('gratuit');});
 T('compteur du jour : 1 vin compté',cpt&&cpt.vins===1&&cpt.jour===aujourdhui(),JSON.stringify(cpt));
 const r0=await page.evaluate(async()=>(await import('./ai.js')).gratuitReste());
 T('après un vin : plus d’IA gratuite aujourd’hui',r0===0,r0);
+await fermer();
+
+// L'appel gratuit est réservé au scan : fiches, valeur et passe de fond ne l'utilisent jamais, même s'il en reste.
+await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('gratuit',{jour:new Date().toISOString().slice(0,10),vins:0});});
+await page.reload();await H.sl(1500);await fermer();
+const nP=calls.length;
+await page.evaluate(()=>{document.querySelector('#fab').click();});await H.sl(300);
+await H.tapText(page,'#sMenu button','Mettre à jour les fiches');await H.sl(800);
+const ecr=await texteEcran();
+T('fiches sans clé personnelle : aucun appel, message clair vers Réglages',calls.length===nP&&/propre clé/.test(ecr),ecr.slice(0,250));
+const cpt2=await page.evaluate(async()=>{const s=await import('./store.js');return s.getMeta('gratuit');});
+T('fiches sans clé personnelle : l’appel gratuit du jour n’est pas consommé',cpt2&&cpt2.vins===0,JSON.stringify(cpt2));
+await fermer();
+const nP2=calls.length;
+await H.sl(4500);
+T('fiches automatiques sans clé personnelle : aucun appel au proxy',!calls.slice(nP2).some(c=>c.url.includes(PROXY)),calls.slice(nP2).map(c=>c.url).join(' | '));
 
 // Le service gratuit refuse (403) : message clair, qui n'accuse pas une clé que l'utilisateur n'a pas.
 mode='403';
 await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('gratuit',{jour:new Date().toISOString().slice(0,10),vins:0});
   await s.replaceAll([{id:'q',name:'Vin Q',year:2017,qty:1,from:2020,to:2035,src:{from:'user',to:'user'},dom:'D',color:'Rouge',region:'M',grape:'',price:20,created:1,updated:1,story:'',pairings:[],check:false,conf:'',sources:[],note:'',loc:'',tastings:[]}]);});
 await page.reload();await H.sl(1500);
-await page.evaluate(()=>document.querySelectorAll('.modal.show').forEach(m=>m.classList.remove('show')));
-await lancer();
+await fermer();
+await scan();
 const logT=await page.evaluate(()=>document.querySelector('#sLog')?.innerText||'');
 T('service gratuit refusé : message clair, sans « Clé IA refusée »',/service gratuit est momentanément indisponible/.test(logT)&&!/Clé IA refusée/.test(logT),logT.slice(0,300));
 T('service gratuit refusé : le motif du service est affiché',logT.includes('origine_refusee'),logT.slice(0,300));
@@ -58,9 +77,9 @@ await page.evaluate(async()=>{localStorage.removeItem('cave-ai');const s=await i
 await page.reload();await H.sl(1500);
 await page.evaluate(()=>document.querySelectorAll('.modal.show').forEach(m=>m.classList.remove('show')));
 const n1=calls.length;
-await lancer();
+await H.click(page,'#fab');await H.sl(300);await H.tapText(page,'#sMenu button','Scanner une étiquette');await H.sl(3000);
 T('limite atteinte : aucun appel',calls.slice(n1).length===0,calls.slice(n1).length);
-const titre=await page.evaluate(()=>document.querySelector('#dlgT')?.textContent||'');
+const titre=await page.evaluate(()=>(document.querySelector('#dlgT')?.textContent||'')+'');
 T('limite atteinte : fenêtre « Limite du jour atteinte »',titre.includes('Limite du jour atteinte'),titre);
 
 // L'avis de Magic ne consomme jamais la clé gratuite : aucun appel d'avis sans clé personnelle.

@@ -588,7 +588,7 @@ async function saveForm() {
 function finishSave(w, ok, msg) {
   closeSheet('sForm');
   // Le vin qui vient d'être enregistré passe en tête de la passe IA, si l'IA a encore du crédit (la bible reste la base).
-  if (ok && AI.configured().includes('gemini')) { autoPrio = w.id; setTimeout(() => autoStep(), 1500); }
+  if (ok && AI.geminiPerso()) { autoPrio = w.id; setTimeout(() => autoStep(), 1500); }
   S.tab = 'cave'; S.filt = 'Tous'; S.q = ''; $('#q').value = '';
   const pos = L.sortWines(S.wines, S.sort, YEAR).findIndex(x => x.id === w.id);
   if (pos >= S.limit) S.limit = Math.ceil((pos + 1) / PAGE) * PAGE;
@@ -603,7 +603,7 @@ function finishSave(w, ok, msg) {
 async function genInForm() {
   const f = readForm();
   if (!f.name && !f.dom) { errToast('Indiquez au moins le nom ou le domaine.'); F('name').focus(); return; }
-  if (!requireAI()) return;
+  if (!requireAIPerso()) return;
   const b = F('gen'); b.disabled = true; b.textContent = 'Génération en cours…';
   try {
     const d = await AI.makeFiche({ ...f, year: f.year });
@@ -684,7 +684,7 @@ async function onCardAction(e) {
     S.wines[idx] = copie;
     if (await persist(() => store.putWines([copie]))) { render(); toast('Dégustation supprimée.'); } else { S.wines[idx] = w; render(); }
   } else if (a === 'gen') {
-    if (!requireAI()) return;
+    if (!requireAIPerso()) return;
     btn.disabled = true; btn.textContent = 'Génération…';
     try {
       const d = await AI.makeFiche(w);
@@ -707,6 +707,12 @@ function ficheMsg(d) {
 function copieIA(w, d) { return L.applyAi(JSON.parse(JSON.stringify(w)), d); }
 function remplace(w, c) { const i = S.wines.indexOf(w); if (i >= 0) S.wines[i] = c; }
 
+// Fonctions autres que la lecture d'étiquette (fiches, valeur…) : elles demandent une clé personnelle, l'appel gratuit du jour est réservé au scan.
+function requireAIPerso() {
+  if (AI.iaPerso()) return true;
+  if (AI.ready() || AI.limiteAtteinte()) { errToastReglages(AI.errText({ code: 'cle_perso' })); return false; }
+  return requireAI();
+}
 function requireAI() {
   if (AI.ready()) return true;
   if (AI.limiteAtteinte()) { limiteWindow(); return false; }
@@ -863,7 +869,7 @@ async function genererAvis() {
 async function valeurCaveIA() {
   const todo = S.wines.filter(w => w.qty > 0 && !w.estim);
   if (!todo.length) { toast('Toutes les bouteilles sont déjà estimées.'); return; }
-  if (!requireAI()) return;
+  if (!requireAIPerso()) return;
   const calls = Math.ceil(todo.length / 10);
   const c = await ask('Estimer la valeur', `${todo.length} vin(s) à estimer, soit environ ${calls} appel(s) à l’IA. Ce sont des fourchettes indicatives, sans vérification sur le web.`, [
     { label: 'Lancer', value: 'go' }, { label: 'Annuler', value: null, kind: 'o' }]);
@@ -895,8 +901,8 @@ async function valeurCaveIA() {
 async function enrichAll() {
   const todo = S.wines.filter(w => !w.aiPass);
   if (!todo.length) { toast('Toutes les fiches ont déjà été mises à jour par l’IA.'); return; }
-  if (!requireAI()) return;
-  const gemini = AI.configured().includes('gemini');
+  if (!requireAIPerso()) return;
+  const gemini = AI.geminiPerso();
   const calls = Math.ceil(todo.length / 10);
   const c = await ask('Mettre à jour les fiches', `${todo.length} vin(s) à vérifier, soit environ ${calls} appel(s) à l’IA (10 vins par appel). Vous pourrez arrêter à tout moment.`, [
     { label: 'Lancer', value: 'go' }, { label: 'Annuler', value: null, kind: 'o' }]);
@@ -940,7 +946,7 @@ async function findForDish() {
     $('#blist').innerHTML = `<p class="mu small">${note}</p>` + (local.length ? local.map(r => card(r.w, 'boire', r.why)).join('')
       : '<p class="empty">Aucune suggestion : complétez les accords de vos fiches (✨ Fiche) ou configurez une IA dans Réglages.</p>');
   };
-  if (!AI.ready()) { showLocal('Suggestions sans IA, d’après les accords enregistrés et la couleur.'); return; }
+  if (!AI.iaPerso()) { showLocal('Suggestions sans IA, d’après les accords enregistrés et la couleur.'); return; }
   // présélection locale : l'IA ne reçoit que 40 vins au plus, quel que soit la taille de la cave
   const pre = classerPlat(dish, 40).map(r => r.w);
   if (pre.length < 40) {
@@ -1212,8 +1218,9 @@ async function effacerDemo() {
 
 function menuAction(m) {
   const pick = id => { closeSheet('sMenu'); $(id).click(); };
-  if (m === 'cam') { if (requireAI()) pick('#fCam'); }
-  else if (m === 'img') { if (requireAI()) pick('#fImg'); }
+  // Si l'IA n'est pas disponible (limite du jour, pas de clé), le menu se ferme : sinon la fenêtre d'explication attendrait derrière lui.
+  if (m === 'cam') { if (requireAI()) pick('#fCam'); else closeSheet('sMenu'); }
+  else if (m === 'img') { if (requireAI()) pick('#fImg'); else closeSheet('sMenu'); }
   else if (m === 'xls') pick('#fXls');
   else if (m === 'man') openForm(null);
   else if (m === 'demo') chargerDemo();
@@ -1487,7 +1494,7 @@ async function initAuto() {
   try { const m = await store.getMeta('autoFill'); if (m && typeof m === 'object') auto = { ...auto, ...m, tries: { ...(m.tries || {}) } }; } catch (e) { /* valeurs par défaut */ }
   // Sur iPhone, pas de tâche de fond : un rappel discret, au plus une fois par jour, s’il reste beaucoup de fiches à vérifier.
   const jour = new Date().toISOString().slice(0, 10);
-  if (iPhone() && AI.ready() && auto.on && autoTodo().length >= 20 && auto.remindDay !== jour) {
+  if (iPhone() && AI.geminiPerso() && auto.on && autoTodo().length >= 20 && auto.remindDay !== jour) {
     auto.remindDay = jour; autoSave();
     toast('Sur iPhone, ouvrez l’appli pour mettre les fiches à jour.');
   }
@@ -1497,10 +1504,11 @@ async function initAuto() {
 function autoStatus() {
   const base = autoStatusBase();
   const quand = auto.lastOk ? ` Dernière mise à jour : ${new Date(auto.lastOk).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.` : '';
-  return base + quand + (iPhone() && auto.on && AI.ready() ? ' Sur iPhone, ouvrez l’appli pour mettre les fiches à jour.' : '');
+  return base + quand + (iPhone() && auto.on && AI.geminiPerso() ? ' Sur iPhone, ouvrez l’appli pour mettre les fiches à jour.' : '');
 }
 function autoStatusBase() {
   if (!AI.ready()) return 'Inactif : aucune IA configurée.';
+  if (!AI.geminiPerso()) return 'Inactif : ajoutez votre propre clé Gemini gratuite dans ⚙ Réglages.';
   if (!auto.on) return 'Désactivé.';
   const n = autoTodo().length;
   if (!n) return 'Toutes vos fiches sont complètes.';
@@ -1524,7 +1532,7 @@ async function autoStep() {
   } catch (e) { /* lecture impossible : on attend le prochain tour */ return; }
   if (now < auto.pauseUntil || auto.calls >= AUTO_MAX_CALLS) return;
   // Recherche web automatique : Gemini seulement (les autres fournisseurs n'ont pas de recherche web ici).
-  if (!AI.configured().includes('gemini')) return;
+  if (!AI.geminiPerso()) return;
   const todo = autoTodo();
   const premier = todo.find(x => x.id === autoPrio) || todo[0];
   autoPrio = null;
