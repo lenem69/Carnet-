@@ -2,7 +2,7 @@
 import { norm, num, price, uid } from './util.js';
 
 export const COLORS = ['Rouge', 'Blanc', 'Rosé', 'Pétillant', 'Autre'];
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 11;
 
 export function normColor(v) {
   const s = norm(v);
@@ -50,7 +50,7 @@ export function normalizeWine(raw) {
     name = dom; dom = '';
   }
   const now = Date.now();
-  return {
+  const fiche = {
     id: str(raw.id) || uid(),
     name,
     dom,
@@ -83,6 +83,27 @@ export function normalizeWine(raw) {
     created: Number(raw.created) || now,
     updated: Number(raw.updated) || now,
   };
+  reparerFenetre(fiche);
+  return fiche;
+}
+
+// Fenêtre de garde inversée (début après fin) : elle faisait afficher « À garder » et « Passé » sur le même vin.
+// Règle : la valeur saisie par l'utilisateur est gardée, l'autre côté (bible ou IA) est retiré ; sans saisie, on remet les deux dans l'ordre.
+// Modifie la fiche (et son origine src) ; renvoie true si elle a changé.
+export function reparerFenetre(w) {
+  if (!(w.from && w.to && w.from > w.to)) return false;
+  const src = { ...(w.src || {}) };
+  if (src.from === 'user' && src.to !== 'user') { w.to = ''; delete src.to; }
+  else if (src.to === 'user' && src.from !== 'user') { w.from = ''; delete src.from; }
+  else {
+    [w.from, w.to] = [w.to, w.from];
+    const sf = src.from, st = src.to;
+    delete src.from; delete src.to;
+    if (st) src.from = st;
+    if (sf) src.to = sf;
+  }
+  w.src = src;
+  return true;
 }
 
 // Journal de dégustation : { d: 'AAAA-MM-JJ', n: note de 1 à 5 étoiles, c: commentaire }.
@@ -171,7 +192,7 @@ export function applyAi(w, d, now = Date.now()) {
     w[k] = v; src[k] = 'ai';
   }
   w.src = src;
-  if (w.from && w.to && w.from > w.to) [w.from, w.to] = [w.to, w.from];
+  reparerFenetre(w);
   if (d.conf) w.conf = w.conf === 'vérifiée' ? 'vérifiée' : d.conf;
   if (d.sources && d.sources.length) w.sources = d.sources;
   if (d.searched) { w.aiSearch = now; w.aiDoute = []; }
@@ -211,11 +232,13 @@ export function bibleEntry(w, bible) {
 export function prefillFromBible(w, bible) {
   const e = bibleEntry(w, bible);
   if (!e) return false;
-  const src = { ...(w.src || {}) }; let ch = false;
-  if (src.from !== 'user' && w.from !== e.from) { w.from = e.from; src.from = 'bible'; ch = true; }
-  if (src.to !== 'user' && w.to !== e.to) { w.to = e.to; src.to = 'bible'; ch = true; }
-  if (!ch) return false;
+  const avant = { from: w.from, to: w.to, src: JSON.stringify(w.src || {}) };
+  const src = { ...(w.src || {}) };
+  if (src.from !== 'user' && w.from !== e.from) { w.from = e.from; src.from = 'bible'; }
+  if (src.to !== 'user' && w.to !== e.to) { w.to = e.to; src.to = 'bible'; }
   w.src = src;
+  reparerFenetre(w); // une saisie de l'utilisateur d'un côté ne doit pas être contredite par la bible de l'autre
+  if (w.from === avant.from && w.to === avant.to && JSON.stringify(w.src) === avant.src) return false;
   if (!w.conf) w.conf = 'estimée';
   return true;
 }

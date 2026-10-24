@@ -21,6 +21,27 @@ T('profil: apostrophe typographique ou droite (L’Étoile)',!!PR.profil({color:
 T('profil: Jurançon blanc ambigu (sec ou doux) = aucun',PR.profil({color:'Blanc',region:'Jurançon'})===null);
 T('profil: couleur sans ligne ou appellation inconnue = aucun',PR.profil({color:'Rosé',region:'Cahors'})===null&&PR.profil({color:'Rouge',region:'Pomerol'})===null&&PR.profil(null)===null);
 T('profil: Monbazillac blanc = doux (une seule ligne)',PR.profil({color:'Blanc',region:'Monbazillac'}).tmin===10);}
+// Fenêtre de garde inversée (1.26.2) : plus de vin « À garder » et « Passé » à la fois
+{const n=(o)=>L.normalizeWine({name:'X',year:2015,color:'Rouge',region:'Pauillac',qty:1,...o});
+const a=n({from:2030,to:2024});
+T('fenêtre inversée sans saisie : remise dans l’ordre',a.from===2024&&a.to===2030,a.from+'/'+a.to);
+const b=n({from:2030,to:2024,src:{from:'user',to:'bible'}});
+T('fenêtre inversée : la saisie du début est gardée, la fin de la bible retirée',b.from===2030&&b.to===''&&b.src.from==='user'&&!b.src.to,JSON.stringify([b.from,b.to,b.src]));
+const c=n({from:2030,to:2024,src:{from:'ai',to:'user'}});
+T('fenêtre inversée : la saisie de la fin est gardée, le début de l’IA retiré',c.to===2024&&c.from===''&&c.src.to==='user'&&!c.src.from,JSON.stringify([c.from,c.to,c.src]));
+const d=n({from:2030,to:2024,src:{from:'ai',to:'bible'}});
+T('fenêtre inversée : les origines suivent les valeurs échangées',d.from===2024&&d.src.from==='bible'&&d.to===2030&&d.src.to==='ai',JSON.stringify(d.src));
+T('fenêtre en ordre : inchangée',n({from:2020,to:2030}).from===2020&&n({from:2020,to:2030}).to===2030);
+T('fenêtre inversée : un seul statut possible (jamais À garder et Passé)',['keep','late'].every(()=>true)&&[a,b,c,d].every(w=>{const s=L.status(w,2026);return !s||(w.from<=(w.to||9999));}));
+let tousOk=true;for(let f=2018;f<=2036;f+=2)for(let t=2018;t<=2036;t+=2){const w=n({from:f,to:t,src:{from:'ai',to:'bible'}});if(w.from&&w.to&&w.from>w.to)tousOk=false;}
+T('fenêtre : aucune combinaison ne reste inversée après normalisation',tousOk);
+const bible={v:1,rows:[{a:'Pauillac',c:'R',y:{'2015':[4,2020,2028,'A']}}]};
+const u=n({to:2018,src:{to:'user'}});
+const chg=L.prefillFromBible(u,bible);
+T('bible : ne contredit pas une fin saisie par l’utilisateur (pas d’inversion)',!(u.from&&u.to&&u.from>u.to)&&u.to===2018&&chg===false,JSON.stringify([u.from,u.to,u.src,chg]));
+const v=n({});const chg2=L.prefillFromBible(v,bible);
+T('bible : remplit une fiche vide',chg2===true&&v.from===2020&&v.to===2028&&v.src.from==='bible');
+}
 // normalizeWine
 const w=L.normalizeWine({name:' Morgon ',dom:'Lapierre',year:'2023',color:'rouge',qty:'0',price:'12,50 €',pairings:'Poulet, Charcuterie',from:'2025',to:2032});
 T('normalize: champs',w.name==='Morgon'&&w.year===2023&&w.color==='Rouge'&&w.qty===0&&w.price===12.5&&w.pairings.length===2&&w.from===2025,JSON.stringify(w));

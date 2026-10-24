@@ -8,7 +8,7 @@ import { saveFile, readText } from './files.js';
 import * as Stats from './stats.js';
 import * as Notes from './notes.js';
 import { demoWines, isDemo } from './demo.js';
-import { apogee, apogeeTexte, apogeeCourte, serviceTexte } from './apogee.js';
+import { apogee, apogeeTexte, serviceTexte } from './apogee.js';
 import { profil } from './profils.js';
 import { chiffres, statutOf } from './chiffres.js';
 const STATUT_LIBELLE = { pret: 'Prêt à boire', garder: 'À garder', urgence: 'Urgence' };
@@ -243,13 +243,12 @@ function card(w, mode, why) {
   const tags2 = [
     w.conf === 'estimée' ? '<span class="tag wa">fiche estimée</span>' : '',
     w.conf === 'vérifiée' ? '<span class="tag ok">fiche vérifiée</span>' : '',
-    w.src && w.src.from === 'bible' ? '<span class="tag">apogée d’après la bible</span>' : '',
+    w.src && w.src.from === 'bible' ? '<span class="tag">garde d’après la bible</span>' : '',
   ].filter(Boolean).join(' · ');
   const hasFiche = w.story || w.pairings.length || w.note || w.sources.length;
   // Apogée estimée par la règle de l'appli (sans IA) : affichée dans la fiche du vin.
   const apoA = w.name ? apogee(w, YEAR) : null;
   const apo = apoA ? apogeeTexte(apoA) : '';
-  const apoRappel = apoA ? apogeeCourte(apoA) : '';
   const svc = w.name ? serviceTexte(w) : '';
   const pf = w.name ? profil(w) : null;
   const repAppel = pf ? `Repères de l’appellation ${pf.appellation} (indicatifs) : ${[!w.grape ? 'cépages ' + pf.cepages : '', !w.pairings.length ? 'accords classiques : ' + pf.accords : ''].filter(Boolean).join(' ; ')}.` : '';
@@ -261,7 +260,7 @@ function card(w, mode, why) {
   ${why ? `<p class="why">💡 ${esc(why)}</p>` : ''}
   <div class="row"><div><h4>${esc(w.name)}${w.year ? ' ' + esc(w.year) : ''}</h4><p>${esc([w.dom, w.region].filter(Boolean).join(' · '))}</p></div>${qty}</div>
   ${meta || tags ? `<div class="ml">${meta ? `<p class="mm">${meta}</p>` : ''}${tags ? `<p class="stl">${tags}</p>` : ''}</div>` : ''}
-  <div class="fr">${hasFiche || apo || svc || tags2 ? `<details><summary>Fiche et accords</summary>${tags2 || apoRappel ? `<p class="mu small sec">${[tags2, apoRappel ? esc(apoRappel) : ''].filter(Boolean).join(' · ')}</p>` : ''}${degLigne(w)}${apo ? `<p class="mu small">${esc(apo)}</p>` : ''}${svc ? `<p class="mu small">${esc(svc)}</p>` : ''}${repAppel && (!w.grape || !w.pairings.length) ? `<p class="mu small">${esc(repAppel)}</p>` : ''}${majIA.length ? `<p class="mu small">Mis à jour par l’IA : ${esc(majIA.join(', '))}.</p>` : ''}${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : degLigne(w) + journalHtml(w, mode)}<button class="am" type="button" data-a="menu" aria-haspopup="dialog">⋯ Actions</button></div>
+  <div class="fr">${hasFiche || apo || svc || tags2 ? `<details><summary>Fiche et accords</summary>${tags2 ? `<p class="mu small sec">${tags2}</p>` : ''}${degLigne(w)}${apo ? `<p class="mu small">${esc(apo)}</p>` : ''}${svc ? `<p class="mu small">${esc(svc)}</p>` : ''}${repAppel && (!w.grape || !w.pairings.length) ? `<p class="mu small">${esc(repAppel)}</p>` : ''}${majIA.length ? `<p class="mu small">Mis à jour par l’IA : ${esc(majIA.join(', '))}.</p>` : ''}${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : degLigne(w) + journalHtml(w, mode)}<button class="am" type="button" data-a="menu" aria-haspopup="dialog">⋯ Actions</button></div>
   <div class="acts-h" hidden>${!w.story && !w.pairings.length ? '<button data-a="gen" type="button">✨ Fiche (IA)</button>' : ''}<button data-a="e" type="button">Modifier</button>${mode === 'cave' ? '<button data-a="d" type="button">Supprimer</button>' : ''}</div>
 </div>`;
 }

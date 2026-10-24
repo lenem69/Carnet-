@@ -59,7 +59,7 @@
       w[k] = v; src[k] = 'ai';
     }
     w.src = src;
-    if (w.from && w.to && w.from > w.to) { const t = w.from; w.from = w.to; w.to = t; }
+    reparerFenetre(w);
     if (d.conf) w.conf = w.conf === 'vérifiée' ? 'vérifiée' : d.conf;
     if (d.sources && d.sources.length) w.sources = d.sources;
     if (d.searched) { w.aiSearch = now || Date.now(); w.aiDoute = []; }
@@ -84,12 +84,30 @@
   function bibleGarde(w, bible) {
     const e = bibleEntry(w, bible);
     if (!e) return false;
-    const src = { ...(w.src || {}) }; let ch = false;
-    if (src.from !== 'user' && w.from !== e.from) { w.from = e.from; src.from = 'bible'; ch = true; }
-    if (src.to !== 'user' && w.to !== e.to) { w.to = e.to; src.to = 'bible'; ch = true; }
-    if (!ch) return false;
+    const avant = { from: w.from, to: w.to, src: JSON.stringify(w.src || {}) };
+    const src = { ...(w.src || {}) };
+    if (src.from !== 'user' && w.from !== e.from) { w.from = e.from; src.from = 'bible'; }
+    if (src.to !== 'user' && w.to !== e.to) { w.to = e.to; src.to = 'bible'; }
     w.src = src;
+    reparerFenetre(w);
+    if (w.from === avant.from && w.to === avant.to && JSON.stringify(w.src) === avant.src) return false;
     if (!w.conf) w.conf = 'estimée';
+    return true;
+  }
+  // Même règle que logic.js › reparerFenetre : fenêtre de garde inversée remise en ordre (la saisie de l'utilisateur est gardée).
+  function reparerFenetre(w) {
+    if (!(w.from && w.to && w.from > w.to)) return false;
+    const src = { ...(w.src || {}) };
+    if (src.from === 'user' && src.to !== 'user') { w.to = ''; delete src.to; }
+    else if (src.to === 'user' && src.from !== 'user') { w.from = ''; delete src.from; }
+    else {
+      [w.from, w.to] = [w.to, w.from];
+      const sf = src.from, st = src.to;
+      delete src.from; delete src.to;
+      if (st) src.from = st;
+      if (sf) src.to = sf;
+    }
+    w.src = src;
     return true;
   }
 
