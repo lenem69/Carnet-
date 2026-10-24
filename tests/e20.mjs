@@ -53,6 +53,12 @@ const nP2=calls.length;
 await H.sl(4500);
 T('fiches automatiques sans clé personnelle : aucun appel au proxy ni au relais (hors avis de Magic)',!calls.slice(nP2).some(c=>c.url.includes(PROXY)||(c.url.includes(RELAIS)&&!JSON.stringify(c.body).includes('Voici le résumé chiffré'))),calls.slice(nP2).map(c=>c.url).join(' | '));
 
+// Réglages sans clé personnelle, relais disponible : s'ouvrent sans erreur (régression 1.27.0).
+await page.evaluate(()=>document.querySelector('#bSet').click());await H.sl(700);
+const regl=await page.evaluate(()=>({n:document.querySelectorAll('#ai-prov option').length,t:(document.querySelector('#ai-prov')||{}).value}));
+T('Réglages sans clé personnelle (relais disponible) : ouverture sans erreur',errs.length===0&&regl.n>=3&&regl.t!=='groq',JSON.stringify(regl)+' '+errs.join(' / '));
+await fermer();
+
 // Relais épuisé (10 vins) : fenêtre d'invitation à saisir sa clé, aucun appel.
 await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('relais',{jour:new Date().toISOString().slice(0,10),vins:10});});
 await page.reload();await H.sl(1500);await fermer();

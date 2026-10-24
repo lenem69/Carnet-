@@ -1098,7 +1098,7 @@ function fillAiFields(provider) {
 }
 // Liste des fournisseurs (✓ = clé enregistrée) et phrase expliquant le choix automatique.
 function renderAiChoices(selected) {
-  const on = AI.configured();
+  const on = AI.configuredKeys();
   $('#ai-prov').innerHTML = AI.ORDER.map(k => `<option value="${k}">${esc(AI.PROVIDERS[k].label)}${on.includes(k) ? ' ✓' : ''}</option>`).join('');
   $('#ai-prov').value = selected;
   $('#ai-auto').textContent = on.length > 1
@@ -1158,7 +1158,7 @@ function saveAi(silent) {
 async function testAi() {
   if (!saveAi(true)) return;
   const prov = $('#ai-prov').value;
-  if (!AI.configured().includes(prov)) { errToast('Saisissez d’abord une clé pour ce fournisseur.'); return; }
+  if (!AI.configuredKeys().includes(prov)) { errToast('Saisissez d’abord une clé pour ce fournisseur.'); return; }
   const b = $('#ai-test'); b.disabled = true; b.textContent = 'Test en cours…';
   try { const ok = await AI.testKey({ only: prov }); ok ? toast('✅ Connexion à l’IA réussie.') : errToast('Réponse inattendue de l’IA. Vérifiez le modèle.'); }
   catch (e) { errToast(AI.errText(e)); }
@@ -1598,7 +1598,7 @@ async function autoStep() {
 /* ============ Statistiques anonymes (facultatives) ============ */
 const statsExtra = () => ({
   wines: S.wines.length,
-  iaKeys: AI.configured().length,
+  iaKeys: AI.configuredKeys().length,
   daysSinceBackup: S.lastBackup ? Math.floor((Date.now() - S.lastBackup) / 864e5) : -1,
 });
 async function initStats() {

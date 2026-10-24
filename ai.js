@@ -100,7 +100,7 @@ async function compter(n) {
 export const configured = () => { const l = ORDER.filter(p => (p === 'gemini' ? !!modeGemini() : getConfig(p).key)); if (relaisDispo()) l.push('groq'); return l; };
 export function getSettings() {
   const r = readRaw();
-  const provider = r.provider || configured()[0] || 'gemini';
+  const provider = r.provider || configured().find(p => p !== 'groq') || 'gemini';
   return { provider, ...getConfig(provider) };
 }
 export function setSettings(s) {
@@ -118,6 +118,8 @@ export function syncCfg() {
   try { store.setMeta('gratuitOn', gratuitActif()).catch(() => {}); } catch (e) { /* sans effet */ }
 }
 export const ready = () => configured().length > 0;
+// Fournisseurs que l'utilisateur voit et règle (le relais offert n'en fait pas partie).
+export const configuredKeys = () => configured().filter(p => p !== 'groq');
 // La lecture gratuite d’étiquette du jour est utilisée et aucune clé personnelle.
 export const limiteAtteinte = () => gratuitBloque();
 // Lecture d’étiquette possible : Gemini (clé perso ou lecture gratuite du jour), Claude ou compatible OpenAI. Le relais n’a pas de vision.
