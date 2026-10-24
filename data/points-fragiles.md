@@ -3,7 +3,7 @@
 *Tenu à jour au fil de la constitution (23 octobre 2026). Bible assemblée : 412 appellations, 5 880 lignes, fiabilité A 23 % / B 52 % / C 24 %. Rien de ce qui est listé ici ne doit être présenté à l'utilisateur comme certain. Les lignes de fiabilité C ne sont pas affichées dans l'appli ; A et B le sont avec la mention « estimation ».*
 
 ## 1. Limites générales (valables pour toutes les zones)
-- **Fenêtres d'apogée** (`apogee_debut`, `apogee_fin`) : **modélisées** par règle (type de vin × qualité), jamais lues dans une source. À remplacer progressivement par des données sourcées (guides de garde, dégustations récentes sur La Passion du Vin / CellarTracker).
+- **Fenêtres d'apogée et de dégustation** (`apogee_debut`, `apogee_fin`, désormais la fenêtre de dégustation) : **calculées** par `apogee.js` (pic par appellation, largeur selon la catégorie du vin, note du millésime), jamais lues dans une source ; voir `data/METHODE-FENETRES.md`. À remplacer progressivement par des données sourcées (guides de garde, dégustations récentes sur La Passion du Vin / CellarTracker).
 - **Notes par appellation** : la plupart des sources ne notent que la région ; les différences entre appellations viennent souvent de commentaires de producteurs ou de la connaissance. À consolider appellation par appellation avec des sources indépendantes.
 - **Avis 2024 et 2025** : provisoires (primeurs, bilans de vendanges, avis de producteurs). À revérifier en 2027, à la mise en bouteille.
 - **Sites non lus ou illisibles pendant la constitution** : Vinatis, Millésima, V and B, CellarTracker (souvent), Comptoir des Millésimes (partiel), tableau Hachette 2005-2013 (en-têtes en images), Viniphile (grille en image). Les relire quand ils sont accessibles.

@@ -227,6 +227,11 @@ export function bibleEntry(w, bible) {
   if (!Array.isArray(cell) || typeof cell[0] !== 'number') return null;
   return { q: cell[0], from: cell[1], to: cell[2], f: cell[3] };
 }
+// Note du millésime (1 à 5) dans la bible pour cette fiche, ou undefined : sert à décaler l'apogée (voir apogee.js).
+export function bibleQuality(w, bible) {
+  const e = bibleEntry(w, bible);
+  return e ? e.q : undefined;
+}
 // Bible d'abord, à l'entrée d'un vin : la garde vient de la bible, sauf une garde saisie par l'utilisateur (origine « user »).
 // Retourne true si la fiche a changé.
 export function prefillFromBible(w, bible) {

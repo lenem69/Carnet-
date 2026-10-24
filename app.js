@@ -247,7 +247,7 @@ function card(w, mode, why) {
   ].filter(Boolean).join(' · ');
   const hasFiche = w.story || w.pairings.length || w.note || w.sources.length;
   // Apogée estimée par la règle de l'appli (sans IA) : affichée dans la fiche du vin.
-  const apoA = w.name ? apogee(w, YEAR) : null;
+  const apoA = w.name ? apogee(w, YEAR, L.bibleQuality(w, S.bible)) : null;
   const apo = apoA ? apogeeTexte(apoA) : '';
   const svc = w.name ? serviceTexte(w) : '';
   const pf = w.name ? profil(w) : null;
@@ -363,7 +363,7 @@ function renderList() {
 // null = pas de fenêtre (vin sans millésime ni garde).
 function fenetreDe(w) {
   if (w.from || w.to) return { from: w.from || null, to: w.to || null };
-  const a = apogee(w, YEAR);
+  const a = apogee(w, YEAR, L.bibleQuality(w, S.bible));
   return a.sansMillesime ? null : { from: a.from, to: a.to };
 }
 // Copie du vin avec la fenêtre effective, pour le classement seulement (la fiche garde ses données d'origine).
@@ -384,7 +384,7 @@ function renderBoire() {
   let items;
   if (S.bmode === 'apogee') {
     // Vins dont la fenêtre d'apogée contient l'année en cours, du pic le plus proche au plus lointain.
-    items = stock.map(w => ({ w, a: apogee(w, YEAR) }))
+    items = stock.map(w => ({ w, a: apogee(w, YEAR, L.bibleQuality(w, S.bible)) }))
       .filter(x => !x.a.sansMillesime && x.a.from <= YEAR && YEAR <= x.a.to)
       .sort((x, y) => x.a.pic - y.a.pic || (x.w.name || '').localeCompare(y.w.name || '', 'fr'));
   } else {

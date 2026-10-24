@@ -400,30 +400,33 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
     T('bible de fond = logique de la page : ' + raw.name, ra === rb && pick(a) === pick(b), JSON.stringify([pick(a), pick(b)]));
   }
   {
-    // Cohérence : pour chaque ligne de la bible (y compris les regroupements), l'apogée de chaque appellation membre reste dans la fenêtre de dégustation, sans correction.
+    // Cohérence : pour chaque ligne de la bible (une ligne par appellation), l'apogée calculée avec la note du millésime reste dans la fenêtre de dégustation, sans correction.
     const bib = JSON.parse(fs.readFileSync(new URL('../bible/bible.json', import.meta.url), 'utf8'));
-    const grp = {};
-    for (const f of fs.readdirSync(new URL('../data/zones/', import.meta.url)).filter(f => /regroupements/.test(f))) for (const l of fs.readFileSync(new URL('../data/zones/' + f, import.meta.url), 'utf8').split('\n').slice(1)) { if (!l.trim()) continue; const [g, a] = l.split('\t'); grp[g] = a.split(';').map(x => x.trim()).filter(Boolean); }
     const CC = { R: 'Rouge', B: 'Blanc', D: 'Blanc', E: 'Pétillant' };
-    let hors = [], longues = [];
+    let hors = [], longues = [], n = 0;
     for (const r of bib.rows) for (const [y, cell] of Object.entries(r.y)) {
-      const [, from, to] = cell;
-      for (const m of (grp[r.a] || [r.a])) {
-        const a = A.apogee({ name: m, dom: '', region: m, color: CC[r.c], year: Number(y), from, to }, 2026);
-        if (a.ajuste || a.from < from || a.to > to) hors.push(m + ' ' + y);
-      }
+      const [q, from, to] = cell; n++;
+      const a = A.apogee({ name: r.a, dom: '', region: r.a, color: CC[r.c], year: Number(y), from, to }, 2026, q);
+      if (a.ajuste || a.from < from || a.to > to) hors.push(r.a + ' ' + y);
       if (to - from > 25) longues.push(r.a + ' ' + y + ' ' + (to - from));
     }
-    T('cohérence : apogée de chaque appellation toujours dans la fenêtre de dégustation (bible, regroupements inclus)', hors.length === 0, hors.slice(0, 8).join(', '));
+    T('cohérence : apogée (avec la note du millésime) toujours dans la fenêtre de dégustation, ' + n + ' millésimes', hors.length === 0, hors.slice(0, 8).join(', '));
     T('cohérence : aucune fenêtre de dégustation de plus de 25 ans', longues.length === 0, longues.slice(0, 8).join(', '));
+    // Les appellations regroupées dans la bible ont chacune leur ligne : l'appli cherche une appellation par son nom exact.
+    const trouve = (region, color, year) => L.bibleEntry({ name: 'X', dom: 'D', region, color, year, src: {} }, bib);
+    const manquants = [['Haut-Médoc', 'Rouge'], ['Médoc', 'Rouge'], ['Listrac-Médoc', 'Rouge'], ['Sauternes', 'Blanc'], ['Barsac', 'Blanc'], ['Nuits-Saint-Georges', 'Rouge']].filter(([r, c]) => !trouve(r, c, 2015));
+    T('regroupements : Haut-Médoc, Médoc, Listrac, Sauternes, Barsac trouvent leur fenêtre', manquants.length === 0, JSON.stringify(manquants));
   }
   {
-    // Qualité du millésime : une note faible raccourcit la fin de la fenêtre, une note forte la prolonge ; l'apogée reste dedans.
-    const w = { name: 'Morgon', dom: '', region: 'Morgon', color: 'Rouge', year: 2015 };
-    const f1 = A.fenetreGarde(w, 1), f5 = A.fenetreGarde(w, 5);
-    const ap = A.apogee({ ...w }, 2026);
-    T('qualité : note 1 raccourcit la garde, note 5 la prolonge', f1.to < f5.to, JSON.stringify([f1, f5]));
-    T('qualité : l’apogée reste dans la fenêtre quelle que soit la note', [f1, f5].every(f => f.from <= ap.from && f.to >= ap.to), JSON.stringify([f1, f5, ap.from, ap.to]));
+    // Qualité du millésime : une note faible avance le pic et raccourcit la fenêtre, une note forte la recule et la prolonge ; l'apogée reste dedans.
+    const w = { name: 'Pauillac', dom: '', region: 'Pauillac', color: 'Rouge', year: 2013 };
+    const f2 = A.fenetreGarde(w, 2), f3 = A.fenetreGarde(w, 3), f5 = A.fenetreGarde(w, 5);
+    const a2 = A.apogee(w, 2026, 2), a3 = A.apogee(w, 2026, 3), a5 = A.apogee(w, 2026, 5);
+    T('qualité : note faible → pic plus tôt, note forte → pic plus tard', a2.pic < a3.pic && a3.pic < a5.pic, JSON.stringify([a2.pic, a3.pic, a5.pic]));
+    T('qualité : note faible → garde plus courte, note forte → garde plus longue', f2.to < f3.to && f3.to < f5.to, JSON.stringify([f2, f3, f5]));
+    T('qualité : l’apogée reste dans la fenêtre quelle que soit la note', [[f2, a2], [f3, a3], [f5, a5]].every(([f, a]) => f.from <= a.from && f.to >= a.to), JSON.stringify([f2, a2.from, a2.to, f5, a5.from, a5.to]));
+    T('qualité : la note 4 (bon millésime) est la référence, sans note le calcul est inchangé', A.apogee(w, 2026).pic === A.apogee(w, 2026, 4).pic && A.apogee(w, 2026, undefined).pic === 2013 + 13);
+    T('qualité : un grand millésime de Pauillac se garde plus de 20 ans, un millésime faible moins de 20', f5.to - 2013 > 20 && f2.to - 2013 < 20, JSON.stringify([f2.to, f5.to]));
   }
   console.log(out.slice(o0).join('\n'));
 }

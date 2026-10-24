@@ -108,9 +108,15 @@ export function refTable(w) {
   return e ? { ans: e[0], fiab: e[1], min: e[2], max: e[3] } : null;
 }
 
-// Calcule l'apogée d'un vin. annee = année en cours (pour le statut).
+// Qualité du millésime (note 1 à 5 de la bible) : un millésime faible atteint son pic plus tôt, un grand millésime plus tard.
+// Les durées de référence (règles et table) valent pour un bon millésime (note 4) : c'est la référence neutre.
+// L'écart est proportionnel à la durée de vie du vin (un grand vin de garde bouge de plusieurs années, un vin léger d'une seule).
+const DECALAGE_PIC = { 1: -0.4, 2: -0.28, 3: -0.12, 4: 0, 5: 0.1 };
+export const decalageQualite = (ans, q) => Math.round(ans * (DECALAGE_PIC[Number(q)] ?? 0));
+
+// Calcule l'apogée d'un vin. annee = année en cours (pour le statut). qualite = note du millésime dans la bible (facultative).
 // Renvoie { pic, from, to, statut, regle, ans, sansMillesime }.
-export function apogee(w, annee = new Date().getFullYear()) {
+export function apogee(w, annee = new Date().getFullYear(), qualite) {
   const texte = texteVin(w);
   // Sans millésime (ex. Champagne brut non millésimé) : prêt à boire dès maintenant.
   const millesime = Number(w.year);
@@ -155,7 +161,8 @@ export function apogee(w, annee = new Date().getFullYear()) {
   else r = REGLES.autre;
 
   const L = largeur(r);
-  let pic = millesime + r.ans;
+  const ansEff = Math.max(1, r.ans + decalageQualite(r.ans, qualite));
+  let pic = millesime + ansEff;
   let from = pic - L.h; let to = pic + L.h;
   // Cohérence : l'apogée ne sort jamais de la fenêtre de garde enregistrée (saisie, bible ou IA).
   // Si la règle tombe en dehors, le pic est ramené dans la fenêtre et la période d'apogée est recoupée avec elle.
@@ -172,7 +179,7 @@ export function apogee(w, annee = new Date().getFullYear()) {
     }
   }
   const statut = annee < from ? 'À garder' : annee > to ? 'Urgence' : 'Prêt à boire';
-  return { pic, from, to, statut, regle: r.label, ans: r.ans, sansMillesime: false, ajuste, cat: L.cat, avant: L.avant, apres: L.apres };
+  return { pic, from, to, statut, regle: r.label, ans: ansEff, ansRegle: r.ans, sansMillesime: false, ajuste, cat: L.cat, avant: L.avant, apres: L.apres };
 }
 
 // Largeur de la période d'apogée autour du pic, et marge de la fenêtre de dégustation avant et après (années).
@@ -183,21 +190,21 @@ export function largeur(r) {
   // La marge après l'apogée est proportionnelle à la durée de vie du vin : un grand vin de garde reste agréable bien après son pic.
   if (ans >= 20) return { cat: 'longue', h: 4, avant: 4, apres: 6 };
   if (ans >= 12) return { cat: 'prestige', h: 3, avant: 3, apres: Math.min(12, Math.round(ans * 0.8)) };
-  if (ans >= 8) return { cat: 'structure', h: 2, avant: 2, apres: Math.round(ans * 0.7) };
+  if (ans >= 8) return { cat: 'structure', h: 2, avant: 2, apres: Math.round(ans * 0.9) };
   if (ans <= 3) return { cat: 'leger', h: 1, avant: 1, apres: 2 };
   return { cat: 'courant', h: 2, avant: 2, apres: ans >= 6 ? 4 : 3 };
 }
 
 // Fenêtre de dégustation proposée (garde) pour un vin : contient la période d'apogée. Sans millésime : null.
-// La qualité du millésime (note 1 à 5 de la bible) allonge ou raccourcit la fin de la fenêtre de dégustation :
+// La qualité du millésime (note 1 à 5 de la bible) décale le pic (voir apogee) et allonge ou raccourcit la fin de la fenêtre :
 // 1 ou 2 : vin qui s'essouffle plus vite ; 4 ou 5 : vin qui tient plus longtemps. L'apogée elle-même n'est jamais coupée.
 // L'effet est proportionnel à la durée de vie du vin (un grand vin de garde gagne ou perd plus d'années qu'un vin courant).
-const FACTEUR_QUALITE = { 1: -0.25, 2: -0.12, 3: 0, 4: 0.1, 5: 0.2 };
+const FACTEUR_APRES = { 1: -0.55, 2: -0.45, 3: -0.2, 4: 0, 5: 0.15 };
 export function fenetreGarde(w, qualite = 3) {
-  const a = apogee({ ...w, from: null, to: null });
+  const a = apogee({ ...w, from: null, to: null }, undefined, qualite);
   if (a.sansMillesime) return null;
   const debut = Math.max(Number(w.year) + 1, a.from - a.avant);
-  const delta = Math.round(a.ans * (FACTEUR_QUALITE[Number(qualite)] ?? 0));
+  const delta = Math.round(a.ansRegle * (FACTEUR_APRES[Number(qualite)] ?? 0));
   const apres = Math.max(0, a.apres + delta);
   const fin = a.to + apres;
   return { from: Math.min(debut, a.from), to: Math.max(fin, a.to) };
