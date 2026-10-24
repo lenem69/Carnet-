@@ -370,7 +370,7 @@ export async function scanLabel(file, opts) {
     timing: { prep: Math.round(prep), appel: Math.round(appel), precis } };
 }
 
-export async function makeFiche(w, opts = {}) {
+async function ficheAvecRecherche(w, opts = {}) {
   const year = new Date().getFullYear();
   // Recherche web seulement chez Gemini ; chez un autre fournisseur, la fiche reste une estimation.
   const ask = s => { const web = s.provider === 'gemini'; return `${EXPERT} ${web ? 'Utilise la recherche web et croise plusieurs sources fiables : site du domaine, guides et revues (RVF, Bettane+Desseauve, Parker, Decanter), forums spécialisés (La Passion du Vin, CellarTracker…), sites de vente en ligne avec fiches produit (Vinatis, V and B, Millésima, Idealwine…), cavistes et notes de dégustation. Compare les fenêtres de garde données par ces sources puis complète la fiche' : 'Complète la fiche de ce vin avec tes connaissances (estime si la cuvée t’est inconnue, sans inventer de faits précis)'} : ${JSON.stringify({ name: w.name, dom: w.dom, year: w.year, color: w.color, region: w.region })}. Nous sommes en ${year}. Ne donne jamais une date de garde précise sans base : en cas de doute, élargis la fourchette et mets conf à « estimée » ; ne retiens « vérifiée » que si au moins deux sources concordent ou si la source est le domaine lui-même. Réponds uniquement par un objet JSON de ce format : ${SCHEMA_FICHE}.`; };
@@ -390,6 +390,27 @@ export async function makeFiche(w, opts = {}) {
   f.sources = sources;
   f.searched = !!out.searched;
   f.fallback = !!out.fallback;
+  return f;
+}
+
+// Fiche d'un seul vin : recherche web d'abord ; si elle échoue (réponse illisible, service, réseau) ou revient vide,
+// on utilise la même méthode que la mise à jour groupée (sans recherche web), qui est la plus fiable.
+export async function makeFiche(w, opts = {}) {
+  const sansRecherche = async () => {
+    const res = await makeFiches([{ ...w, id: '1' }], opts);
+    const f = res.get('1');
+    if (!f) throw { code: 'invalid_json' };
+    f.searched = false; f.fallback = true;
+    return f;
+  };
+  let f;
+  try { f = await ficheAvecRecherche(w, opts); }
+  catch (e) {
+    const c = e && e.code;
+    if (!e || e.name === 'AbortError' || !['invalid_json', 'server', 'network', 'blocked'].includes(c)) throw e;
+    return sansRecherche();
+  }
+  if (!f.story && !f.pairings.length && !f.grape) { try { return await sansRecherche(); } catch (e) { return f; } }
   return f;
 }
 
