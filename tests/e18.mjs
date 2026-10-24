@@ -5,7 +5,7 @@ const S=H.suite('Avis sur l’équilibre');const T=S.T;
 let mode='ok', n=0;
 const G=o=>({json:{candidates:[{content:{parts:[{text:JSON.stringify(o)}]}}]}});
 const ai=async c=>{
-  if(!JSON.stringify(c.body).includes('Voici un résumé'))return G({});
+  if(!JSON.stringify(c.body).includes('Voici le résumé chiffré'))return G({});
   n++;
   if(mode==='quota')return {status:429,json:{error:{message:'quota'}}};
   return G({court:'Cave plutôt rouge, il lui manque des blancs. Essai '+n+'.',complet:'Détail complet '+n+'.'});

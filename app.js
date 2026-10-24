@@ -443,7 +443,16 @@ function bilanHtml(c) {
   const complet = avisMem && avisMem.complet;
   let avisHtml;
   if (avisEnCours && !court) avisHtml = '<span class="mu">Lecture de la cave…</span>';
-  else if (court) avisHtml = `${esc(court)}${complet ? `<details class="avis-complet"><summary>Avis complet</summary><p>${esc(complet)}</p></details>` : ''}<span class="mu small">Avis du ${new Date(avisMem.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} · impression, sans vérification${avisEnCours ? ' · mise à jour en cours' : ''}${avisMem.erreur ? ' · mise à jour impossible : ' + esc(avisMem.erreur) : ''}</span>`;
+  else if (court) {
+    const m = avisMem, struct = !!(m.solide || m.manque || m.priorite);
+    const date = new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const pied = `<span class="mu small">Avis du ${date} · impression, sans vérification${avisEnCours ? ' · mise à jour en cours' : ''}${m.erreur ? ' · mise à jour impossible : ' + esc(m.erreur) : ''}</span>`;
+    const detail = complet ? `<details class="avis-complet"><summary>Avis complet</summary><p>${esc(complet)}</p></details>` : '';
+    const bloc = (cls, titre, items) => items && items.length ? `<section class="ab ${cls}"><h4>${titre}</h4><ul>${items.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : '';
+    avisHtml = struct
+      ? `<p class="avis-lead">${esc(court)}</p>${m.cles && m.cles.length ? `<ul class="cles">${m.cles.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}${bloc('ab-ok', 'Ce qui est solide', m.solide)}${bloc('ab-wa', 'Ce qui manque', m.manque)}${bloc('ab-pr', 'À acheter ou faire en priorité', m.priorite)}${detail}${pied}`
+      : `${esc(court)}${detail}${pied}`;
+  }
   else if (avisMem && avisMem.erreur) avisHtml = `<span class="mu">Pas encore d’avis : ${esc(avisMem.erreur)}</span>`;
   else avisHtml = `<span class="mu">${AI.avisPossible() ? 'Avis en préparation…' : 'L’avis de l’IA demande votre propre clé, à ajouter dans ⚙ Réglages.'}</span>`;
   return `<div class="bilan">
@@ -800,9 +809,28 @@ async function genererAvis() {
   try {
     await whenFree();
     const c = chiffres(S.wines, YEAR);
-    const resume = { bouteilles: c.bouteilles, references: c.references, couleurs: c.couleurs, regions: c.regions.slice(0, 5), cepages: c.cepages.slice(0, 5), statuts: c.statuts, lecture: L.equilibre(c) };
-    const { court, complet } = await AI.avisCave(resume);
-    avisMem = { court, complet, date: Date.now(), cle, v: VERSION, erreur: '' };
+    const tot = c.bouteilles || 1, pc = n => Math.round(n / tot * 100);
+    const fr = c.frise.slice(0, 12);
+    const absents = ['Blanc', 'Rosé', 'Pétillant'].filter(k => !c.couleurs.some(x => x[0] === k));
+    const resume = {
+      annee: YEAR, bouteilles: c.bouteilles, references: c.references,
+      couleurs: c.couleurs.map(([k, n]) => ({ couleur: k, bouteilles: n, pct: pc(n) })),
+      couleurs_absentes: absents,
+      regions: c.regions.slice(0, 8).map(([k, n]) => ({ region: k, bouteilles: n, pct: pc(n) })),
+      appellations: c.appellations.slice(0, 8).map(([k, n]) => ({ appellation: k, bouteilles: n, pct: pc(n) })),
+      cepages: c.cepages.slice(0, 8).map(([k, n]) => ({ cepage: k, bouteilles: n, pct: pc(n) })),
+      millesimes_par_decennie: c.decennies.map(([k, n]) => ({ decennie: k || 'sans millésime', bouteilles: n })),
+      statuts: { prets_a_boire: c.statuts.pret, a_garder: c.statuts.garder, urgence: c.statuts.urgence, sans_periode_de_garde: c.statuts.sans },
+      a_boire_vite: c.aBoireVite,
+      calendrier_a_boire: fr.map(([y, n]) => ({ annee: y, bouteilles: n })),
+      annees_creuses_sur_12_ans: fr.filter(x => !x[1]).map(x => x[0]),
+      pic_a_boire: c.pic,
+      diversite: c.diversite, lecture: L.equilibre(c),
+    };
+    const rep = await AI.avisCave(resume);
+    const { court, complet } = rep;
+    const extra = rep.solide ? { cles: rep.cles, solide: rep.solide, manque: rep.manque, priorite: rep.priorite } : {};
+    avisMem = { court, complet, ...extra, date: Date.now(), cle, v: VERSION, erreur: '' };
   } catch (e) {
     // Sans crédit ou en panne : on garde l’avis précédent et on dit pourquoi
     avisMem = { ...(avisMem || {}), cle, v: VERSION, erreur: AI.errText(e) };

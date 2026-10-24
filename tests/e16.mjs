@@ -4,7 +4,7 @@ const S=H.suite('Équilibre et valeur');const T=S.T;
 const G=o=>({json:{candidates:[{content:{parts:[{text:JSON.stringify(o)}]}}]}});
 const ai=async c=>{
   const corps=JSON.stringify(c.body);
-  if(corps.includes('Voici un résumé'))return G({court:'Cave plutôt rouge, il lui manque des blancs.',complet:'Détail sur les blancs.'});
+  if(corps.includes('Voici le résumé chiffré'))return G({court:'Cave plutôt rouge, il lui manque des blancs.',complet:'Détail sur les blancs.'});
   if(corps.includes('fourchette indicative')){const ids=[...new Set([...corps.matchAll(/\\"id\\":\\"?([\w-]+)/g)].map(m=>m[1]))];return G({items:ids.map(id=>({id,min:20,max:40}))});}
   return G({});
 };

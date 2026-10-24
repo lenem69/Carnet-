@@ -411,11 +411,17 @@ export async function pickForDish(dish, candidates, opts) {
   return items.filter(x => x && x.id != null).map(x => ({ id: String(x.id), why: String(x.why || '') }));
 }
 
-// Avis sur l'équilibre de la cave, à partir d'un résumé (pas de liste de vins). Sans recherche web.
+// Avis sur l'équilibre de la cave, à partir d'un résumé chiffré (aucun nom de vin). Sans recherche web.
+// Analyse d'expert appuyée sur les seuls chiffres fournis, rendue en blocs lisibles : message clé, trois repères,
+// points solides, manques, priorités, et une analyse détaillée. Les anciens avis (court + complet) restent lisibles.
+const liste = (v, n, len) => (Array.isArray(v) ? v.map(x => String(x == null ? '' : x).trim().slice(0, len)).filter(Boolean).slice(0, n) : []);
 export async function avisCave(resume, opts = {}) {
-  const d = await callJson(`${EXPERT} Voici un résumé de ma cave (sans liste de vins) : ${JSON.stringify(resume)}. Donne deux avis, en français, sur son équilibre (couleurs, régions, types de vins, moments de boire) et ce qui pourrait lui manquer. "court" : 3 phrases au maximum. "complet" : 6 à 8 phrases, avec des conseils concrets d’accords et d’achats. Ce sont des impressions, pas des faits vérifiés. Réponds uniquement par {"court":"…","complet":"…"}.`, { ...opts });
+  const d = await callJson(`${EXPERT} Voici le résumé chiffré de ma cave, sans aucun nom de vin : ${JSON.stringify(resume)}. Fais une analyse d’expert, appuyée uniquement sur ces chiffres : concentration (région, appellation, cépage), répartition des couleurs et styles absents (blancs, rosés, bulles, vins de dessert), rythme de consommation (calendrier des bouteilles à boire, années creuses, pic), équilibre entre vins prêts, à garder et en urgence, profil des millésimes. Cite au moins un chiffre du résumé dans chaque constat. N’invente aucun vin, aucune note, aucun prix ; si une donnée manque, dis-le. Réponds en français, uniquement par un objet JSON de ce format : {"court":"le message le plus important, 2 phrases au maximum","cles":["3 messages clés de 8 mots au maximum"],"solide":["2 à 4 points forts, une phrase chacun, chiffrés"],"manque":["2 à 4 manques ou risques, une phrase chacun, chiffrés"],"priorite":["3 achats ou actions à faire en priorité : type de vin ou appellation, pourquoi, pour boire quand ; jamais de nom de cuvée ni de prix"],"complet":"analyse détaillée de 8 à 12 phrases en 3 ou 4 paragraphes séparés par une ligne vide, avec des conseils concrets d’accords et d’achats"}. Ce sont des impressions fondées sur des chiffres, pas des faits vérifiés.`, { ...opts });
   if (!d || typeof d !== 'object' || typeof d.court !== 'string' || !d.court.trim()) throw { code: 'invalid_json' };
-  return { court: d.court.trim().slice(0, 500), complet: typeof d.complet === 'string' ? d.complet.trim().slice(0, 2000) : '' };
+  const out = { court: d.court.trim().slice(0, 400), complet: typeof d.complet === 'string' ? d.complet.trim().slice(0, 3500) : '' };
+  const cles = liste(d.cles, 3, 70), solide = liste(d.solide, 4, 260), manque = liste(d.manque, 4, 260), priorite = liste(d.priorite, 3, 300);
+  if (solide.length || manque.length || priorite.length) Object.assign(out, { cles, solide, manque, priorite });
+  return out;
 }
 
 // Valeur indicative : fourchette de prix d'une bouteille de 75 cl par vin, sans recherche web, par lot.

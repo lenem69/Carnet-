@@ -66,9 +66,9 @@ T('limite atteinte : fenêtre « Limite du jour atteinte »',titre.includes('Lim
 // L'avis de Magic ne consomme jamais la clé gratuite : aucun appel d'avis sans clé personnelle.
 await page.evaluate(async()=>{localStorage.removeItem('cave-ai');const s=await import('./store.js');await s.setMeta('gratuit',{jour:new Date().toISOString().slice(0,10),vins:0});
   await s.replaceAll([{id:'r',name:'Vin R',year:2016,qty:1,from:2020,to:2035,src:{from:'user',to:'user'},dom:'D',color:'Rouge',region:'M',grape:'x',price:20,created:1,updated:1,story:'x',pairings:['a'],check:false,conf:'',sources:[],note:'',loc:'',tastings:[],aiPass:1,estim:{min:1,max:2,date:1}}]);});
-const na=calls.filter(c=>JSON.stringify(c.body).includes('Voici un résumé')).length;
+const na=calls.filter(c=>JSON.stringify(c.body).includes('Voici le résumé chiffré')).length;
 await page.reload();await H.sl(5000);
-const nb=calls.filter(c=>JSON.stringify(c.body).includes('Voici un résumé')).length;
+const nb=calls.filter(c=>JSON.stringify(c.body).includes('Voici le résumé chiffré')).length;
 T('clé gratuite : aucun avis généré pour Magic',nb===na,nb-na);
 await H.tapText(page,'.tab','Magic');await H.sl(500);
 const mt=await page.evaluate(()=>document.querySelector('#vChiffres')?.innerText||'');

@@ -317,3 +317,16 @@ details.adv[open] summary { margin-bottom: 6px; }
 .w .am:active { background: var(--soft); }
 #acN { margin-bottom: 4px; }
 #acSep { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--bd); }
+
+/* Équilibre de ma cave : avis structuré (message clé, repères, trois blocs, analyse détaillée) */
+.bilan #avisIA { font-size: 16px; }
+.avis-lead { font-size: 17px; font-weight: 600; line-height: 1.5; color: var(--tx); margin: 0 0 10px; }
+.cles { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+.cles li { background: var(--orf); color: var(--ortx); border: 1px solid var(--orbr); border-radius: 99px; padding: 4px 12px; font-size: 13px; font-weight: 600; }
+.ab { border-left: 4px solid var(--bd); background: var(--card); border-radius: 0 10px 10px 0; padding: 8px 12px; margin: 0 0 10px; }
+.ab h4 { margin: 0 0 4px; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.ab ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 15px; line-height: 1.5; }
+.ab-ok { border-left-color: var(--ok); } .ab-ok h4 { color: var(--ok); }
+.ab-wa { border-left-color: var(--wa); } .ab-wa h4 { color: var(--wa); }
+.ab-pr { border-left-color: var(--ac); background: var(--soft); } .ab-pr h4 { color: var(--ac); }
+.avis-complet p { font-size: 15px; }

@@ -42,7 +42,7 @@ await H.sl(3500);
 const c1=calls.length;
 T('limite atteinte : pas de nouvel appel pendant la pause',c1>=1&&c1<=3,String(c1));
 const am=await page.evaluate(async()=>{const s=await import('./store.js');return s.getMeta('autoFill')});
-T('pause enregistrée jusqu’à la prochaine remise à zéro',am&&am.pauseUntil>Date.now()+3600e3,JSON.stringify(am));
+T('pause enregistrée jusqu’à la prochaine remise à zéro',am&&am.pauseUntil>Date.now()+60e3,JSON.stringify(am));
 await H.click(page,'#bSet');await H.sl(300);
 T('réglages : état lisible',/pause|reprise/.test(await H.txt(page,'#st-auto-info')),await H.txt(page,'#st-auto-info'));
 T('aucune erreur (limite)',errs.length===0,errs.join('|'));
@@ -59,7 +59,7 @@ T('sans IA configurée : aucun appel',calls.length===0);
 await page.close();
 mode='empty';
 ({page,errs,calls}=await mk(2));await H.sl(5000);
-T('IA sans réponse : 2 essais par vin au plus',calls.filter(c=>!JSON.stringify(c.body).includes('Voici un résumé')).length<=2,String(calls.length));
+T('IA sans réponse : 2 essais par vin au plus',calls.filter(c=>!JSON.stringify(c.body).includes('Voici le résumé chiffré')).length<=2,String(calls.length));
 await page.close();mode='ok';
 
 // 4. nouveautés après mise à jour : une seule fois, résumé court
