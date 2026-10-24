@@ -256,8 +256,8 @@ function card(w, mode, why) {
   ${why ? `<p class="why">💡 ${esc(why)}</p>` : ''}
   <div class="row"><div><h4>${esc(w.name)}${w.year ? ' ' + esc(w.year) : ''}</h4><p>${esc([w.dom, w.region].filter(Boolean).join(' · '))}</p></div>${qty}</div>
   ${meta || tags ? `<div class="ml">${meta ? `<p class="mm">${meta}</p>` : ''}${tags ? `<p class="stl">${tags}</p>` : ''}</div>` : ''}
-  ${hasFiche || apo || tags2 ? `<details><summary>Fiche et accords</summary>${tags2 || apoRappel ? `<p class="mu small sec">${[tags2, apoRappel ? esc(apoRappel) : ''].filter(Boolean).join(' · ')}</p>` : ''}${degLigne(w)}${apo ? `<p class="mu small">${esc(apo)}</p>` : ''}${majIA.length ? `<p class="mu small">Mis à jour par l’IA : ${esc(majIA.join(', '))}.</p>` : ''}${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : degLigne(w) + journalHtml(w, mode)}
-  <div class="acts">${!w.story && !w.pairings.length ? '<button class="lnk gen" data-a="gen">✨ Fiche (IA)</button>' : ''}<button class="lnk" data-a="e">Modifier</button>${mode === 'cave' ? '<button class="lnk quiet" data-a="d">Supprimer</button>' : ''}</div>
+  <div class="fr">${hasFiche || apo || tags2 ? `<details><summary>Fiche et accords</summary>${tags2 || apoRappel ? `<p class="mu small sec">${[tags2, apoRappel ? esc(apoRappel) : ''].filter(Boolean).join(' · ')}</p>` : ''}${degLigne(w)}${apo ? `<p class="mu small">${esc(apo)}</p>` : ''}${majIA.length ? `<p class="mu small">Mis à jour par l’IA : ${esc(majIA.join(', '))}.</p>` : ''}${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : degLigne(w) + journalHtml(w, mode)}<button class="am" type="button" data-a="menu" aria-haspopup="dialog">⋯ Actions</button></div>
+  <div class="acts-h" hidden>${!w.story && !w.pairings.length ? '<button data-a="gen" type="button">✨ Fiche (IA)</button>' : ''}<button data-a="e" type="button">Modifier</button>${mode === 'cave' ? '<button data-a="d" type="button">Supprimer</button>' : ''}</div>
 </div>`;
 }
 
@@ -602,6 +602,27 @@ async function genInForm() {
   b.disabled = false; b.textContent = '✨ Générer la fiche (IA)';
 }
 
+/* ============ Menu « Actions » d’une carte ============ */
+// Un seul bouton sur la carte (loin des + et −) ; Modifier, Noter, Fiche IA et Supprimer sont dans une fenêtre.
+// Les vrais boutons restent dans la carte (masqués) : le menu les déclenche, la logique n’est pas dupliquée.
+let actId = null;
+function openActions(w, card) {
+  actId = w.id;
+  $('#acN').textContent = w.name + (w.year ? ' ' + w.year : '');
+  const has = sel => !!card.querySelector(sel);
+  $$('#sAct [data-x]').forEach(b => { b.hidden = !has(`[data-a="${b.dataset.x}"]`); });
+  $('#acSep').hidden = $('#sAct [data-x="d"]').hidden;
+  openSheet('sAct');
+}
+function runAction(x) {
+  const card = $$('#list .w, #blist .w').find(c => c.dataset.id === actId);
+  const real = card && card.querySelector(`[data-a="${x}"]`);
+  closeSheet('sAct');
+  if (!real) { errToast('Ce vin n’est plus affiché : rouvrez ses actions depuis la liste.'); return; }
+  if (x === 'gen') toast('Génération de la fiche en cours…');
+  real.click();
+}
+
 /* ============ Actions sur les fiches ============ */
 async function onCardAction(e) {
   const btn = e.target.closest('[data-a],[data-m]');
@@ -611,6 +632,7 @@ async function onCardAction(e) {
   if (a === 'more') { S.limit += PAGE; renderList(); return; }
   const card = btn.closest('.w'); if (!card) return;
   const w = S.wines.find(x => x.id === card.dataset.id); if (!w) return;
+  if (a === 'menu') { openActions(w, card); return; }
   if (a === 'p' || a === 'm') {
     const before = w.qty;
     w.qty = Math.max(0, w.qty + (a === 'p' ? 1 : -1));
@@ -1144,6 +1166,7 @@ function bind() {
   $('#st-auto').onchange = () => { auto.on = $('#st-auto').checked; if (auto.on) auto.pauseUntil = 0; autoSave(); $('#st-auto-info').textContent = autoStatus(); if (auto.on) setTimeout(autoStep, 500); };
   $('#st-help').onclick = openContact;
   $('#st-esprit').onclick = () => openSheet('sEsprit');
+  $$('#sAct [data-x]').forEach(b => { b.onclick = () => runAction(b.dataset.x); });
   $('#st-news').onclick = () => { const l = Notes.since('0.0.0', VERSION); ask('Nouveautés', l.length ? l.map(x => '• ' + x).join('\n') : 'Aucune nouveauté à afficher.', [{ label: 'Fermer', value: 'ok' }]); };
   $('#ct-share').onclick = sendContact;
   $('#ct-pub').onclick = publishContact;

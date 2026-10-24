@@ -69,6 +69,23 @@ T('équilibre : avis complet identique',avis.complet===COMPLET,JSON.stringify(av
 T('équilibre : accès « Avis complet » conservé',avis.summary==='Avis complet');
 T('équilibre : mention « pas une valeur de revente garantie »',bilan.includes('pas une valeur de revente garantie'));
 
+
+/* Menu « Actions » d’une carte */
+await H.tapText(page,'.tab','Ma cave');await H.sl(400);
+T('carte : un seul bouton visible « Actions », plus de Supprimer à côté des + et −',await page.evaluate(()=>{const c=document.querySelector('#list .w');const vis=[...c.querySelectorAll('button')].filter(b=>b.offsetParent!==null).map(b=>b.textContent.trim());return vis.some(x=>x.includes('Actions'))&&!vis.includes('Supprimer')&&!vis.includes('Modifier');}));
+T('carte : bouton Actions éloigné de 12 px au moins du « − »',await page.evaluate(()=>{const c=document.querySelector('#list .w');const a=c.querySelector('.am').getBoundingClientRect();const m=c.querySelector('[data-a="m"]').getBoundingClientRect();return a.top-m.bottom>=12;}));
+await page.evaluate(()=>document.querySelector('#list .w .am').click());await H.sl(500);
+const act=await H.txt(page,'#sAct');
+T('menu actions : nom du vin et 4 actions',act.includes('Vin')&&act.includes('Modifier')&&act.includes('Noter une dégustation')&&act.includes('Supprimer'),act);
+T('menu actions : Supprimer est séparé et en rouge',await page.evaluate(()=>{const b=document.querySelector('#sAct [data-x="d"]');return b.classList.contains('danger')&&!b.closest('.stack').querySelector('[data-x="e"]');}));
+await page.evaluate(()=>document.querySelector('#sAct [data-x="d"]').click());await H.sl(500);
+T('supprimer depuis le menu : confirmation demandée (rien n’est supprimé tout de suite)',(await H.txt(page,'#sDlg')).includes('Supprimer ce vin ?')&&await page.evaluate(()=>document.querySelectorAll('#list .w').length)===2);
+await H.tapText(page,'#dlgB button','Annuler');await H.sl(400);
+await page.evaluate(()=>document.querySelector('#list .w .am').click());await H.sl(400);
+await page.evaluate(()=>document.querySelector('#sAct [data-x="e"]').click());await H.sl(600);
+T('modifier depuis le menu : le formulaire s’ouvre rempli',await page.evaluate(()=>document.querySelector('#sForm').classList.contains('show')&&document.querySelector('#f-name').value.startsWith('Vin')),'');
+await page.evaluate(()=>document.querySelectorAll('.modal.show').forEach(m=>m.classList.remove('show')));
+
 /* Erreurs : une seule à la fois, bouton vers les Réglages sur erreur de clé */
 await H.tapText(page,'.tab','Ma cave');await H.sl(300);
 await page.evaluate(()=>{window.dispatchEvent(new ErrorEvent('error',{message:'essai un'}));window.dispatchEvent(new ErrorEvent('error',{message:'essai deux'}));window.dispatchEvent(new ErrorEvent('error',{message:'essai deux'}));});await H.sl(300);
