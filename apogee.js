@@ -180,22 +180,25 @@ export function apogee(w, annee = new Date().getFullYear()) {
 // La fenêtre de dégustation (garde) contient toujours la période d'apogée, avec une marge avant et une marge après.
 export function largeur(r) {
   const ans = r.ans;
+  // La marge après l'apogée est proportionnelle à la durée de vie du vin : un grand vin de garde reste agréable bien après son pic.
   if (ans >= 20) return { cat: 'longue', h: 4, avant: 4, apres: 6 };
-  if (ans >= 12) return { cat: 'prestige', h: 3, avant: 3, apres: 6 };
-  if (ans >= 8) return { cat: 'structure', h: 2, avant: 2, apres: 4 };
+  if (ans >= 12) return { cat: 'prestige', h: 3, avant: 3, apres: Math.min(12, Math.round(ans * 0.8)) };
+  if (ans >= 8) return { cat: 'structure', h: 2, avant: 2, apres: Math.round(ans * 0.7) };
   if (ans <= 3) return { cat: 'leger', h: 1, avant: 1, apres: 2 };
-  return { cat: 'courant', h: 2, avant: 2, apres: 3 };
+  return { cat: 'courant', h: 2, avant: 2, apres: ans >= 6 ? 4 : 3 };
 }
 
 // Fenêtre de dégustation proposée (garde) pour un vin : contient la période d'apogée. Sans millésime : null.
 // La qualité du millésime (note 1 à 5 de la bible) allonge ou raccourcit la fin de la fenêtre de dégustation :
 // 1 ou 2 : vin qui s'essouffle plus vite ; 4 ou 5 : vin qui tient plus longtemps. L'apogée elle-même n'est jamais coupée.
-const DELTA_QUALITE = { 1: -2, 2: -1, 3: 0, 4: 1, 5: 2 };
+// L'effet est proportionnel à la durée de vie du vin (un grand vin de garde gagne ou perd plus d'années qu'un vin courant).
+const FACTEUR_QUALITE = { 1: -0.25, 2: -0.12, 3: 0, 4: 0.1, 5: 0.2 };
 export function fenetreGarde(w, qualite = 3) {
   const a = apogee({ ...w, from: null, to: null });
   if (a.sansMillesime) return null;
   const debut = Math.max(Number(w.year) + 1, a.from - a.avant);
-  const apres = Math.max(0, a.apres + (DELTA_QUALITE[Number(qualite)] ?? 0));
+  const delta = Math.round(a.ans * (FACTEUR_QUALITE[Number(qualite)] ?? 0));
+  const apres = Math.max(0, a.apres + delta);
   const fin = a.to + apres;
   return { from: Math.min(debut, a.from), to: Math.max(fin, a.to) };
 }
