@@ -688,6 +688,7 @@ async function onCardAction(e) {
     btn.disabled = true; btn.textContent = 'Génération…';
     try {
       const d = await AI.makeFiche(w);
+      if (!d.story && !d.pairings.length && !d.grape) { btn.disabled = false; btn.textContent = '✨ Fiche (IA)'; errToast('L’IA a répondu sans fiche exploitable pour ce vin. Réessayez dans un instant ; si cela se répète, vérifiez votre clé dans ⚙ Réglages.'); return; }
       Stats.track('fiches_ia'); if (d.conf === 'vérifiée') Stats.track('fiches_verif');
       const c = copieIA(w, d);
       if (await persist(() => store.putWines([c]))) {

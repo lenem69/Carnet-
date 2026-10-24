@@ -375,9 +375,15 @@ export async function makeFiche(w, opts = {}) {
   // Recherche web seulement chez Gemini ; chez un autre fournisseur, la fiche reste une estimation.
   const ask = s => { const web = s.provider === 'gemini'; return `${EXPERT} ${web ? 'Utilise la recherche web et croise plusieurs sources fiables : site du domaine, guides et revues (RVF, Bettane+Desseauve, Parker, Decanter), forums spécialisés (La Passion du Vin, CellarTracker…), sites de vente en ligne avec fiches produit (Vinatis, V and B, Millésima, Idealwine…), cavistes et notes de dégustation. Compare les fenêtres de garde données par ces sources puis complète la fiche' : 'Complète la fiche de ce vin avec tes connaissances (estime si la cuvée t’est inconnue, sans inventer de faits précis)'} : ${JSON.stringify({ name: w.name, dom: w.dom, year: w.year, color: w.color, region: w.region })}. Nous sommes en ${year}. Ne donne jamais une date de garde précise sans base : en cas de doute, élargis la fourchette et mets conf à « estimée » ; ne retiens « vérifiée » que si au moins deux sources concordent ou si la source est le domaine lui-même. Réponds uniquement par un objet JSON de ce format : ${SCHEMA_FICHE}.`; };
   const out = { wantSearch: true };
-  const d = await callJson(ask, { ...opts, out });
+  let d = await callJson(ask, { ...opts, out });
   if (!d || typeof d !== 'object' || Array.isArray(d)) throw { code: 'invalid_json' };
-  const f = ficheFrom(d);
+  let f = ficheFrom(d);
+  // Réponse sans histoire ni accords (cas d'une recherche web qui n'a rien donné) : un second essai sans recherche web.
+  if (!f.story && !f.pairings.length && out.searched) {
+    const out2 = {};
+    const d2 = await callJson(ask, { ...opts, out: out2 });
+    if (d2 && typeof d2 === 'object' && !Array.isArray(d2)) { d = d2; f = ficheFrom(d2); f.fallback = true; Object.assign(out, { searched: false, sources: [] }); }
+  }
   const sources = out.searched ? (out.sources || []) : [];
   // « vérifiée » seulement si le modèle l’affirme ET que des pages web ont réellement été consultées.
   f.conf = sources.length && /^v[ée]rifi/i.test(String(d.conf || d.c || '')) ? 'vérifiée' : 'estimée';
