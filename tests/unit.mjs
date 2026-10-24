@@ -210,7 +210,7 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   const ap = (w, y) => A.apogee(w, y);
   const t1 = ap({ name: 'Champagne Brut', color: 'Pétillant', region: 'Champagne', year: '' }, 2026);
   T('apogée : sans millésime → prêt à boire', t1.sansMillesime && t1.statut === 'Prêt à boire', JSON.stringify(t1));
-  const t2 = ap({ name: 'Château Bouscaut', color: 'Rouge', region: 'Pessac-Léognan', year: 2015 }, 2026);
+  const t2 = ap({ name: 'Château Bouscaut', color: 'Rouge', region: 'Haut-Médoc', year: 2015 }, 2026);
   T('apogée : Bordeaux rouge 2015 → +8 ans, pic 2023, urgence en 2026', t2.pic === 2023 && t2.statut === 'Urgence' && t2.ans === 8, JSON.stringify(t2));
   const t3 = ap({ name: 'Morgon Côte du Py', color: 'Rouge', region: 'Beaujolais', year: 2023 }, 2026);
   T('apogée : Beaujolais 2023 → +4 ans, pic 2027, prêt à boire en 2026', t3.pic === 2027 && t3.statut === 'Prêt à boire', JSON.stringify(t3));
@@ -232,6 +232,28 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   T('apogée : grand cru rouge 2018 → +15 ans (le grand cru prime sur le premier cru)', t8d.ans === 15 && t8d.pic === 2033, JSON.stringify(t8d));
   const t9 = ap({ name: 'Rioja Gran Reserva', color: 'Rouge', region: 'Rioja', year: 2010 }, 2026);
   T('apogée : étranger prestige (gran reserva) → +15 ans', t9.ans === 15, JSON.stringify(t9));
+  // Chaque niveau garde sa règle : village ≠ premier cru ≠ grand cru, et chaque appellation a la sienne.
+  const AN = (name, region, color, year = 2018, extra = {}) => ap({ name, region, color, year, dom: 'Domaine X', ...extra }, 2026).ans;
+  T('niveau : Chassagne-Montrachet village rouge → +8 (pas « grand vin »)', AN('Chassagne-Montrachet', 'Chassagne-Montrachet', 'Rouge') === 8, String(AN('Chassagne-Montrachet', 'Chassagne-Montrachet', 'Rouge')));
+  T('niveau : Chassagne-Montrachet village blanc → +7', AN('Chassagne-Montrachet', 'Chassagne-Montrachet', 'Blanc') === 7);
+  T('niveau : Chassagne-Montrachet 1er cru rouge → +12, blanc → +10', AN('Chassagne-Montrachet 1er cru', 'Chassagne-Montrachet Premier Cru', 'Rouge') === 12 && AN('Chassagne-Montrachet 1er cru', 'Chassagne-Montrachet Premier Cru', 'Blanc') === 10);
+  T('niveau : Montrachet grand cru → +15', AN('Montrachet', 'Montrachet', 'Blanc') === 15);
+  T('niveau : Gevrey-Chambertin village → +9, Chambertin grand cru → +15', AN('Gevrey-Chambertin', 'Gevrey-Chambertin', 'Rouge') === 9 && AN('Chambertin', 'Chambertin', 'Rouge') === 15);
+  T('niveau : Chambolle-Musigny village → +8, Vosne-Romanée village → +10, Romanée-Conti → +15', AN('Chambolle-Musigny', 'Chambolle-Musigny', 'Rouge') === 8 && AN('Vosne-Romanée', 'Vosne-Romanée', 'Rouge') === 10 && AN('Romanée-Conti', 'Romanée-Conti', 'Rouge') === 15);
+  T('niveau : Crozes-Hermitage → +7, Hermitage → +15', AN('Crozes-Hermitage', 'Crozes-Hermitage', 'Rouge') === 7 && AN('Hermitage', 'Hermitage', 'Rouge') === 15);
+  T('appellation : Pauillac +12, Saint-Émilion Grand Cru +10, Châteauneuf-du-Pape +12, Côte-Rôtie +12, Morgon +6, Muscadet +3, Chablis blanc +6',
+    AN('Cuvée', 'Pauillac', 'Rouge') === 12 && AN('Cuvée', 'Saint-Émilion Grand Cru', 'Rouge') === 10 && AN('Cuvée', 'Châteauneuf-du-Pape', 'Rouge') === 12 && AN('Cuvée', 'Côte-Rôtie', 'Rouge') === 12 && AN('Cuvée', 'Morgon', 'Rouge') === 6 && AN('Cuvée', 'Muscadet', 'Blanc') === 3 && AN('Cuvée', 'Chablis', 'Blanc') === 6);
+  {
+    // Audit de toute la liste connue : seuls les vrais grands crus (ou appellations « Grand Cru ») prennent la règle du grand vin.
+    const { TAXONOMIE } = await import('../taxonomie.js');
+    const noms = [...new Set(Object.values(TAXONOMIE).map(v => v[0]))];
+    const prestige = noms.filter(n => ['Rouge', 'Blanc'].some(c => ap({ name: 'Cuvée', dom: 'Domaine X', region: n, color: c, year: 2018 }, 2026).regle === 'grand cru ou grand vin'));
+    const faux = prestige.filter(n => /^(chassagne|puligny|gevrey|chambolle|vosne|crozes)|premier cru|saint-émilion|ch[aâ]teauneuf|c[oô]te-r[oô]tie|cornas/i.test(n));
+    T('audit : aucun village, premier cru ni appellation courante pris pour un grand vin', faux.length === 0, faux.join(', '));
+    T('audit : les grands crus connus gardent la règle du grand vin', ['Montrachet', 'Chambertin', 'Musigny', 'Romanée-Conti', 'Richebourg', 'Échezeaux'].every(n => prestige.includes(n)), prestige.join(', '));
+    const p1 = noms.filter(n => /Premier Cru$/.test(n)).filter(n => ap({ name: 'Cuvée', dom: 'Domaine X', region: n, color: 'Rouge', year: 2018 }, 2026).ans !== 12);
+    T('audit : tous les « Premier Cru » rouges → +12', p1.length === 0, p1.join(', '));
+  }
   T('apogée : rappel court sur la carte', A.apogeeCourte(t6)==='Apogée 2031 · à venir' && A.apogeeCourte(t1)==='Prêt à boire (sans millésime)', A.apogeeCourte(t6));
   T('apogée : phrase de la fiche contient le pic et la fenêtre', /Apogée estimée 2031 \(entre 2029 et 2033\)/.test(A.apogeeTexte(t6)), A.apogeeTexte(t6));
   // Cohérence apogée / fenêtre de garde : l'apogée ne sort jamais de la fenêtre enregistrée.
@@ -248,11 +270,11 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
     }
     T(`apogée : jamais hors de la fenêtre de garde (${n} combinaisons)`, hors === 0, ex);
     T('apogée : rappel court sans mot de statut pouvant contredire la pastille', pbPhrase === 0, String(pbPhrase));
-    const sans = ap({ name: 'X', dom: 'D', color: 'Rouge', region: 'Cornas', year: 2020, from: '', to: '' }, 2026);
+    const sans = ap({ name: 'X', dom: 'D', color: 'Rouge', region: 'Richebourg', year: 2020, from: '', to: '' }, 2026);
     T('apogée : sans fenêtre enregistrée, règle inchangée (grand cru 2020 → 2035)', sans.pic === 2035 && sans.ajuste === false, JSON.stringify(sans));
-    const dedans = ap({ name: 'X', dom: 'D', color: 'Rouge', region: 'Cornas', year: 2020, from: 2028, to: 2042 }, 2026);
+    const dedans = ap({ name: 'X', dom: 'D', color: 'Rouge', region: 'Richebourg', year: 2020, from: 2028, to: 2042 }, 2026);
     T('apogée : déjà dans la fenêtre → inchangée', dedans.pic === 2035 && dedans.ajuste === false, JSON.stringify(dedans));
-    const hors2 = ap({ name: 'X', dom: 'D', color: 'Rouge', region: 'Cornas', year: 2020, from: 2025, to: 2029 }, 2026);
+    const hors2 = ap({ name: 'X', dom: 'D', color: 'Rouge', region: 'Richebourg', year: 2020, from: 2025, to: 2029 }, 2026);
     T('apogée : hors fenêtre → ramenée à la fin de la fenêtre et signalée', hors2.pic === 2029 && hors2.ajuste === true && /Ramenée dans la fenêtre/.test(A.apogeeTexte(hors2)), JSON.stringify(hors2));
   }
 }

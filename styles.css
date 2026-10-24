@@ -338,3 +338,15 @@ details.adv[open] summary { margin-bottom: 6px; }
 .empty.vide .ou { text-align: center; margin: 14px 0 2px; }
 .demobar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 12px; margin-bottom: 10px; border: 1px dashed #c9a24a; border-radius: 12px; background: rgba(201, 162, 74, .12); font-size: 14px; }
 .demobar .btn { width: auto; min-height: 40px; padding: 6px 14px; }
+
+/* Transitions douces (changement d'onglet, ouverture des fenêtres, boutons) ; coupées si l'appareil demande moins d'animations. */
+@keyframes vueIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes fondIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes monte { from { transform: translateY(32px); opacity: .6; } to { transform: none; opacity: 1; } }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.vin { animation: vueIn .28s cubic-bezier(.2, .8, .2, 1); }
+.modal.show { animation: fondIn .2s ease-out; }
+.modal.show > .sheet { animation: monte .28s cubic-bezier(.2, .8, .2, 1); }
+.toast { animation: toastIn .22s ease-out; }
+.tab, .chip { transition: background-color .22s ease, color .22s ease, border-color .22s ease, box-shadow .22s ease, transform .08s ease; }
+@media (prefers-reduced-motion: reduce) { .vin, .modal.show, .modal.show > .sheet, .toast { animation: none; } .tab, .chip { transition: none; } }

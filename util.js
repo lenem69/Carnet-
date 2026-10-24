@@ -29,3 +29,6 @@ export const sleep = (ms, signal) => new Promise((resolve, reject) => {
   const t = setTimeout(resolve, ms);
   if (signal) signal.addEventListener('abort', () => { clearTimeout(t); reject(Object.assign(new Error('abort'), { name: 'AbortError' })); }, { once: true });
 });
+
+// « 21 pourcent » (ou « pour cent ») devient « 21 % » : l'IA écrit parfois le mot en toutes lettres.
+export const symPct = t => String(t == null ? '' : t).replace(/(\d+(?:[.,]\d+)?)\s*(?:pour\s?cents?|pourcents?)(?![a-zà-ÿ])/gi, '$1 %');

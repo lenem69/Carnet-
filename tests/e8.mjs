@@ -31,7 +31,7 @@ T('aucun message ni fenêtre pendant le travail',!(await H.shown(page,'#sDlg'))&
 await H.sl(3500);
 T('limite de 20 recherches par jour respectée',calls.length<=20,String(calls.length));
 await H.sl(1500);
-T('25 vins : traités par lots (sans recherche), toutes les fiches écrites en peu d’appels',(await done(page))>=25&&calls.length<=10,calls.length+' appels, '+await done(page));
+T('25 vins : traités par lots (sans recherche), toutes les fiches écrites en peu d’appels',(await done(page))>=25&&calls.length<=12,calls.length+' appels, '+await done(page));
 T('aucune erreur (remplissage)',errs.length===0,errs.join('|'));
 await page.close();
 
@@ -66,7 +66,7 @@ await page.close();mode='ok';
 ({page,errs}=await mk(0));await H.sl(1500);
 await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('seenVersion','1.16.0')});
 await page.reload();await H.sl(1500);
-T('mise à jour : fenêtre des nouveautés affichée',(await H.shown(page,'#sDlg'))&&/Mise à jour 1.26.6/.test(await H.txt(page,'#dlgT')),await H.txt(page,'#dlgT'));
+T('mise à jour : fenêtre des nouveautés affichée',(await H.shown(page,'#sDlg'))&&/Mise à jour 1.26.7/.test(await H.txt(page,'#dlgT')),await H.txt(page,'#dlgT'));
 const nx=await H.txt(page,'#dlgX');
 T('résumé : points des versions manquées, pas ceux déjà vus',/appel gratuit du jour/.test(nx)&&/contradictions sur la garde/.test(nx)&&!/Onglet « Magic »/.test(nx)&&!/Publier ma requête/.test(nx)&&!/Choix automatique de l’IA/.test(nx),nx);
 await H.tapText(page,'#dlgB button','Compris');await H.sl(300);

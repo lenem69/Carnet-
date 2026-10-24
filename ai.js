@@ -1,6 +1,6 @@
 // IA optionnelle : lecture d'étiquettes, fiches, accords. Fournisseur au choix, clé saisie par l'utilisateur.
 // L'appli fonctionne entièrement sans IA ; ce module n'est appelé que sur action explicite.
-import { sleep } from './util.js';
+import { sleep, symPct } from './util.js';
 import { normColor } from './logic.js';
 import * as store from './store.js';
 
@@ -336,7 +336,7 @@ export async function callJson(prompt, opts = {}) {
 /* ---------- Demandes métier ---------- */
 const SCHEMA_LABEL = '{"name":"cuvée","dom":"domaine/château","year":2019,"color":"Rouge|Blanc|Rosé|Pétillant|Autre","region":"appellation","grape":"cépages","lecture":"haute si tout est lisible, moyenne si tu as dû deviner une partie, faible sinon"}';
 const SCHEMA_FICHE = '{"grape":"cépages","story":"2-3 phrases sur la cuvée, le domaine et le millésime","from":année de début de garde,"to":année de fin de garde,"pairings":["4 à 6 plats précis"],"conf":"vérifiée si les pages web consultées confirment cette cuvée, ce millésime et la fenêtre de garde, sinon estimée"}';
-const EXPERT = 'Tu es un sommelier expert de 30 ans d’expérience, qui connaît les grands guides (RVF, Bettane+Desseauve, Parker, Decanter).';
+const EXPERT = 'Tu es un sommelier expert de 30 ans d’expérience, qui connaît les grands guides (RVF, Bettane+Desseauve, Parker, Decanter). Quand tu complètes une fiche de vin, ne la laisse jamais vide : si la cuvée exacte est introuvable, déduis la fiche du domaine, de l’appellation, du millésime et de la couleur (cépages de l’appellation, style, histoire du domaine ou de la région, accords classiques, garde habituelle), et signale l’incertitude plutôt que de te taire. Écris les pourcentages avec le symbole % (par exemple 21 %), jamais en toutes lettres.';
 
 export async function scanLabel(file, opts) {
   const t0 = performance.now();
@@ -463,11 +463,11 @@ export async function pickForDish(dish, candidates, opts) {
 // Avis sur l'équilibre de la cave, à partir d'un résumé chiffré (aucun nom de vin). Sans recherche web.
 // Analyse d'expert appuyée sur les seuls chiffres fournis, rendue en blocs lisibles : message clé, trois repères,
 // points solides, manques, priorités, et une analyse détaillée. Les anciens avis (court + complet) restent lisibles.
-const liste = (v, n, len) => (Array.isArray(v) ? v.map(x => String(x == null ? '' : x).trim().slice(0, len)).filter(Boolean).slice(0, n) : []);
+const liste = (v, n, len) => (Array.isArray(v) ? v.map(x => symPct(String(x == null ? '' : x).trim()).slice(0, len)).filter(Boolean).slice(0, n) : []);
 export async function avisCave(resume, opts = {}) {
   const d = await callJson(`${EXPERT} Voici le résumé chiffré de ma cave, sans aucun nom de vin : ${JSON.stringify(resume)}. Fais une analyse d’expert, appuyée uniquement sur ces chiffres : concentration (région, appellation, cépage), répartition des couleurs et styles absents (blancs, rosés, bulles, vins de dessert), rythme de consommation (calendrier des bouteilles à boire, années creuses, pic), équilibre entre vins prêts, à garder et en urgence, profil des millésimes. Cite au moins un chiffre du résumé dans chaque constat. N’invente aucun vin, aucune note, aucun prix ; si une donnée manque, dis-le. Réponds en français, uniquement par un objet JSON de ce format : {"court":"le message le plus important, 2 phrases au maximum","cles":["3 messages clés de 8 mots au maximum"],"solide":["2 à 4 points forts, une phrase chacun, chiffrés"],"manque":["2 à 4 manques ou risques, une phrase chacun, chiffrés"],"priorite":["3 achats ou actions à faire en priorité : type de vin ou appellation, pourquoi, pour boire quand ; jamais de nom de cuvée ni de prix"],"complet":"analyse détaillée de 6 à 10 phrases en 3 ou 4 paragraphes séparés par une ligne vide, qui APPROFONDIT sans répéter les blocs précédents : conseils concrets d’accords et d’achats"}. Ce sont des impressions fondées sur des chiffres, pas des faits vérifiés.`, { ...opts });
   if (!d || typeof d !== 'object' || typeof d.court !== 'string' || !d.court.trim()) throw { code: 'invalid_json' };
-  const out = { court: d.court.trim().slice(0, 400), complet: typeof d.complet === 'string' ? d.complet.trim().slice(0, 3500) : '' };
+  const out = { court: symPct(d.court.trim()).slice(0, 400), complet: typeof d.complet === 'string' ? symPct(d.complet.trim()).slice(0, 3500) : '' };
   const cles = liste(d.cles, 3, 70), solide = liste(d.solide, 4, 260), manque = liste(d.manque, 4, 260), priorite = liste(d.priorite, 3, 300);
   if (solide.length || manque.length || priorite.length) Object.assign(out, { cles, solide, manque, priorite });
   return out;

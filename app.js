@@ -1,5 +1,5 @@
 // Interface de l'appli « Ma cave ».
-import { $, $$, esc, norm, num, price, uid } from './util.js';
+import { $, $$, esc, norm, num, price, uid, symPct } from './util.js';
 import * as store from './store.js';
 import * as L from './logic.js';
 import * as AI from './ai.js';
@@ -26,7 +26,7 @@ const PAGE = 100;
 const BACKUP_DAYS = 60;
 const S = {
   wines: [], tab: 'cave', filt: 'Tous', sort: 'name', q: '', limit: PAGE, bmode: 'year',
-  editId: null, formExtra: {}, lastBackup: 0, update: null, ready: false, highlight: null, ouvert: new Set(), title: 'Ma cave', bible: null,
+  editId: null, formExtra: {}, lastBackup: 0, update: null, ready: false, highlight: null, lastTab: null, ouvert: new Set(), title: 'Ma cave', bible: null,
 };
 const DEFAULT_TITLE = 'Ma cave';
 
@@ -421,6 +421,12 @@ function render() {
   $$('.tab').forEach(b => { const on = b.dataset.t === S.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
   $('#vCave').hidden = S.tab !== 'cave'; $('#vBoire').hidden = S.tab !== 'boire'; $('#vChiffres').hidden = S.tab !== 'chiffres'; document.querySelector('.stats').hidden = S.tab === 'chiffres' || (S.ready && !S.wines.length);   // pas de compteurs à zéro sur une cave vide
   if (S.tab === 'cave') renderList(); else if (S.tab === 'boire') renderBoire(); else renderChiffres();
+  // Transition douce à chaque changement d'onglet (jamais quand la même vue est simplement redessinée).
+  if (S.lastTab && S.lastTab !== S.tab) {
+    const v = S.tab === 'cave' ? $('#vCave') : S.tab === 'boire' ? $('#vBoire') : $('#vChiffres');
+    if (v) { v.classList.remove('vin'); void v.offsetWidth; v.classList.add('vin'); setTimeout(() => v.classList.remove('vin'), 400); }
+  }
+  S.lastTab = S.tab;
   avisSiChange();
 }
 // « Magic » : tableau de bord de la cave. Calcul local, sans IA.
@@ -453,10 +459,10 @@ function bilanHtml(c) {
     const m = avisMem, struct = !!(m.solide || m.manque || m.priorite);
     const date = new Date(m.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
     const pied = `<span class="mu small">Avis du ${date} · impression, sans vérification${avisEnCours ? ' · mise à jour en cours' : ''}${m.erreur ? ' · mise à jour impossible : ' + esc(m.erreur) : ''}</span>`;
-    const detail = complet ? `<details class="avis-complet"><summary>Avis complet</summary><p>${esc(complet)}</p></details>` : '';
-    const bloc = (cls, titre, items) => items && items.length ? `<section class="ab ${cls}"><h4>${titre}</h4><ul>${items.map(x => `<li>${esc(x)}</li>`).join('')}</ul></section>` : '';
+    const detail = complet ? `<details class="avis-complet"><summary>Avis complet</summary><p>${esc(symPct(complet))}</p></details>` : '';
+    const bloc = (cls, titre, items) => items && items.length ? `<section class="ab ${cls}"><h4>${titre}</h4><ul>${items.map(x => `<li>${esc(symPct(x))}</li>`).join('')}</ul></section>` : '';
     avisHtml = struct
-      ? `<p class="avis-lead">${esc(court)}</p>${m.cles && m.cles.length ? `<ul class="cles">${m.cles.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}${bloc('ab-ok', 'Ce qui est solide', m.solide)}${bloc('ab-wa', 'Ce qui manque', m.manque)}${bloc('ab-pr', 'À acheter ou faire en priorité', m.priorite)}${detail}${pied}`
+      ? `<p class="avis-lead">${esc(symPct(court))}</p>${m.cles && m.cles.length ? `<ul class="cles">${m.cles.map(x => `<li>${esc(symPct(x))}</li>`).join('')}</ul>` : ''}${bloc('ab-ok', 'Ce qui est solide', m.solide)}${bloc('ab-wa', 'Ce qui manque', m.manque)}${bloc('ab-pr', 'À acheter ou faire en priorité', m.priorite)}${detail}${pied}`
       : `${esc(court)}${detail}${pied}`;
   }
   else if (avisMem && avisMem.erreur) avisHtml = `<span class="mu">Pas encore d’avis : ${esc(avisMem.erreur)}</span>`;

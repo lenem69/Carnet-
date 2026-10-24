@@ -23,17 +23,81 @@ export const REGLES = {
 };
 
 // Mots-clés sur le nom, le domaine, le cépage et la région (texte normalisé : minuscules, sans accents).
-const LIQUOREUX = /\bsauternes|barsac|monbazillac|layon|quarts? de chaume|bonnezeaux|tokaj|liquoreux|moelleux|vin de paille|pedro ximenez|\bporto\b|\bport\b|madere|vin jaune|jurancon|vendanges tardives|beerenauslese|eiswein|ice wine/;
+const LIQUOREUX = /\bsauternes|barsac|monbazillac|layon|quarts? de chaume|bonnezeaux|tokaj|liquoreux|moelleux|vin de paille|pedro ximenez|\bporto\b|\bport\b|madere|vin jaune|jurancon(?! sec)|vendanges tardives|grains nobles|beerenauslese|eiswein|ice wine/;
 const PREMIER_CRU = /premier cru|1er cru/;
-const PRESTIGE = /grand cru|grands crus|chateauneuf|hermitage|cote rotie|cornas|barolo|barbaresco|brunello|gran reserva|chateau (margaux|latour|lafite|mouton|haut[ -]brion|petrus|cheval blanc|ausone|angelus)|mouton rothschild|montrachet|romanee|chambertin|musigny|echezeaux|richebourg/;
+const PRESTIGE = /grand cru|grands crus|barolo|barbaresco|brunello|gran reserva|chateau (margaux|latour|lafite|mouton|haut brion|petrus|cheval blanc|ausone|angelus)|mouton rothschild|montrachet|romanee|chambertin|musigny|echezeaux|richebourg/;
 const VIN_LEGER = /\bigp\b|indication geographique|pays d.oc|vin de france|\bvdf\b|vin de pays|vin de table/;
 
 const ANNEE_MIN = 1900; const ANNEE_MAX = 2035;
 
+// Un village n'est pas un grand cru : « Chassagne-Montrachet », « Gevrey-Chambertin », « Chambolle-Musigny », « Vosne-Romanée », « Puligny-Montrachet »,
+// « Crozes-Hermitage » et « Saint-Émilion Grand Cru » contiennent le nom d'un grand cru ou d'un terme de prestige sans en être un.
+const VILLAGES = /\b(chassagne|puligny|gevrey|chambolle|vosne|crozes) (montrachet|chambertin|musigny|romanee|hermitage)\b/g;
+const cleTexte = t => norm(t).replace(/[-'’]/g, ' ').replace(/\s+/g, ' ').trim();
+export function texteVin(w) {
+  return cleTexte([w.name, w.dom, w.grape, w.region].join(' | ')).replace(VILLAGES, '$1').replace(/saint emilion grand cru/g, 'saint emilion');
+}
+
+// Règle propre à chaque appellation (années après le millésime) : [rouge, blanc], null = non concerné.
+// Valable pour le niveau « village » ou le vin de l'appellation ; 1er cru et grand cru ont leurs propres règles (voir niveau).
+const PAR_APPELLATION = {
+  // Bourgogne
+  'bourgogne': [5, 4], 'bourgogne aligote': [null, 3], 'bourgogne hautes cotes de nuits': [6, 5], 'hautes cotes de nuits': [6, 5], 'hautes cotes de beaune': [6, 5],
+  'marsannay': [6, 4], 'fixin': [8, 6], 'gevrey chambertin': [9, null], 'morey saint denis': [9, 8], 'chambolle musigny': [8, null], 'vosne romanee': [10, null],
+  'nuits saint georges': [9, 6], 'aloxe corton': [9, 7], 'pernand vergelesses': [7, 6], 'savigny les beaune': [7, 5], 'beaune': [8, 6], 'pommard': [10, null],
+  'volnay': [9, null], 'monthelie': [7, 6], 'auxey duresses': [6, 6], 'saint romain': [5, 5], 'meursault': [6, 6], 'puligny montrachet': [null, 7],
+  'chassagne montrachet': [8, 7], 'saint aubin': [6, 6], 'santenay': [7, 5], 'maranges': [6, null], 'mercurey': [6, 5], 'givry': [5, 4], 'rully': [5, 4],
+  'montagny': [null, 4], 'pouilly fuisse': [null, 6], 'saint veran': [null, 4], 'macon': [3, 3], 'chablis': [null, 6], 'petit chablis': [null, 3], 'irancy': [6, null],
+  // Bordeaux
+  'bordeaux': [5, 3], 'bordeaux superieur': [6, 3], 'entre deux mers': [null, 2], 'medoc': [7, null], 'haut medoc': [8, null], 'listrac medoc': [8, null], 'moulis en medoc': [8, null],
+  'pauillac': [12, null], 'saint julien': [12, null], 'saint estephe': [11, null], 'margaux': [11, null], 'pessac leognan': [10, 7], 'graves': [8, 5],
+  'pomerol': [12, null], 'lalande de pomerol': [8, null], 'saint emilion': [8, null], 'saint emilion grand cru': [10, null], 'lussac saint emilion': [7, null],
+  'montagne saint emilion': [7, null], 'puisseguin saint emilion': [7, null], 'saint georges saint emilion': [7, null], 'fronsac': [8, null], 'canon fronsac': [8, null],
+  'cotes de bourg': [6, null], 'blaye': [6, null], 'cotes de blaye': [6, 3], 'blaye cotes de bordeaux': [6, null], 'castillon cotes de bordeaux': [7, null],
+  'cotes de bordeaux': [6, 3], 'francs cotes de bordeaux': [6, null], 'loupiac': [null, 15], 'sainte croix du mont': [null, 15], 'cadillac': [null, 12], 'cerons': [null, 12],
+  // Rhône
+  'hermitage': [15, 12], 'cote rotie': [12, null], 'cornas': [12, null], 'saint joseph': [8, 5], 'crozes hermitage': [7, 4], 'condrieu': [null, 3],
+  'chateau grillet': [null, 6], 'saint peray': [null, 4], 'chateauneuf du pape': [12, 7], 'gigondas': [10, null], 'vacqueyras': [8, 4], 'lirac': [6, 3],
+  'cairanne': [7, 3], 'rasteau': [7, null], 'vinsobres': [7, null], 'beaumes de venise': [7, null], 'cotes du rhone villages': [5, 3], 'cotes du rhone': [4, 3],
+  'ventoux': [4, 3], 'luberon': [4, 3], 'costieres de nimes': [4, 3],
+  // Loire
+  'chinon': [6, 5], 'bourgueil': [6, null], 'saint nicolas de bourgueil': [6, null], 'saumur champigny': [6, null], 'saumur': [4, 5], 'anjou': [4, 5],
+  'anjou villages': [5, null], 'anjou villages brissac': [6, null], 'savennieres': [null, 10], 'savennieres coulee de serrant': [null, 12], 'savennieres roche aux moines': [null, 10],
+  'vouvray': [null, 8], 'montlouis sur loire': [null, 7], 'jasnieres': [null, 8], 'sancerre': [4, 4], 'pouilly fume': [null, 4], 'menetou salon': [4, 3], 'quincy': [null, 3],
+  'reuilly': [3, 3], 'muscadet': [null, 3], 'muscadet sevre et maine': [null, 4], 'touraine': [3, 3], 'cheverny': [3, 3], 'cour cheverny': [null, 6], 'valencay': [3, 3],
+  // Beaujolais
+  'beaujolais': [4, 3], 'beaujolais villages': [4, null], 'morgon': [6, null], 'moulin a vent': [7, null], 'chenas': [6, null], 'julienas': [5, null],
+  'cote de brouilly': [5, null], 'brouilly': [4, null], 'fleurie': [4, null], 'chiroubles': [3, null], 'regnie': [4, null], 'saint amour': [4, null],
+  // Alsace
+  'alsace riesling': [null, 6], 'alsace pinot gris': [5, 5], 'alsace gewurztraminer': [null, 5], 'alsace pinot noir': [4, null], 'alsace pinot blanc': [null, 3],
+  'alsace sylvaner': [null, 3], 'alsace muscat': [null, 3], 'alsace edelzwicker': [null, 3],
+  // Sud-Ouest, Jura, Savoie
+  'cahors': [8, null], 'madiran': [10, null], 'irouleguy': [6, 4], 'pecharmant': [7, null], 'bergerac': [4, 3], 'cotes de bergerac': [5, 3], 'gaillac': [4, 3],
+  'fronton': [4, null], 'buzet': [5, null], 'marcillac': [4, null], 'saint mont': [5, 3], 'jurancon sec': [null, 5], 'pacherenc du vic bilh': [null, 6],
+  'arbois': [5, 6], 'cotes du jura': [5, 5], 'l etoile': [null, 6], 'chateau chalon': [null, 25], 'vin de savoie': [3, 3], 'roussette de savoie': [null, 4], 'seyssel': [null, 4], 'bugey': [3, 3],
+  // Languedoc-Roussillon
+  'faugeres': [7, null], 'saint chinian': [6, null], 'minervois la liviniere': [8, null], 'minervois': [5, 3], 'corbieres': [5, 3], 'corbieres boutenac': [8, null],
+  'fitou': [6, null], 'terrasses du larzac': [8, null], 'pic saint loup': [7, null], 'montpeyroux': [7, null], 'la clape': [7, 5], 'pezenas': [6, null],
+  'languedoc': [4, 3], 'picpoul de pinet': [null, 2], 'limoux': [null, 5], 'collioure': [8, 4], 'cotes du roussillon': [5, 3], 'cotes du roussillon villages': [6, null],
+  'tautavel': [7, null], 'maury': [12, 12], 'maury sec': [8, null], 'banyuls': [15, 15], 'banyuls grand cru': [20, 20], 'rivesaltes': [10, 10],
+  // Provence et Corse
+  'bandol': [10, 4], 'palette': [8, 6], 'cassis': [null, 3], 'bellet': [5, 4], 'coteaux d aix en provence': [4, 3], 'les baux de provence': [5, null],
+  'cotes de provence': [3, 3], 'coteaux varois en provence': [3, 3], 'patrimonio': [6, 4], 'ajaccio': [5, 3], 'vin de corse': [4, 3],
+};
+// Nom d'appellation sans le niveau (« Chassagne-Montrachet Premier Cru » → « chassagne montrachet »).
+const sansNiveau = nom => cleTexte(nom).replace(/ (premier cru|grand cru)$/, '');
+// Niveau hiérarchique : grand cru > premier cru > village (ou appellation régionale). Le village n'est jamais un grand cru.
+export function niveau(w) {
+  const t = texteVin(w);
+  if (PRESTIGE.test(t)) return 'grand';
+  if (PREMIER_CRU.test(t)) return 'premier';
+  return 'village';
+}
+
 // Calcule l'apogée d'un vin. annee = année en cours (pour le statut).
 // Renvoie { pic, from, to, statut, regle, ans, sansMillesime }.
 export function apogee(w, annee = new Date().getFullYear()) {
-  const texte = norm([w.name, w.dom, w.grape, w.region].join(' | '));
+  const texte = texteVin(w);
   // Sans millésime (ex. Champagne brut non millésimé) : prêt à boire dès maintenant.
   const millesime = Number(w.year);
   if (!w.year || !Number.isInteger(millesime) || millesime < ANNEE_MIN || millesime > ANNEE_MAX) {
@@ -45,12 +109,23 @@ export function apogee(w, annee = new Date().getFullYear()) {
   const champagne = grande === 'Champagne' || /champagne/.test(texte);
 
   let r;
+  const base = app ? (PAR_APPELLATION[cleTexte(app[0])] ?? PAR_APPELLATION[sansNiveau(app[0])]) : null;
+  const nomApp = app ? app[0].replace(/ (Premier|Grand) Cru$/, '') : '';
+  const enAns = (ans, label) => ({ ans, label });
   if (LIQUOREUX.test(texte)) r = REGLES.liquoreux;
   else if (w.color === 'Pétillant' && champagne) r = REGLES.champagne;
-  else if (PRESTIGE.test(texte)) r = REGLES.prestige;
-  else if (PREMIER_CRU.test(texte)) r = REGLES.premierCru;
+  else if (PRESTIGE.test(texte) || (app && /grand cru$/i.test(app[0]) && !/saint[- ]émilion|banyuls/i.test(app[0]))) {
+    // Grand cru : règle générale ; quelques régions vieillissent moins longtemps.
+    r = /chablis|alsace/.test(texte) ? enAns(12, 'grand cru (Chablis, Alsace)') : REGLES.prestige;
+  }
+  else if (PREMIER_CRU.test(texte) || (app && /premier cru$/i.test(app[0]))) {
+    r = w.color === 'Blanc' ? enAns(10, 'premier cru blanc') : REGLES.premierCru;
+  }
   else if (w.color === 'Pétillant') r = REGLES.cremant;
   else if (w.color === 'Rosé') r = REGLES.rose;
+  else if (base && (w.color === 'Rouge' || w.color === 'Blanc') && base[w.color === 'Rouge' ? 0 : 1] != null) {
+    r = enAns(base[w.color === 'Rouge' ? 0 : 1], nomApp);
+  }
   else if (VIN_LEGER.test(texte)) r = REGLES.leger;
   else if (w.color === 'Rouge') {
     if (grande === 'Beaujolais' || grande === 'Vallée de la Loire') r = REGLES.rougeLeger;
@@ -105,7 +180,7 @@ export function service(w) {
   if (!w) return null;
   const pr = profil(w);
   if (pr) return { min: pr.tmin, max: pr.tmax, appellation: true };
-  const texte = norm([w.name, w.dom, w.grape, w.region].join(' | '));
+  const texte = texteVin(w);
   const r = (min, max) => ({ min, max, appellation: false });
   // Vin jaune : se sert presque tempéré (avant la règle des liquoreux, qui le contient).
   if (/chateau[- ]chalon|vin jaune/.test(texte)) return r(14, 16);
