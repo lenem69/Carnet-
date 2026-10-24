@@ -34,6 +34,7 @@ function toast(msg, opt = {}) {
   // un même message déjà affiché n’est pas répété
   const deja = [...box.children].find(c => c.firstChild && c.firstChild.textContent === msg);
   if (deja) return deja;
+  if (opt.kind === 'err') [...box.querySelectorAll('.toast.err')].forEach(c => c.remove());
   const el = document.createElement('div');
   el.className = 'toast' + (opt.kind === 'err' ? ' err' : '');
   el.setAttribute('role', opt.kind === 'err' ? 'alert' : 'status');
@@ -50,6 +51,8 @@ function toast(msg, opt = {}) {
   return el;
 }
 const errToast = msg => toast('⚠️ ' + msg, { kind: 'err' });
+// Erreur de clé ou de modèle d’IA : un bouton mène directement aux réglages concernés.
+const errToastReglages = msg => toast('⚠️ ' + msg, { kind: 'err', action: { label: 'Réglages', fn: () => openSettings() } });
 
 window.addEventListener('error', e => { if (e && e.message) errToast('Erreur inattendue : ' + e.message); });
 window.addEventListener('unhandledrejection', e => {
@@ -232,11 +235,13 @@ function card(w, mode, why) {
   const meta = [w.color, w.grape, w.price !== '' ? fmtPrice(w.price) : '', w.loc ? '📍 ' + w.loc : ''].filter(Boolean).map(esc).join(' · ');
   const tags = [
     w.check ? '<span class="tag bad">à vérifier</span>' : '',
+    st ? `<span class="tag stp ${st.cls}">${st.label}${w.from || w.to ? ' (' + (w.from || '…') + '–' + (w.to || '…') + ')' : ''}</span>` : '',
+    w.qty <= 0 ? '<span class="tag">plus en cave</span>' : '',
+  ].filter(Boolean).join(' ');
+  const tags2 = [
     w.conf === 'estimée' ? '<span class="tag wa">fiche estimée</span>' : '',
     w.conf === 'vérifiée' ? '<span class="tag ok">fiche vérifiée</span>' : '',
-    st ? `<span class="tag ${st.cls}">${st.label}${w.from || w.to ? ' (' + (w.from || '…') + '–' + (w.to || '…') + ')' : ''}</span>` : '',
     w.src && w.src.from === 'bible' ? '<span class="tag">apogée d’après la bible</span>' : '',
-    w.qty <= 0 ? '<span class="tag">plus en cave</span>' : '',
   ].filter(Boolean).join(' · ');
   const hasFiche = w.story || w.pairings.length || w.note || w.sources.length;
   // Apogée estimée par la règle de l'appli (sans IA) : affichée dans la fiche du vin.
@@ -250,9 +255,9 @@ function card(w, mode, why) {
   return `<div class="w${w.qty <= 0 ? ' out' : ''}${S.highlight === w.id ? ' hl' : ''}" data-id="${esc(w.id)}">
   ${why ? `<p class="why">💡 ${esc(why)}</p>` : ''}
   <div class="row"><div><h4>${esc(w.name)}${w.year ? ' ' + esc(w.year) : ''}</h4><p>${esc([w.dom, w.region].filter(Boolean).join(' · '))}</p></div>${qty}</div>
-  ${meta ? `<p>${meta}</p>` : ''}${tags ? `<p>${tags}</p>` : ''}${apoRappel ? `<p class="mu small">${esc(apoRappel)}</p>` : ''}${degLigne(w)}
+  ${meta ? `<p>${meta}</p>` : ''}${tags ? `<p class="stl">${tags}</p>` : ''}${tags2 || apoRappel ? `<p class="mu small sec">${[tags2, apoRappel ? esc(apoRappel) : ''].filter(Boolean).join(' · ')}</p>` : ''}${degLigne(w)}
   ${hasFiche || apo ? `<details><summary>Fiche et accords</summary>${apo ? `<p class="mu small">${esc(apo)}</p>` : ''}${majIA.length ? `<p class="mu small">Mis à jour par l’IA : ${esc(majIA.join(', '))}.</p>` : ''}${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : journalHtml(w, mode)}
-  <div class="acts">${!w.story && !w.pairings.length ? '<button class="lnk" data-a="gen">✨ Fiche (IA)</button>' : ''}<button class="lnk" data-a="e">Modifier</button>${mode === 'cave' ? '<button class="lnk" data-a="d">Supprimer</button>' : ''}</div>
+  <div class="acts">${!w.story && !w.pairings.length ? '<button class="lnk" data-a="gen">✨ Fiche (IA)</button>' : ''}<button class="lnk main" data-a="e">Modifier</button>${mode === 'cave' ? '<button class="lnk quiet" data-a="d">Supprimer</button>' : ''}</div>
 </div>`;
 }
 
@@ -365,8 +370,8 @@ function classerPlat(dish, n) {
 }
 
 function renderBoire() {
-  const modes = [['year', 'Cette année'], ['soon', 'À boire vite'], ['apogee', 'Apogée'], ['dish', 'Avec un plat']];
-  $('#bchips').innerHTML = modes.map(([k, l]) => `<button class="chip${k === S.bmode ? ' on' : ''}" data-b="${k}">${l}</button>`).join('');
+  const modes = [['year', 'Cette année'], ['soon', 'À boire vite'], ['dish', 'Avec un plat'], ['apogee', 'Apogée']];
+  $('#bchips').innerHTML = modes.map(([k, l]) => `<button class="chip${k === S.bmode ? ' on' : ''}${k === 'apogee' ? ' sec' : ''}" data-b="${k}">${l}</button>`).join('');
   $('#plat').hidden = S.bmode !== 'dish';
   if (S.bmode === 'dish') return; // résultats rendus par la recherche
   const stock = S.wines.filter(w => w.qty > 0);
@@ -384,10 +389,17 @@ function renderBoire() {
       })
       .sort((x, y) => ((x.f && x.f.to) || 9999) - ((y.f && y.f.to) || 9999));
   }
+  // Pourquoi ce vin : chiffres déjà calculés par les règles de l’appli, rien d’inventé.
+  const pourquoi = x => {
+    if (S.bmode === 'apogee') return x.a && x.a.pic ? `Apogée estimée vers ${x.a.pic} (fenêtre ${x.a.from}–${x.a.to}).` : '';
+    const f = x.f; if (!f) return S.bmode === 'year' ? 'Sans millésime : considéré prêt à boire.' : '';
+    if (S.bmode === 'soon') return f.to ? (f.to < YEAR ? `Fenêtre de garde terminée en ${f.to}.` : f.to === YEAR ? `Fenêtre de garde qui se termine cette année (${f.to}).` : `Fenêtre de garde jusqu’en ${f.to}.`) : '';
+    return f.to ? `Dans sa période de garde, jusqu’en ${f.to}.` : (f.from ? `Dans sa période de garde, depuis ${f.from}.` : '');
+  };
   const list = items.map(x => x.w);
   const head = list.length ? `<p class="mu small">${list.length} vin${list.length > 1 ? 's' : ''} · ${list.reduce((a, w) => a + w.qty, 0)} bouteille(s)</p>` : '';
   const vide = { year: 'Aucun vin dans sa période idéale cette année.', soon: 'Aucun vin proche de la fin de sa fenêtre.', apogee: 'Aucun vin à l’apogée cette année.' }[S.bmode];
-  $('#blist').innerHTML = head + (list.length ? list.map(w => card(w, 'boire')).join('') : `<p class="empty">${vide}</p>`);
+  $('#blist').innerHTML = head + (list.length ? items.map(x => card(x.w, 'boire', pourquoi(x))).join('') : `<p class="empty">${vide}</p>`);
 }
 
 function renderDatalists() {
@@ -435,11 +447,12 @@ function bilanHtml(c) {
   else if (avisMem && avisMem.erreur) avisHtml = `<span class="mu">Pas encore d’avis : ${esc(avisMem.erreur)}</span>`;
   else avisHtml = `<span class="mu">${AI.avisPossible() ? 'Avis en préparation…' : 'L’avis de l’IA demande votre propre clé, à ajouter dans ⚙ Réglages.'}</span>`;
   return `<div class="bilan">
-    <p><b>${titre}</b></p>
+    <h3 class="bt">Équilibre de ma cave</h3>
+    <p class="bsub"><b>${titre}</b></p>
     <div id="avisIA" class="small">${avisHtml}</div>
     <p><b>Équilibre</b> ${esc(L.equilibre(c))}</p>
     <p><b>Valeur estimée</b> ${v.couverts ? `≈ ${fmtEur(v.total)}` : 'pas encore estimée'}</p>
-    <p class="mu small">${v.couverts ? `${v.couverts} bouteille(s) sur ${v.bouteilles} estimée(s). ` : ''}Estimation indicative : peu de prix d’achat sont saisis, donc elle repose sur les connaissances de l’IA, sans vérification.</p>
+    <p class="mu small">${v.couverts ? `${v.couverts} bouteille(s) sur ${v.bouteilles} estimée(s). ` : ''}Estimation indicative : peu de prix d’achat sont saisis, donc elle repose sur les connaissances de l’IA, sans vérification. Ce n’est pas une valeur de revente garantie.</p>
     ${reste ? `<button class="lnk" data-act="valeur" type="button">Estimer la valeur (IA)</button>` : ''}
   </div>`;
 }
@@ -1130,6 +1143,7 @@ function bind() {
   $('#st-stats-show').onclick = showStatsPreview;
   $('#st-auto').onchange = () => { auto.on = $('#st-auto').checked; if (auto.on) auto.pauseUntil = 0; autoSave(); $('#st-auto-info').textContent = autoStatus(); if (auto.on) setTimeout(autoStep, 500); };
   $('#st-help').onclick = openContact;
+  $('#st-esprit').onclick = () => openSheet('sEsprit');
   $('#ct-share').onclick = sendContact;
   $('#ct-pub').onclick = publishContact;
   $('#ct-copy').onclick = async () => {
@@ -1452,7 +1466,7 @@ async function autoStep() {
     else if (code === 'service_gratuit') { auto.pauseUntil = now + 30 * 6e4; auto.pauseWhy = 'service gratuit indisponible'; }
     else if (['bad_key', 'bad_model', 'bad_base', 'no_key'].includes(code)) {
       auto.pauseUntil = now + 864e5; auto.pauseWhy = 'clé ou modèle d’IA à vérifier';
-      errToast('Fiches automatiques en pause : ' + AI.errText(e));
+      errToastReglages('Fiches automatiques en pause : ' + AI.errText(e));
     } else { auto.pauseUntil = now + 30 * 6e4; auto.pauseWhy = 'connexion ou serveur indisponible'; }
   } finally { autoBusy = false; autoSave(); store.setMeta('passeVerrou', 0).catch(() => {}); }
 }

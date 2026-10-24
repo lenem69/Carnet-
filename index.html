@@ -40,6 +40,7 @@
 <div id="landing" hidden role="dialog" aria-modal="true" aria-labelledby="ldT">
   <div class="ld">
     <h1 id="ldT">Ma cave</h1>
+    <p class="slogan">Votre cave. Vos choix. Votre plaisir.</p>
     <p class="mu">Installez l’appli sur votre écran d’accueil : elle s’ouvre comme une vraie appli, même sans réseau.</p>
     <div id="ld-ios" hidden>
       <div class="tuto" aria-hidden="true">
@@ -77,14 +78,14 @@
     <div class="stat"><b id="sD">0</b><span>à boire vite</span></div>
   </div>
   <div class="tabs" role="tablist">
-    <button class="tab on" role="tab" data-t="cave" aria-selected="true">Ma cave</button>
-    <button class="tab" role="tab" data-t="boire" aria-selected="false">Que boire ?</button>
-    <button class="tab" role="tab" data-t="chiffres" aria-selected="false">Magic 🪄</button>
+    <button class="tab on" role="tab" data-t="cave" aria-selected="true"><svg class="ti" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M10 2.5h4v4.5c0 1.6 2.2 2.2 2.2 5V20a1.5 1.5 0 0 1-1.5 1.5h-5.4A1.5 1.5 0 0 1 7.8 20v-8c0-2.800 2.200-3.400 2.200-5z"/><rect x="9.600" y="13" width="4.800" height="5" rx=".8"/></svg><span class="tl">Ma cave</span><svg class="chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+    <button class="tab" role="tab" data-t="boire" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M7 2.500h10c.4 4.800-.4 9-5 9.500-4.600-.5-5.400-4.700-5-9.500z"/><path d="M12 12v8.500M8.500 21.500h7M7.200 7h9.600"/></svg><span class="tl">Que boire ?</span><svg class="chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+    <button class="tab" role="tab" data-t="chiffres" aria-selected="false"><svg class="ti" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M10 3l1.900 5.100L17 10l-5.100 1.900L10 17l-1.900-5.100L3 10l5.100-1.900z"/><path d="M18 14.500l.8 2.200 2.200.8-2.200.8-.8 2.200-.8-2.200-2.200-.8 2.200-.8z"/></svg><span class="tl">Magic</span><svg class="chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
   </div>
 
   <section id="vCave">
     <div class="tools">
-      <input id="q" type="search" placeholder="Rechercher : nom, domaine, cépage…" aria-label="Rechercher" autocomplete="off">
+      <input id="q" type="search" placeholder="Nom, domaine…" aria-label="Rechercher" autocomplete="off">
       <select id="sort" aria-label="Trier">
         <option value="name">Nom</option>
         <option value="urgent">À boire en priorité</option>
@@ -107,7 +108,7 @@
     </div>
     <div id="blist"></div>
   </section>
-  <footer class="credit">Application créée par Jean-François Morin<br>© Copyright appartenant à Jean-François Morin 2026<br><button class="lnk" id="bContact" type="button">Aide et contact</button> · <button class="lnk" id="bReport" type="button">Signaler un problème</button></footer>
+  <footer class="credit"><span class="slogan">Votre cave. Vos choix. Votre plaisir.</span><br>Application créée par Jean-François Morin<br>© Copyright appartenant à Jean-François Morin 2026<br><button class="lnk" id="bContact" type="button">Aide et contact</button> · <button class="lnk" id="bReport" type="button">Signaler un problème</button></footer>
 </main>
 
 <button id="fab" aria-label="Ajouter des vins">
@@ -122,14 +123,15 @@
 <!-- Menu d'ajout -->
 <div class="modal" id="sMenu" role="dialog" aria-modal="true" aria-labelledby="mT"><div class="sheet">
   <h2 id="mT">Ajouter des vins</h2>
+  <h3 class="first">Ajouter des bouteilles</h3>
   <div class="stack">
     <button class="btn" data-m="cam">📷 Scanner une étiquette</button>
     <button class="btn o" data-m="img">🖼️ Importer des photos (plusieurs)</button>
     <button class="btn o" data-m="xls">📊 Importer un tableur (Excel, CSV)</button>
     <button class="btn o" data-m="man">✍️ Saisie manuelle</button>
   </div>
-  <h3>Fiches et données</h3>
-  <div class="stack">
+  <h3>Gérer ma cave</h3>
+  <div class="stack lst">
     <button class="btn o" data-m="enr">✨ Mettre à jour les fiches (IA)</button>
     <button class="btn o" data-m="bk">💾 Sauvegarder ma cave</button>
     <button class="btn o" data-m="res">♻️ Restaurer une sauvegarde</button>
@@ -210,6 +212,16 @@
 <!-- Réglages -->
 <div class="modal" id="sSet" role="dialog" aria-modal="true" aria-labelledby="stT"><div class="sheet">
   <h2 id="stT">Réglages</h2>
+  <section class="rub apropos">
+    <h3>À propos</h3>
+    <div class="aboutcard">
+      <p class="wm">L’esprit de Ma cave</p>
+      <p class="slogan">Votre cave. Vos choix. Votre plaisir.</p>
+      <p class="small">Six engagements : vos données chez vous, la simplicité, le conseil, la liberté, la connaissance du vin et un outil à votre service.</p>
+      <div class="stack"><button class="btn" id="st-esprit" type="button">Lire L’esprit de Ma cave</button></div>
+    </div>
+  </section>
+  <section class="rub">
   <h3>IA (optionnelle)</h3>
   <p class="mu small">Sert au scan d’étiquettes, aux fiches et aux accords affinés. Tout le reste fonctionne sans IA.</p>
   <div id="ai-guide" class="guide" hidden>
@@ -219,7 +231,7 @@
     <ol class="steps">
       <li>Connectez-vous avec votre compte Google.</li>
       <li>Touchez « Create API key ».</li>
-      <li>Copiez la clé (elle commence par « AIza »).</li>
+      <li>Copiez la clé (elle commence par « AIza » ou « AQ. »).</li>
       <li>Revenez ici : « Coller la clé », puis « Enregistrer ».</li>
     </ol>
   </div>
@@ -243,6 +255,8 @@
     <button class="btn" id="ai-save">Enregistrer</button>
     <button class="btn o" id="ai-test">Tester la connexion</button>
   </div>
+  </section>
+  <section class="rub">
   <h3>Fiches automatiques</h3>
   <label class="chk"><input type="checkbox" id="st-auto"> Compléter les fiches toute seule</label>
   <ul class="mu small notes">
@@ -252,25 +266,48 @@
   </ul>
   <p id="st-auto-info" class="mu small"></p>
   <button class="btn o" id="st-maj">Mettre à jour les fiches maintenant</button>
-  <h3>Nouvelles versions</h3>
-  <p id="st-notif-info" class="mu small"></p>
-  <button class="btn o" id="st-notif" type="button">Me prévenir des nouvelles versions</button>
-  <div id="st-stats-w" hidden>
-    <h3>Statistiques anonymes</h3>
-    <label class="chk"><input type="checkbox" id="st-stats"> Aider à améliorer l’appli</label>
-    <p class="mu small">Une fois par semaine, un récapitulatif de nombres (ouvertures, fonctions utilisées, erreurs) est envoyé à l’auteur. Jamais de nom de vin, de photo ni de clé.</p>
-    <div class="stack"><button class="btn o" id="st-stats-show" type="button">Voir ce qui est envoyé</button></div>
-  </div>
+  </section>
+  <section class="rub">
   <h3>Données</h3>
   <p id="st-info" class="mu small"></p>
   <div class="stack">
     <button class="btn o" id="st-erase">Effacer toutes les données</button>
   </div>
+  </section>
+  <div id="st-stats-w" class="rub" hidden>
+    <h3>Statistiques anonymes</h3>
+    <label class="chk"><input type="checkbox" id="st-stats"> Aider à améliorer l’appli</label>
+    <p class="mu small">Une fois par semaine, un récapitulatif de nombres (ouvertures, fonctions utilisées, erreurs) est envoyé à l’auteur. Jamais de nom de vin, de photo ni de clé.</p>
+    <div class="stack"><button class="btn o" id="st-stats-show" type="button">Voir ce qui est envoyé</button></div>
+  </div>
+  <section class="rub">
   <h3>Application</h3>
   <p class="mu small">Version <b id="st-ver"></b></p>
   <p class="mu small">© Copyright appartenant à Jean-François Morin 2026</p>
+  <h4 class="sub">Nouvelles versions</h4>
+  <p id="st-notif-info" class="mu small"></p>
+  <button class="btn o" id="st-notif" type="button">Me prévenir des nouvelles versions</button>
+  <p class="mu small">Hors connexion : votre cave, les fiches, les périodes de garde et les accords locaux fonctionnent sans Internet. Seules l’IA, la mise à jour de la bible des vins et la recherche de nouvelles versions ont besoin du réseau.</p>
   <div class="stack"><button class="btn o" id="st-upd">Vérifier les mises à jour</button><button class="btn o" id="st-help" type="button">Aide et contact</button></div>
+  </section>
   <button class="lnk close" data-close="sSet">Fermer</button>
+</div></div>
+
+<!-- L’esprit de Ma cave -->
+<div class="modal" id="sEsprit" role="dialog" aria-modal="true" aria-labelledby="esT"><div class="sheet">
+  <h2 id="esT" class="wm">Ma cave</h2>
+  <p class="slogan">Votre cave. Vos choix. Votre plaisir.</p>
+  <p class="mu small">Gérez vos bouteilles simplement, comprenez leur évolution et choisissez le bon moment pour les ouvrir.</p>
+  <p class="mu small">Une application pensée pour les amateurs de vin : personnelle, autonome et fondée sur la connaissance du vin.</p>
+  <h3>L’esprit de Ma cave</h3>
+  <section class="cv"><p class="kick">01 — Vos données</p><h3 class="cvt">Votre cave vous appartient.</h3><p>Vos bouteilles, vos dégustations, votre collection : vos données restent stockées sur votre appareil. Vous gardez la maîtrise de votre cave et de sa sauvegarde.</p></section>
+  <section class="cv"><p class="kick">02 — La simplicité</p><h3 class="cvt">Une cave, sans complications.</h3><p>Ajoutez vos bouteilles, retrouvez-les facilement et suivez votre collection. Par saisie, photo ou import de fichier. L’outil s’adapte à vous, pas l’inverse.</p></section>
+  <section class="cv"><p class="kick">03 — Le conseil</p><h3 class="cvt">Savoir quoi ouvrir, et quand.</h3><p>Une cave ne sert pas seulement à compter les bouteilles. Elle doit aider à en profiter : suivre les périodes de garde, repérer les vins prêts à boire et trouver le bon accord avec un plat.</p></section>
+  <section class="cv"><p class="kick">04 — La liberté</p><h3 class="cvt">Votre cave, même hors connexion.</h3><p>Retrouvez votre collection sans dépendre d’Internet. Les fonctions essentielles restent accessibles localement. Les services en ligne, notamment l’IA, interviennent uniquement lorsqu’ils sont nécessaires.</p></section>
+  <section class="cv"><p class="kick">05 — La connaissance du vin</p><h3 class="cvt">Des repères solides, pas des réponses au hasard.</h3><p>Ma cave s’appuie sur une base de données dédiée au vin, des règles de garde par appellation et une estimation de l’apogée. L’IA vient enrichir les fiches et les conseils. Les informations vérifiées à partir de sources sont distinguées des estimations.</p></section>
+  <section class="cv"><p class="kick">06 — La philosophie</p><h3 class="cvt">Un outil à votre service. Rien de plus.</h3><p>Pas de compte obligatoire, pas de complexité inutile, pas de dépendance à un service en ligne pour gérer sa cave au quotidien. Ma cave privilégie votre usage, votre autonomie et le plaisir du vin.</p></section>
+  <p class="mu small esnote">Quand vous utilisez l’IA, les informations nécessaires à la demande (par exemple une photo d’étiquette ou le nom d’un vin) sont envoyées au service d’IA choisi.</p>
+  <button class="lnk close" data-close="sEsprit">Fermer</button>
 </div></div>
 
 <!-- Installation sur iPhone -->

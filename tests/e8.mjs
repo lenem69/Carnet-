@@ -68,7 +68,7 @@ await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta
 await page.reload();await H.sl(1500);
 T('mise à jour : fenêtre des nouveautés affichée',(await H.shown(page,'#sDlg'))&&/Mise à jour 1.25.2/.test(await H.txt(page,'#dlgT')),await H.txt(page,'#dlgT'));
 const nx=await H.txt(page,'#dlgX');
-T('résumé : points des versions manquées, pas ceux déjà vus',/Magic : l’avis sur l’équilibre/.test(nx)&&/IA gratuite/.test(nx)&&!/Onglet « Magic »/.test(nx)&&!/Publier ma requête/.test(nx)&&!/Choix automatique de l’IA/.test(nx),nx);
+T('résumé : points des versions manquées, pas ceux déjà vus',/Nouvelle identité/.test(nx)&&/IA gratuite/.test(nx)&&!/Onglet « Magic »/.test(nx)&&!/Publier ma requête/.test(nx)&&!/Choix automatique de l’IA/.test(nx),nx);
 await H.tapText(page,'#dlgB button','Compris');await H.sl(300);
 await page.reload();await H.sl(1500);
 T('nouveautés : affichées une seule fois',!(await H.shown(page,'#sDlg')));

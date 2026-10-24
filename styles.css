@@ -24,8 +24,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 3px solid var(--ac); outline-offset: 2px; }
 h1, h2, h3 { line-height: 1.2; margin: 0; text-wrap: balance; }
-h1 { font-size: 24px; letter-spacing: -0.01em; }
-h2 { font-size: 20px; margin-bottom: 8px; }
+h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; font-family: Georgia, 'Times New Roman', serif; }
+h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
 h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--mu); margin: 18px 0 8px; }
 p { margin: 4px 0; }
 .mu { color: var(--mu); } .small { font-size: 14px; }
@@ -48,7 +48,8 @@ p { margin: 4px 0; }
 .tab {
   flex: 1; min-height: 54px; padding: 6px 4px; border-radius: 12px;
   border: 1.5px solid var(--or); background: var(--orf); color: var(--ortx);
-  font-size: 16px; font-weight: 800; letter-spacing: .01em; line-height: 1.15;
+  font-size: 14px; font-weight: 700; letter-spacing: .01em; line-height: 1.15;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; position: relative;
   box-shadow: 0 3px 0 var(--or); transition: transform .08s ease, box-shadow .08s ease;
 }
 .tab:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--or); }
@@ -60,15 +61,16 @@ p { margin: 4px 0; }
 input, select, textarea { width: 100%; min-height: 44px; padding: 10px 11px; border: 1px solid var(--bd); border-radius: 10px; background: var(--card); }
 textarea { resize: vertical; }
 
-.chips { display: flex; gap: 6px; overflow-x: auto; margin: 10px 0; padding-bottom: 4px; scrollbar-width: thin; }
-.chip { flex: none; min-height: 36px; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--bd); background: var(--card); font-size: 14px; }
+.chips { display: flex; gap: 8px; overflow-x: auto; margin: 10px 0; padding-bottom: 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; min-height: 40px; padding: 6px 14px; border-radius: 99px; border: 1px solid var(--bd); background: var(--card); font-size: 14px; }
 .chip.on { background: var(--ac); color: var(--acx); border-color: var(--ac); }
 .chip .n { opacity: .75; font-variant-numeric: tabular-nums; }
 
 .w { background: var(--card); border: 1px solid var(--bd); border-radius: 12px; padding: 12px; margin-bottom: 8px; }
 .w.out { opacity: .6; }
 .w.hl { outline: 2px solid var(--ac); }
-.w h4 { margin: 0; font-size: 16px; overflow-wrap: anywhere; }
+.w h4 { margin: 0; font-size: 17px; font-weight: 700; color: var(--tx); overflow-wrap: anywhere; }
 .w p { margin: 2px 0; color: var(--mu); font-size: 14px; overflow-wrap: anywhere; }
 .w .why { color: var(--tx); }
 .row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
@@ -249,3 +251,51 @@ details.adv[open] summary { margin-bottom: 6px; }
 .stars button { font-size: 34px; line-height: 1; padding: 4px 6px; background: none; border: 0; color: #b5545f; cursor: pointer; min-width: 44px; min-height: 44px; }
 .stars button[aria-checked="true"] { color: #7b1e3a; }
 .stars button:focus-visible { outline: 2px solid #7b1e3a; outline-offset: 2px; }
+
+/* Identité visuelle 1.25.2 : icônes au trait, recherche, signature, esprit de Ma cave */
+.tab .ti { flex: none; }
+.tab .chev { display: none; position: absolute; right: 6px; top: 50%; margin-top: -8px; opacity: .55; }
+@media (min-width: 560px) { .tab { flex-direction: row; gap: 8px; padding-right: 22px; } .tab .chev { display: block; } }
+.tools input#q { padding-left: 38px; background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236f5f63' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6'/%3E%3Cpath d='M15 15l5 5'/%3E%3C/svg%3E") no-repeat 11px 50% / 18px 18px; }
+.slogan { display: block; font-size: 12px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--ac); margin: 2px 0 10px; }
+.credit .slogan { margin: 0 0 8px; font-size: 11px; opacity: .85; }
+.wm { font-family: Georgia, 'Times New Roman', serif; font-size: 22px; }
+.cv { border-top: 1px solid var(--bd); padding: 12px 0 6px; }
+.cv p { margin: 0 0 4px; font-size: 15px; }
+.kick { font-size: 12px !important; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--or-dark, #8a6a1f); }
+.cv .cvt { font-family: Georgia, 'Times New Roman', serif; font-size: 18px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--ac); margin: 2px 0 6px; }
+
+/* Cartes : statut principal en pastille, informations de fiche au second niveau */
+.w .stl { margin: 6px 0 2px; display: flex; flex-wrap: wrap; gap: 6px; }
+.tag.stp { padding: 3px 10px; border-radius: 99px; border: 1px solid currentColor; font-weight: 700; }
+.w .sec { margin-top: 2px; }
+.acts .main { font-weight: 700; }
+.acts .quiet { color: var(--mu); }
+.chip.sec { background: none; border-style: dashed; color: var(--mu); }
+.chip.sec.on { background: var(--ac); color: var(--acx); border-style: solid; }
+/* Ajouter des vins : actions de gestion en liste discrète */
+#sMenu h3.first { margin-top: 6px; }
+.stack.lst { gap: 0; border: 1px solid var(--bd); border-radius: 12px; overflow: hidden; background: var(--card); }
+.stack.lst .btn.o { border: 0; border-radius: 0; border-bottom: 1px solid var(--bd); text-align: left; font-weight: 500; color: var(--tx); background: none; min-height: 48px; }
+.stack.lst .btn.o:last-child { border-bottom: 0; }
+/* Réglages : rubriques */
+.rub { border-top: 1px solid var(--bd); margin-top: 10px; padding-top: 2px; }
+.rub.apropos { border-top: 0; margin-top: 0; }
+.rub h3 { color: var(--ac); }
+.aboutcard { background: var(--card); border: 1px solid var(--bd); border-left: 4px solid var(--or); border-radius: 12px; padding: 12px 14px; }
+.aboutcard .wm { margin: 0; }
+.aboutcard .stack { margin-top: 8px; }
+.esnote { margin-top: 14px !important; }
+/* Magic : Équilibre de ma cave, présentation éditoriale (le contenu n’est pas touché) */
+.bilan { border-top: 3px solid var(--ac); padding: 14px 16px; }
+.bilan .bt { font-family: Georgia, 'Times New Roman', serif; font-size: 20px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--ac); margin: 0 0 4px; }
+.bilan .bsub { color: var(--mu); font-size: 14px; margin-bottom: 8px; }
+.bilan #avisIA { font-size: 15px; line-height: 1.6; margin-bottom: 10px; }
+.bilan #avisIA .mu.small { display: block; margin-top: 8px; }
+.bilan > p:not(.bt):not(.bsub) { padding-top: 8px; border-top: 1px solid var(--bd); }
+.avis-complet { margin-top: 10px; }
+.avis-complet summary { display: inline-block; min-height: 44px; line-height: 44px; padding: 0 16px; border: 1px solid var(--ac); border-radius: 99px; color: var(--ac); font-weight: 600; cursor: pointer; }
+.avis-complet[open] summary { background: var(--soft); }
+.avis-complet p { white-space: pre-line; line-height: 1.65; margin: 10px 0 0; }
+.guide a { color: var(--ac); }
+.rub h4.sub { margin: 14px 0 4px; font-size: 15px; font-weight: 600; color: var(--tx); }
