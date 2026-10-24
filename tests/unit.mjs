@@ -193,8 +193,29 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   T('apogée : grand cru rouge 2018 → +15 ans (le grand cru prime sur le premier cru)', t8d.ans === 15 && t8d.pic === 2033, JSON.stringify(t8d));
   const t9 = ap({ name: 'Rioja Gran Reserva', color: 'Rouge', region: 'Rioja', year: 2010 }, 2026);
   T('apogée : étranger prestige (gran reserva) → +15 ans', t9.ans === 15, JSON.stringify(t9));
-  T('apogée : rappel court sur la carte', A.apogeeCourte(t6)==='Apogée 2031 · à garder' && A.apogeeCourte(t1)==='Prêt à boire (sans millésime)', A.apogeeCourte(t6));
+  T('apogée : rappel court sur la carte', A.apogeeCourte(t6)==='Apogée 2031 · à venir' && A.apogeeCourte(t1)==='Prêt à boire (sans millésime)', A.apogeeCourte(t6));
   T('apogée : phrase de la fiche contient le pic et la fenêtre', /Apogée estimée 2031 \(entre 2029 et 2033\)/.test(A.apogeeTexte(t6)), A.apogeeTexte(t6));
+  // Cohérence apogée / fenêtre de garde : l'apogée ne sort jamais de la fenêtre enregistrée.
+  {
+    const couleurs = ['Rouge', 'Blanc', 'Rosé', 'Pétillant'];
+    const regions = ['Cornas', 'Pauillac', 'Chablis', 'Morgon', 'Champagne', 'Sauternes', 'Rioja', 'Alsace', ''];
+    let n = 0, hors = 0, pbPhrase = 0, ex = '';
+    for (const color of couleurs) for (const region of regions) for (const year of [1995, 2005, 2012, 2018, 2022, 2024]) for (const [from, to] of [[2020, 2030], [2025, 2029], [2040, 2050], [2010, 2015], [2026, 2026], ['', 2027], [2030, '']]) for (const an of [2026, 2035]) {
+      const a = ap({ name: 'Cuvée test', dom: 'D', color, region, year, from, to }, an); n++;
+      const wf = Number(from) || null, wt = Number(to) || null;
+      const ok = a.pic >= (wf || 0) && a.pic <= (wt || 9999) && a.from >= (wf || 0) && a.to <= (wt || 9999) && a.from <= a.pic && a.pic <= a.to;
+      if (!ok) { hors++; ex = ex || JSON.stringify({ color, region, year, from, to, a }); }
+      if (/à garder|urgence|prêt à boire/i.test(A.apogeeCourte(a).replace('Prêt à boire (sans millésime)', ''))) pbPhrase++;
+    }
+    T(`apogée : jamais hors de la fenêtre de garde (${n} combinaisons)`, hors === 0, ex);
+    T('apogée : rappel court sans mot de statut pouvant contredire la pastille', pbPhrase === 0, String(pbPhrase));
+    const sans = ap({ name: 'X', dom: 'D', color: 'Rouge', region: 'Cornas', year: 2020, from: '', to: '' }, 2026);
+    T('apogée : sans fenêtre enregistrée, règle inchangée (grand cru 2020 → 2035)', sans.pic === 2035 && sans.ajuste === false, JSON.stringify(sans));
+    const dedans = ap({ name: 'X', dom: 'D', color: 'Rouge', region: 'Cornas', year: 2020, from: 2028, to: 2042 }, 2026);
+    T('apogée : déjà dans la fenêtre → inchangée', dedans.pic === 2035 && dedans.ajuste === false, JSON.stringify(dedans));
+    const hors2 = ap({ name: 'X', dom: 'D', color: 'Rouge', region: 'Cornas', year: 2020, from: 2025, to: 2029 }, 2026);
+    T('apogée : hors fenêtre → ramenée à la fin de la fenêtre et signalée', hors2.pic === 2029 && hors2.ajuste === true && /Ramenée dans la fenêtre/.test(A.apogeeTexte(hors2)), JSON.stringify(hors2));
+  }
 }
 console.log(out.join('\n'));
 const mw=L.normalizeWine({name:'Chassagne-Montrachet',dom:'Paul Jouard',year:2012,loc:'Casier B'});

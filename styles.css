@@ -308,3 +308,4 @@ details.adv[open] summary { margin-bottom: 6px; }
 .w .acts .lnk { font-size: 14px; font-weight: 500; color: var(--mu); }
 .w .acts .gen { margin-right: auto; color: var(--ac); }
 .w details { margin-top: 6px; }
+.w details > summary { font-weight: 600; color: var(--ac); min-height: 40px; display: flex; align-items: center; cursor: pointer; }

@@ -62,20 +62,38 @@ export function apogee(w, annee = new Date().getFullYear()) {
   }
   else r = REGLES.autre;
 
-  const pic = millesime + r.ans;
-  const from = pic - 2; const to = pic + 2;
+  let pic = millesime + r.ans;
+  let from = pic - 2; let to = pic + 2;
+  // Cohérence : l'apogée ne sort jamais de la fenêtre de garde enregistrée (saisie, bible ou IA).
+  // Si la règle tombe en dehors, le pic est ramené dans la fenêtre et la période d'apogée est recoupée avec elle.
+  let ajuste = false;
+  const wf = Number(w.from) > 0 ? Number(w.from) : null;
+  const wt = Number(w.to) > 0 ? Number(w.to) : null;
+  if (!(wf && wt && wf > wt)) {
+    if (wf && pic < wf) { pic = wf; ajuste = true; }
+    if (wt && pic > wt) { pic = wt; ajuste = true; }
+    if (ajuste || (wf && from < wf) || (wt && to > wt)) {
+      from = Math.max(from, wf || from); to = Math.min(to, wt || to);
+      if (from > to) { from = pic; to = pic; }
+      from = Math.min(from, pic); to = Math.max(to, pic);
+    }
+  }
   const statut = annee < from ? 'À garder' : annee > to ? 'Urgence' : 'Prêt à boire';
-  return { pic, from, to, statut, regle: r.label, ans: r.ans, sansMillesime: false };
+  return { pic, from, to, statut, regle: r.label, ans: r.ans, sansMillesime: false, ajuste };
 }
+
+// Où en est l'apogée elle-même (et non le statut du vin, qui dépend de la fenêtre de garde) : évite de contredire la pastille de la carte.
+const ETAT = { 'À garder': 'à venir', 'Prêt à boire': 'en cours', 'Urgence': 'dépassée' };
 
 // Phrase affichée dans la fiche du vin.
 export function apogeeTexte(a) {
   if (a.sansMillesime) return 'Sans millésime : prêt à boire.';
-  return `Apogée estimée ${a.pic} (entre ${a.from} et ${a.to}) : ${a.statut.toLowerCase()}. Règle : ${a.regle}, +${a.ans} ans après le millésime.`;
+  const plage = a.from === a.to ? '' : ` (entre ${a.from} et ${a.to})`;
+  return `Apogée estimée ${a.pic}${plage} : ${ETAT[a.statut]}. Règle : ${a.regle}, +${a.ans} ans après le millésime.${a.ajuste ? ' Ramenée dans la fenêtre de garde enregistrée.' : ''}`;
 }
 
-// Rappel court affiché sur la carte du vin, sans ouvrir la fiche.
+// Rappel court affiché dans la fiche dépliée du vin.
 export function apogeeCourte(a) {
   if (a.sansMillesime) return 'Prêt à boire (sans millésime)';
-  return `Apogée ${a.pic} · ${a.statut.toLowerCase()}`;
+  return `Apogée ${a.pic} · ${ETAT[a.statut]}`;
 }
