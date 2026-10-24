@@ -223,7 +223,7 @@
   </section>
   <section class="rub">
   <h3>IA (optionnelle)</h3>
-  <p class="mu small">Sert au scan d’étiquettes, aux fiches et aux accords affinés. Tout le reste fonctionne sans IA.</p>
+  <p class="mu small">L’IA lit les étiquettes, rédige les fiches, estime la valeur et rédige l’avis de Magic. Tout le reste fonctionne sans IA, même hors connexion.</p>
   <div id="ai-guide" class="guide" hidden>
     <p><b>Une clé gratuite, en 2 minutes</b></p>
     <p class="small">Adresse à ouvrir : <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com/app/apikey</a></p>
@@ -235,7 +235,32 @@
       <li>Revenez ici : « Coller la clé », puis « Enregistrer ».</li>
     </ol>
   </div>
-  <p class="mu small">Si vous avez déjà votre propre clé, c’est elle qui est utilisée en premier.</p>
+  <p class="mu small">Avec votre propre clé gratuite, l’IA n’a plus de limite fixée par l’appli, et c’est elle qui est utilisée en premier.</p>
+  <details class="adv" id="ai-fonct"><summary>Fonctionnement</summary>
+    <h4 class="sub">Sans clé personnelle</h4>
+    <ul class="mu small notes">
+      <li>Lecture d’étiquette : 1 photo par jour.</li>
+      <li>Fiches, valeur estimée, suggestions de plat et avis de Magic : une aide offerte pour 10 vins par jour.</li>
+      <li>L’avis de Magic se met à jour au plus une fois par jour, quand au moins 2 vins ont été ajoutés ou retirés.</li>
+      <li>Au-delà de ces limites, rien n’est perdu : tout revient le lendemain, ou vous ajoutez votre clé.</li>
+      <li>Le remplissage automatique des fiches en arrière-plan demande votre clé.</li>
+    </ul>
+    <h4 class="sub">Avec votre clé Gemini gratuite</h4>
+    <ul class="mu small notes">
+      <li>Plus de limite fixée par l’appli : seul le quota gratuit de Google s’applique.</li>
+      <li>Lecture d’étiquette sans limite, remplissage automatique des fiches, recherche sur le web.</li>
+      <li>L’avis de Magic se met à jour dès que 2 vins sont ajoutés ou retirés.</li>
+      <li>Si Google atteint sa limite du jour, l’aide offerte prend le relais sans que vous ayez rien à faire (hors lecture des photos).</li>
+    </ul>
+    <h4 class="sub">Ce qui est envoyé</h4>
+    <ul class="mu small notes">
+      <li>Photos d’étiquettes : à Google (Gemini) seulement.</li>
+      <li>Fiches : nom, domaine, millésime, couleur, région.</li>
+      <li>Avis de Magic : des chiffres de votre cave, jamais de nom de vin.</li>
+      <li>L’aide offerte passe par un service tiers (Groq), en texte seulement, jamais de photo.</li>
+      <li>Votre clé reste sur ce téléphone.</li>
+    </ul>
+  </details>
   <p id="ai-auto" class="mu small"></p>
   <label for="ai-prov">Fournisseur à configurer</label>
   <select id="ai-prov"></select>

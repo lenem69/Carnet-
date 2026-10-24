@@ -1,4 +1,4 @@
-// Avis sur l’équilibre : court et complet, générés à l’installation de la version et à chaque ajout ou suppression ; sans crédit, l’avis précédent reste.
+// Avis sur l’équilibre : court et complet, générés à l’installation de la version et dès que 2 vins sont ajoutés ou retirés ; sans crédit, l’avis précédent reste.
 import {start} from './server.mjs';import * as H from './h.mjs';
 H.deploy();const srv=await start(8123);const b=await H.browser();
 const S=H.suite('Avis sur l’équilibre');const T=S.T;
@@ -35,15 +35,19 @@ T('avis court affiché directement',t.includes('Essai 1'),t.slice(0,200));
 T('avis complet : disponible à dérouler',t.includes('Avis complet'));
 T('plus de bouton « Actualiser »',!t.includes('Actualiser'));
 await ajouter('Vin B');await H.tapText(page,'.tab','Ma cave');await H.sl(4000);
-T('ajout d’un vin : nouvel avis',n===2,n);
+T('1 seul vin ajouté : pas de nouvel avis',n===1,n);
+await ajouter('Vin C');await H.tapText(page,'.tab','Ma cave');await H.sl(4000);
+T('2 vins ajoutés : nouvel avis',n===2,n);
 t=await magic();
-T('avis mis à jour après ajout',t.includes('Essai 2'));
+T('avis mis à jour après 2 ajouts',t.includes('Essai 2'));
 await H.tapText(page,'.tab','Ma cave');await H.sl(4000);
 T('pas de nouvel appel sans changement',n===2,n);
-await supprimer('Vin B');await H.tapText(page,'.tab','Magic');await H.sl(300);await H.tapText(page,'.tab','Ma cave');await H.sl(4000);
-T('suppression d’un vin : nouvel avis',n===3,n);
+await supprimer('Vin B');await H.tapText(page,'.tab','Magic');await H.sl(300);await H.tapText(page,'.tab','Ma cave');await H.sl(3000);
+T('1 seul vin retiré : pas de nouvel avis',n===2,n);
+await supprimer('Vin C');await H.tapText(page,'.tab','Magic');await H.sl(300);await H.tapText(page,'.tab','Ma cave');await H.sl(4000);
+T('2 vins retirés : nouvel avis',n===3,n);
 mode='quota';
-await ajouter('Vin C');await H.tapText(page,'.tab','Ma cave');await H.sl(300);
+await ajouter('Vin D');await ajouter('Vin E');await H.tapText(page,'.tab','Ma cave');await H.sl(300);
 await attendreFin();
 t=await magic();
 T('sans crédit : l’avis précédent reste affiché',t.includes('Essai 3')&&t.includes('mise à jour impossible'),t.slice(0,240));

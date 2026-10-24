@@ -57,6 +57,7 @@ T('fiches automatiques sans clé personnelle : aucun appel au proxy ni au relais
 await page.evaluate(()=>document.querySelector('#bSet').click());await H.sl(700);
 const regl=await page.evaluate(()=>({n:document.querySelectorAll('#ai-prov option').length,t:(document.querySelector('#ai-prov')||{}).value}));
 T('Réglages sans clé personnelle (relais disponible) : ouverture sans erreur',errs.length===0&&regl.n>=3&&regl.t!=='groq',JSON.stringify(regl)+' '+errs.join(' / '));
+T('Réglages : « Fonctionnement » explique avec et sans clé personnelle',await page.evaluate(()=>{const d=document.querySelector('#ai-fonct');return !!d&&/Sans clé personnelle/.test(d.textContent)&&/Avec votre clé Gemini/.test(d.textContent)&&/10 vins par jour/.test(d.textContent)&&!/aucune limite/i.test(d.textContent);}));
 await fermer();
 
 // Relais épuisé (10 vins) : fenêtre d'invitation à saisir sa clé, aucun appel.

@@ -837,10 +837,13 @@ const cleCave = () => {
   return S.wines.length + ':' + h.toString(36);
 };
 const renderSiMagic = () => { if (S.tab === 'chiffres') renderChiffres(); };
+const ecartAvis = () => { const avant = new Set(avisMem.ids), now = new Set(S.wines.map(w => String(w.id))); let n = 0; for (const i of now) if (!avant.has(i)) n++; for (const i of avant) if (!now.has(i)) n++; return n; };
 function avisSiChange() {
   if (!S.wines.length || !AI.avisPossible()) return;
   const cle = cleCave();
   if (cle === avisCleVue) return;
+  // L'avis ne se refait que si au moins 2 vins ont été ajoutés ou retirés depuis le dernier (même version de l'appli).
+  if (avisMem && avisMem.v === VERSION && Array.isArray(avisMem.ids) && ecartAvis() < 2) return;
   avisCleVue = cle;
   clearTimeout(avisTimer);
   avisTimer = setTimeout(() => genererAvis(), 2500);
@@ -849,6 +852,7 @@ async function genererAvis() {
   if (avisEnCours || !S.wines.length || !AI.avisPossible()) return;
   avisEnCours = true; renderSiMagic();
   const cle = cleCave();
+  const idsAvis = S.wines.map(w => String(w.id));
   try {
     await whenFree();
     const c = chiffres(S.wines, YEAR);
@@ -873,7 +877,7 @@ async function genererAvis() {
     const rep = await AI.avisCave(resume);
     const { court, complet } = rep;
     const extra = rep.solide ? { cles: rep.cles, solide: rep.solide, manque: rep.manque, priorite: rep.priorite } : {};
-    avisMem = { court, complet, ...extra, date: Date.now(), cle, v: VERSION, erreur: '' };
+    avisMem = { court, complet, ...extra, date: Date.now(), cle, ids: idsAvis, v: VERSION, erreur: '' };
   } catch (e) {
     // Sans crédit ou en panne : on garde l’avis précédent et on dit pourquoi
     avisMem = { ...(avisMem || {}), cle, v: VERSION, erreur: AI.errText(e) };
@@ -881,7 +885,7 @@ async function genererAvis() {
   try { await store.setMeta('avis', avisMem); } catch (e) { console.error(e); }
   avisEnCours = false; renderSiMagic();
   // la cave a changé pendant la lecture : on relance une fois
-  if (cleCave() !== cle) { clearTimeout(avisTimer); avisTimer = setTimeout(() => genererAvis(), 2500); }
+  if (cleCave() !== cle) avisSiChange();
 }
 
 

@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.28.0': ['Équilibre de ma cave : l’avis se met à jour dès que 2 vins sont ajoutés ou retirés (au lieu d’à chaque vin).','⚙ Réglages › IA : un nouveau bouton « Fonctionnement » explique simplement ce qui marche avec et sans clé personnelle, et ce qui est envoyé.'],
   '1.27.2': ['Correction : ⚙ Réglages s’ouvre de nouveau (erreur « Cannot read properties of undefined (reading \'label\') » introduite par l’IA offerte en 1.27.0).'],
   '1.27.1': ['Équilibre de ma cave : l’avis retrouve l’esprit d’un sommelier expert (constats chiffrés, conséquences à table et en cave, appellations précises à acheter, conseil de sommelier), même avec l’IA offerte.', 'Le titre et le bouton ⚙ Réglages restent visibles en haut de l’écran quand on fait défiler la liste.'],
   '1.27.0': ['IA offerte : sans clé à vous, l’appli vous aide maintenant pour les fiches, la valeur estimée, les suggestions de plat et l’avis de Magic, pour 10 vins par jour et par appareil. La lecture d’étiquette gratuite reste à une photo par jour. Au-delà, une fenêtre vous invite à ajouter votre propre clé gratuite Gemini, qui garde toujours la priorité.', 'Si votre clé Gemini est épuisée pour la journée, l’IA offerte prend le relais sans rien vous afficher.'],
