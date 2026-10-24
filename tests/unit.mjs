@@ -211,7 +211,7 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   const t1 = ap({ name: 'Champagne Brut', color: 'Pétillant', region: 'Champagne', year: '' }, 2026);
   T('apogée : sans millésime → prêt à boire', t1.sansMillesime && t1.statut === 'Prêt à boire', JSON.stringify(t1));
   const t2 = ap({ name: 'Château Bouscaut', color: 'Rouge', region: 'Haut-Médoc', year: 2015 }, 2026);
-  T('apogée : Bordeaux rouge 2015 → +8 ans, pic 2023, urgence en 2026', t2.pic === 2023 && t2.statut === 'Urgence' && t2.ans === 8, JSON.stringify(t2));
+  T('apogée : Bordeaux rouge 2015 → +9 ans (Haut-Médoc), pic 2024, prêt à boire en 2026', t2.pic === 2024 && t2.statut === 'Prêt à boire' && t2.ans === 9, JSON.stringify(t2));
   const t3 = ap({ name: 'Morgon Côte du Py', color: 'Rouge', region: 'Beaujolais', year: 2023 }, 2026);
   T('apogée : Beaujolais 2023 → +4 ans, pic 2027, prêt à boire en 2026', t3.pic === 2027 && t3.statut === 'Prêt à boire', JSON.stringify(t3));
   const t4 = ap({ name: 'Gosset Grand Rosé', color: 'Rosé', region: 'Champagne', year: 2025 }, 2026);
@@ -241,8 +241,8 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   T('niveau : Gevrey-Chambertin village → +9, Chambertin grand cru → +15', AN('Gevrey-Chambertin', 'Gevrey-Chambertin', 'Rouge') === 9 && AN('Chambertin', 'Chambertin', 'Rouge') === 15);
   T('niveau : Chambolle-Musigny village → +8, Vosne-Romanée village → +8 (table), Romanée-Conti → +15', AN('Chambolle-Musigny', 'Chambolle-Musigny', 'Rouge') === 8 && AN('Vosne-Romanée', 'Vosne-Romanée', 'Rouge') === 8 && AN('Romanée-Conti', 'Romanée-Conti', 'Rouge') === 15);
   T('niveau : Crozes-Hermitage → +5, Hermitage → +11 (table)', AN('Crozes-Hermitage', 'Crozes-Hermitage', 'Rouge') === 5 && AN('Hermitage', 'Hermitage', 'Rouge') === 11);
-  T('appellation : Pauillac +12, Saint-Émilion Grand Cru +10, Châteauneuf-du-Pape +12, Côte-Rôtie +11, Morgon +8, Muscadet +3, Chablis blanc +6',
-    AN('Cuvée', 'Pauillac', 'Rouge') === 12 && AN('Cuvée', 'Saint-Émilion Grand Cru', 'Rouge') === 10 && AN('Cuvée', 'Châteauneuf-du-Pape', 'Rouge') === 12 && AN('Cuvée', 'Côte-Rôtie', 'Rouge') === 11 && AN('Cuvée', 'Morgon', 'Rouge') === 8 && AN('Cuvée', 'Muscadet', 'Blanc') === 3 && AN('Cuvée', 'Chablis', 'Blanc') === 6);
+  T('appellation : Pauillac +13, Saint-Émilion Grand Cru +11, Châteauneuf-du-Pape +12, Côte-Rôtie +11, Morgon +8, Muscadet +3, Chablis blanc +6',
+    AN('Cuvée', 'Pauillac', 'Rouge') === 13 && AN('Cuvée', 'Saint-Émilion Grand Cru', 'Rouge') === 11 && AN('Cuvée', 'Châteauneuf-du-Pape', 'Rouge') === 12 && AN('Cuvée', 'Côte-Rôtie', 'Rouge') === 11 && AN('Cuvée', 'Morgon', 'Rouge') === 8 && AN('Cuvée', 'Muscadet', 'Blanc') === 3 && AN('Cuvée', 'Chablis', 'Blanc') === 6);
   {
     // Audit de toute la liste connue : seuls les vrais grands crus (ou appellations « Grand Cru ») prennent la règle du grand vin.
     const { TAXONOMIE } = await import('../taxonomie.js');
