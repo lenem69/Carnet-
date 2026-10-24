@@ -24,7 +24,7 @@ export const REGLES = {
 };
 
 // Mots-clés sur le nom, le domaine, le cépage et la région (texte normalisé : minuscules, sans accents).
-const LIQUOREUX = /\bsauternes|barsac|monbazillac|layon|quarts? de chaume|bonnezeaux|tokaj|liquoreux|moelleux|vin de paille|pedro ximenez|\bporto\b|\bport\b|madere|vin jaune|jurancon(?! sec)|vendanges tardives|grains nobles|beerenauslese|eiswein|ice wine/;
+const LIQUOREUX = /\bsauternes|barsac|monbazillac|layon|aubance|quarts? de chaume|bonnezeaux|tokaj|liquoreux|moelleux|vin de paille|pedro ximenez|\bporto\b(?! vecchio)|\bport\b|madere|vin jaune|jurancon(?! sec)|vendanges tardives|grains nobles|beerenauslese|eiswein|ice wine/;
 const PREMIER_CRU = /premier cru|1er cru/;
 const PRESTIGE = /grand cru|grands crus|barolo|barbaresco|brunello|gran reserva|chateau (margaux|latour|lafite|mouton|haut brion|petrus|cheval blanc|ausone|angelus)|mouton rothschild|montrachet|romanee|chambertin|musigny|echezeaux|richebourg/;
 const VIN_LEGER = /\bigp\b|indication geographique|pays d.oc|vin de france|\bvdf\b|vin de pays|vin de table/;
@@ -180,7 +180,7 @@ export function apogee(w, annee = new Date().getFullYear()) {
 // La fenêtre de dégustation (garde) contient toujours la période d'apogée, avec une marge avant et une marge après.
 export function largeur(r) {
   const ans = r.ans;
-  if (ans >= 20) return { cat: 'longue', h: 4, avant: 4, apres: 10 };
+  if (ans >= 20) return { cat: 'longue', h: 4, avant: 4, apres: 6 };
   if (ans >= 12) return { cat: 'prestige', h: 3, avant: 3, apres: 6 };
   if (ans >= 8) return { cat: 'structure', h: 2, avant: 2, apres: 4 };
   if (ans <= 3) return { cat: 'leger', h: 1, avant: 1, apres: 2 };

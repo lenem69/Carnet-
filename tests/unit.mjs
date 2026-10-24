@@ -412,10 +412,10 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
         const a = A.apogee({ name: m, dom: '', region: m, color: CC[r.c], year: Number(y), from, to }, 2026);
         if (a.ajuste || a.from < from || a.to > to) hors.push(m + ' ' + y);
       }
-      if (to - from > 25 && !/liquoreux|corse/i.test(r.a)) longues.push(r.a + ' ' + y + ' ' + (to - from));
+      if (to - from > 25) longues.push(r.a + ' ' + y + ' ' + (to - from));
     }
     T('cohérence : apogée de chaque appellation toujours dans la fenêtre de dégustation (bible, regroupements inclus)', hors.length === 0, hors.slice(0, 8).join(', '));
-    T('cohérence : fenêtre de plus de 25 ans seulement pour les liquoreux et les mentions de Corse', longues.length === 0, longues.slice(0, 8).join(', '));
+    T('cohérence : aucune fenêtre de dégustation de plus de 25 ans', longues.length === 0, longues.slice(0, 8).join(', '));
   }
   {
     // Qualité du millésime : une note faible raccourcit la fin de la fenêtre, une note forte la prolonge ; l'apogée reste dedans.
