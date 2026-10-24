@@ -1,4 +1,4 @@
-// Identité et UX 1.25.2 : esprit de Ma cave, Réglages en rubriques, menu en deux sections, Que boire expliqué,
+// Identité et UX 1.25.2-1.25.3 : esprit de Ma cave, Réglages en rubriques, menu en deux sections, Que boire expliqué,
 // Équilibre de ma cave (contenu de l’avis strictement conservé), une seule erreur affichée à la fois.
 import {start} from './server.mjs';import * as H from './h.mjs';
 H.deploy();const srv=await start(8123);const b=await H.browser();

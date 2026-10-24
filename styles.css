@@ -299,3 +299,12 @@ details.adv[open] summary { margin-bottom: 6px; }
 .avis-complet p { white-space: pre-line; line-height: 1.65; margin: 10px 0 0; }
 .guide a { color: var(--ac); }
 .rub h4.sub { margin: 14px 0 4px; font-size: 15px; font-weight: 600; color: var(--tx); }
+
+/* Cartes sobres : l’essentiel d’un coup d’œil, le reste dans « Fiche et accords » */
+.w .ml { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 10px; margin: 4px 0 0; }
+.w .ml .mm { margin: 0; flex: 1 1 auto; min-width: 0; }
+.w .ml .stl { margin: 0 0 0 auto; flex: none; justify-content: flex-end; }
+.w .acts { justify-content: flex-end; align-items: center; margin-top: 2px; }
+.w .acts .lnk { font-size: 14px; font-weight: 500; color: var(--mu); }
+.w .acts .gen { margin-right: auto; color: var(--ac); }
+.w details { margin-top: 6px; }

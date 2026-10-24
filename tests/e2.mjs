@@ -59,7 +59,7 @@ T('fiche : recherche web Gemini demandée (outil de recherche, forums et vente e
 T('fiche : message « vérifiée » avec 2 sources',(await H.txt(page,'#toasts')).includes('Fiche vérifiée sur le web (2 sources)'),await H.txt(page,'#toasts'));
 await H.click(page,'#f-save');await H.sl(400);
 T('scan : enregistré',(await H.txt(page,'#list')).includes('Morgon 2023'));
-T('carte : étiquette « fiche vérifiée »',(await H.txt(page,'#list')).includes('fiche vérifiée'));
+T('carte : étiquette « fiche vérifiée »',(await page.$eval('#list',e=>e.textContent)).includes('fiche vérifiée'));
 const lk=await page.$$eval('#list .src a',a=>a.map(x=>x.href+'|'+x.rel+'|'+x.target));
 T('carte : sources cliquables (https, sans doublon, sans http)',lk.length===2&&lk.every(x=>x.startsWith('https://')&&x.includes('noopener')&&x.endsWith('_blank')),JSON.stringify(lk));
 mode='nosrc';await page.evaluate(()=>document.querySelector('#list .w [data-a="e"]').click());await H.sl(300);

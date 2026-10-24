@@ -11,7 +11,7 @@ await page.evaluate(async()=>{const s=await import('./store.js');
 await page.reload();await H.sl(1500);
 const bib=await page.evaluate(async()=>{const s=await import('./store.js');return (await s.getMeta('bible'))||null;});
 T('bible copiée sur le téléphone au premier démarrage',!!bib&&JSON.parse(bib).v===1,String(bib).slice(0,80));
-const t=await H.txt(page,'#vCave');
+const t=await page.$eval('#vCave',e=>e.textContent);
 T('fiche remplie par la bible : étiquette « apogée d’après la bible »',t.includes('apogée d’après la bible'),t.slice(0,300));
 T('saisie manuelle : pas d’étiquette bible',(t.split('apogée d’après la bible').length-1)===1,t.slice(0,300));
 T('aucune erreur JavaScript',errs.length===0,errs.join('|'));

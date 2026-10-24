@@ -7,7 +7,7 @@ await page.goto(H.URL0);await H.sl(900);
 await page.evaluate(async()=>{const s=await import('./store.js');
   await s.replaceAll([{id:'a',name:'Château A',dom:'A',year:2015,color:'Rouge',region:'Margaux',grape:'Merlot',qty:2,price:30,from:2020,to:2026,created:1,updated:1}]);});
 await page.reload();await H.sl(1200);
-const texte=()=>page.evaluate(()=>document.body.innerText);
+const texte=()=>page.evaluate(()=>document.body.textContent);
 // 1. ouvrir la fiche, puis noter une dégustation
 await H.tapText(page,'summary','Fiche et accords');await H.sl(300);
 T('journal : fiche affiche « Aucune dégustation notée »',(await texte()).includes('Aucune dégustation notée'));
