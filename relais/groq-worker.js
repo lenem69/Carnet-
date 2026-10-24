@@ -47,7 +47,7 @@ export default {
       body: JSON.stringify({
         model: modele, messages, temperature: Math.min(1, Number(corps.temperature) || 0.2),
         max_completion_tokens: Math.min(MAX_SORTIE, Number(corps.max_tokens) || MAX_SORTIE),
-        reasoning_effort: 'low',
+        reasoning_effort: corps.reasoning_effort === 'medium' ? 'medium' : 'low',
         ...(json ? { response_format: { type: 'json_object' } } : {}),
       }),
     });

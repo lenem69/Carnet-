@@ -30,7 +30,7 @@ h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: v
 p { margin: 4px 0; }
 .mu { color: var(--mu); } .small { font-size: 14px; }
 
-.top { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 10px; }
+.top { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 10px; position: sticky; top: 0; z-index: 12; background: var(--bg); margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
 .icon { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--bd); background: var(--card); color: var(--tx); display: grid; place-items: center; }
 
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
