@@ -2,7 +2,25 @@ import * as L from '../logic.js';
 import * as I from '../importer.js';
 import XLSX from 'xlsx';
 import fs from 'fs';
+import * as A from '../apogee.js';
+import * as PR from '../profils.js';
 const out=[];const T=(n,c,x='')=>out.push((c?'PASS ':'FAIL ')+n+(c?'':' → '+x));
+// Température de service et repères d'appellation (1.26.0)
+{const sv=(color,region,name='X')=>A.service({name,color,region});const tx=o=>o&&o.min+'-'+o.max;
+T('service: rouge de Bordeaux 16-18',tx(sv('Rouge','Pauillac'))==='16-18',tx(sv('Rouge','Pauillac')));
+T('service: Beaujolais léger 13-15',tx(sv('Rouge','Morgon'))==='13-15');
+T('service: Champagne 8-10, crémant 6-8',tx(sv('Pétillant','Champagne'))==='8-10'&&tx(sv('Pétillant','Crémant d’Alsace'))==='6-8');
+T('service: rosé 8-10, liquoreux 8-10',tx(sv('Rosé','Bandol'))==='8-10'&&tx(sv('Blanc','Sauternes'))==='8-10');
+T('service: vin jaune 14-16 (pas la règle des liquoreux)',tx(sv('Blanc','Château-Chalon'))==='14-16'&&sv('Blanc','Château-Chalon').appellation===true);
+T('service: premier cru blanc 10-12',tx(sv('Blanc','Chablis premier cru'))==='10-12');
+T('service: couleur inconnue = rien',sv('Autre','')===null&&A.serviceTexte({name:'X',color:'Autre'})==='');
+T('service: texte « Service : 16 à 18 °C. »',A.serviceTexte({name:'X',color:'Rouge',region:'Cahors'})==='Service : 16 à 18 °C.');
+T('service: min < max pour toutes les couleurs et règles',['Rouge','Blanc','Rosé','Pétillant'].every(c=>['','Pauillac','Morgon','Sancerre','Chablis premier cru','Champagne','Sauternes','Cahors','IGP Pays d’Oc'].every(r=>{const o=A.service({name:'X',color:c,region:r});return !o||o.min<o.max&&o.min>=5&&o.max<=20})));
+T('profil: Cahors rouge trouvé, cépages Malbec',PR.profil({color:'Rouge',region:'Cahors'}).cepages.includes('Malbec'));
+T('profil: apostrophe typographique ou droite (L’Étoile)',!!PR.profil({color:'Blanc',region:"L'Étoile"})&&!!PR.profil({color:'Blanc',region:'L’Étoile'}));
+T('profil: Jurançon blanc ambigu (sec ou doux) = aucun',PR.profil({color:'Blanc',region:'Jurançon'})===null);
+T('profil: couleur sans ligne ou appellation inconnue = aucun',PR.profil({color:'Rosé',region:'Cahors'})===null&&PR.profil({color:'Rouge',region:'Pomerol'})===null&&PR.profil(null)===null);
+T('profil: Monbazillac blanc = doux (une seule ligne)',PR.profil({color:'Blanc',region:'Monbazillac'}).tmin===10);}
 // normalizeWine
 const w=L.normalizeWine({name:' Morgon ',dom:'Lapierre',year:'2023',color:'rouge',qty:'0',price:'12,50 €',pairings:'Poulet, Charcuterie',from:'2025',to:2032});
 T('normalize: champs',w.name==='Morgon'&&w.year===2023&&w.color==='Rouge'&&w.qty===0&&w.price===12.5&&w.pairings.length===2&&w.from===2025,JSON.stringify(w));

@@ -2,6 +2,7 @@
 // Règle du sommelier de l'appli (brouillon de l'utilisateur), complétée par l'expérience. Pure : hors connexion, sans IA.
 import { norm } from './util.js';
 import { reconnaitre, reperage, estEtranger } from './chiffres.js';
+import { profil } from './profils.js';
 
 // Nombre d'années après le millésime, avant le pic. La fenêtre d'apogée est pic ± 2 ans.
 export const REGLES = {
@@ -96,4 +97,39 @@ export function apogeeTexte(a) {
 export function apogeeCourte(a) {
   if (a.sansMillesime) return 'Prêt à boire (sans millésime)';
   return `Apogée ${a.pic} · ${ETAT[a.statut]}`;
+}
+
+// Température de service conseillée { min, max } en °C, ou null si la couleur est inconnue.
+// Repères de l'appellation quand ils existent ; sinon règle générale par couleur et style (usages classiques du service).
+export function service(w) {
+  if (!w) return null;
+  const pr = profil(w);
+  if (pr) return { min: pr.tmin, max: pr.tmax, appellation: true };
+  const texte = norm([w.name, w.dom, w.grape, w.region].join(' | '));
+  const r = (min, max) => ({ min, max, appellation: false });
+  // Vin jaune : se sert presque tempéré (avant la règle des liquoreux, qui le contient).
+  if (/chateau[- ]chalon|vin jaune/.test(texte)) return r(14, 16);
+  if (LIQUOREUX.test(texte)) return r(8, 10);
+  const app = w.region ? reconnaitre(String(w.region)) : null;
+  const grande = app ? app[2] : (w.region && !estEtranger(String(w.region)) ? reperage(String(w.region)) : null);
+  const champagne = grande === 'Champagne' || /champagne/.test(texte);
+  if (w.color === 'Pétillant') return champagne ? r(8, 10) : r(6, 8);
+  if (w.color === 'Rosé') return r(8, 10);
+  const rouge = w.color === 'Rouge', blanc = w.color === 'Blanc';
+  if (!rouge && !blanc) return null;
+  if (PRESTIGE.test(texte)) return rouge ? r(16, 18) : r(11, 13);
+  if (PREMIER_CRU.test(texte)) return rouge ? r(16, 18) : r(10, 12);
+  if (VIN_LEGER.test(texte)) return rouge ? r(14, 16) : r(8, 10);
+  if (rouge) {
+    if (grande === 'Beaujolais' || grande === 'Vallée de la Loire') return r(13, 15);
+    if (grande === 'Bordeaux' || grande === 'Vallée du Rhône' || grande === 'Bourgogne') return r(16, 18);
+    return r(15, 17);
+  }
+  const regional = !app || /^bourgogne/.test(norm(app[0]));
+  return grande === 'Bourgogne' && !regional ? r(10, 12) : r(8, 10);
+}
+
+export function serviceTexte(w) {
+  const s = service(w);
+  return s ? `Service : ${s.min} à ${s.max} °C.` : '';
 }
