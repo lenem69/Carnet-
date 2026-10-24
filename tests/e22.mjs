@@ -39,6 +39,9 @@ T('réglages : « À propos » est la première rubrique',heads[0]==='À propos'
 T('réglages : rubriques IA, Données, Application présentes',['IA (optionnelle)','Données','Application'].every(x=>heads.includes(x)),heads.join(' | '));
 T('réglages : champs IA toujours utilisables',await page.evaluate(()=>{const e=document.querySelector('#ai-key');return !!e&&e.offsetParent!==null;}));
 T('réglages : info hors connexion',(await H.txt(page,'#sSet')).includes('Hors connexion'));
+await page.evaluate(()=>document.querySelector('#st-news').click());await H.sl(500);
+T('réglages : « Voir les nouveautés » affiche la liste',(await H.txt(page,'#sDlg')).includes('Nouvelle identité'),await H.txt(page,'#sDlg'));
+await H.tapText(page,'#dlgB button','Fermer');await H.sl(400);
 await page.evaluate(()=>document.querySelector('#st-esprit').click());await H.sl(500);
 const es=await H.txt(page,'#sEsprit');
 for(const t of ['Votre cave vous appartient.','Une cave, sans complications.','Savoir quoi ouvrir, et quand.','Votre cave, même hors connexion.','Des repères solides, pas des réponses au hasard.','Un outil à votre service. Rien de plus.','base de données dédiée au vin'])

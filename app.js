@@ -1144,6 +1144,7 @@ function bind() {
   $('#st-auto').onchange = () => { auto.on = $('#st-auto').checked; if (auto.on) auto.pauseUntil = 0; autoSave(); $('#st-auto-info').textContent = autoStatus(); if (auto.on) setTimeout(autoStep, 500); };
   $('#st-help').onclick = openContact;
   $('#st-esprit').onclick = () => openSheet('sEsprit');
+  $('#st-news').onclick = () => { const l = Notes.since('0.0.0', VERSION); ask('Nouveautés', l.length ? l.map(x => '• ' + x).join('\n') : 'Aucune nouveauté à afficher.', [{ label: 'Fermer', value: 'ok' }]); };
   $('#ct-share').onclick = sendContact;
   $('#ct-pub').onclick = publishContact;
   $('#ct-copy').onclick = async () => {
