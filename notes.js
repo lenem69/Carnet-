@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.29.1': ['Équilibre de ma cave : l’avis retrouve toute sa profondeur (appellations, cépages, calendrier année par année, millésimes, conseil de sommelier), avec un premier paragraphe positif et un avis complet qui ne contredit jamais le résumé.'],
   '1.29.0': ['Équilibre de ma cave : le premier paragraphe est plus positif, et l’avis rapide et l’avis complet ne se contredisent plus (même niveau d’alerte, mêmes chiffres).','Apogée : une table de référence par appellation (fiabilité A et B) affine l’année du pic pour une centaine d’appellations ; elle reste toujours dans la fenêtre de garde.'],
   '1.28.0': ['Équilibre de ma cave : l’avis se met à jour dès que 2 vins sont ajoutés ou retirés (au lieu d’à chaque vin).','⚙ Réglages › IA : un nouveau bouton « Fonctionnement » explique simplement ce qui marche avec et sans clé personnelle, et ce qui est envoyé.'],
   '1.27.2': ['Correction : ⚙ Réglages s’ouvre de nouveau (erreur « Cannot read properties of undefined (reading \'label\') » introduite par l’IA offerte en 1.27.0).'],

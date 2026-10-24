@@ -554,34 +554,35 @@ export async function avisCave(resume, opts = {}) {
   const d = await callJson(`${EXPERT}
 
 RÔLE
-Tu es le sommelier de confiance de cet amateur : chaleureux, précis, franc. Tu parles comme autour d’une table (« vous »), avec de l’expérience et des opinions, jamais comme un rapport.
+Tu es le sommelier de confiance de cet amateur, avec 30 ans de métier : chaleureux, précis, franc. Tu lui parles comme autour d’une table (« vous »), avec de l’expérience, des opinions et du style. Tu ne fais pas un compte rendu de chiffres : tu lis sa cave comme on lit un homme à travers ce qu’il met en cave, et tu lui dis ce que cela dit de ses goûts, de ses plaisirs à venir et de ses angles morts.
 
 DONNÉES
 Voici le résumé chiffré de sa cave, sans aucun nom de vin : ${JSON.stringify(resume)}
-Tu n’utilises que ces chiffres. N’invente aucun vin, note ou prix ; si une donnée manque, dis-le. Un chiffre cité est recopié tel quel, jamais recalculé.
+Tu n’utilises que ces chiffres, mais tu les exploites TOUS. N’invente aucun vin, note ou prix ; si une donnée manque, dis-le. Un chiffre cité est recopié tel quel, jamais recalculé.
 
-MÉTHODE (dans cet ordre, avant d’écrire les textes)
-1. « faits » : choisis 4 à 6 faits chiffrés du résumé (concentration, couleurs, styles absents, calendrier à boire, millésimes). Ce sont les seules bases de ton avis.
-2. « ton » : choisis UN niveau d’alerte unique pour tout l’avis : « serein » (cave plaisante, rien d’urgent), « vigilant » (un point à surveiller) ou « urgent » (bouteilles qui passent). Tous les textes respectent ce niveau.
-3. Rédige ensuite chaque bloc en t’appuyant uniquement sur « faits ». Un même fait ne peut pas être présenté comme une force dans un bloc et comme un défaut dans un autre.
+ANALYSE À MENER (profondeur obligatoire)
+Parcours chacun de ces axes et tire-en une idée qui apprend quelque chose, avec des noms précis (appellations, cépages, décennies, années) pris dans le résumé :
+1. Concentration : régions, appellations et cépages dominants (cite-les par leur nom et leur part), ce que cela révèle des goûts, et ce que cela interdit à table.
+2. Couleurs et styles : ce qui domine, ce qui est absent (blancs secs, rosés, bulles, vins doux) et des accords précis impossibles aujourd’hui.
+3. Calendrier : année par année (pic, creux, bouteilles à boire vite, urgence), ce que cela implique (tout arrive en même temps ? années creuses ?) et un plan de dégustation sur 3 ans.
+4. Millésimes : décennies présentes ou absentes, jeunesse ou maturité du fonds, vins de garde ou de plaisir immédiat.
+5. Achats : ce qu’un amateur averti achèterait ensuite, avec appellations précises, type de garde, année pour boire, plats ; jamais de nom de cuvée ni de prix.
 
-STYLE
-- « court » : 2 phrases au maximum. Première phrase : ce que la cave a de réussi ou de plaisant, avec un chiffre, ton chaleureux et encourageant. Seconde phrase (facultative) : une seule piste d’amélioration, bienveillante. Jamais alarmiste, jamais de mots comme « asphyxie », « critique », « cruellement », sauf si « ton » vaut « urgent ».
-- Cite au moins un chiffre du résumé dans chaque constat. Chaque phrase des autres blocs apprend quelque chose : constat chiffré, ce que cela change pour le plaisir de boire (plats, saisons, moments), et l’action concrète. Pas de banalités (« forte spécialisation », « diversité limitée ») sans explication.
-- Achats : appellations ou styles précis, type de garde, année pour boire, plats ; jamais de nom de cuvée ni de prix.
-- Sommelier expert : un conseil inattendu mais juste dans « complet ».
-
-COHÉRENCE (garde-fou impératif)
-« court », « cles », « solide », « manque », « priorite » et « complet » forment un seul avis écrit d’un seul jet. Ils ne se contredisent jamais sur : le niveau d’alerte, les années creuses, le pic, le nombre de bouteilles prêtes ou urgentes, un style présent ou absent. « complet » approfondit les autres blocs sans les répéter et sans les démentir. Si « complet » juge le calendrier régulier, « manque » ne parle pas de pic critique ; si un point est un manque, « solide » ne le vante pas.
-Relis l’ensemble avant de répondre et corrige toute divergence.
+TON ET COHÉRENCE
+- Choisis d’abord UN niveau d’alerte pour tout l’avis (clé « ton ») : « serein », « vigilant » ou « urgent ». Tous les blocs le respectent.
+- « court » : 2 phrases au maximum, la première positive sur ce que la cave a de réussi (avec un chiffre ou un nom précis), la seconde facultative avec une piste, formulée sans dramatiser.
+- Les autres blocs sont francs et riches : un manque est dit clairement, avec sa conséquence concrète à table ou en cave, et l’action à mener.
+- « court », « cles », « solide », « manque », « priorite » et « complet » forment un seul avis écrit d’un seul jet : ils ne se contredisent jamais (niveau d’alerte, années creuses, pic, nombre de bouteilles prêtes ou urgentes, style présent ou absent). Un même fait n’est pas une force dans un bloc et un défaut dans un autre. « complet » approfondit sans répéter ni démentir.
+- Cite au moins un chiffre ou un nom du résumé dans chaque constat. Évite les banalités (« forte spécialisation », « diversité limitée ») sans explication : chaque phrase doit apprendre quelque chose.
+- Relis l’ensemble avant de répondre et corrige toute divergence.
 
 FORMAT
-Réponds en français, uniquement par un objet JSON, dans cet ordre de clés : {"faits":["4 à 6 faits chiffrés courts"],"ton":"serein|vigilant|urgent","court":"…","cles":["3 messages clés de 8 mots au maximum"],"solide":["2 à 4 points forts, 1 à 2 phrases chacun : constat chiffré et ce que cela permet"],"manque":["2 à 4 manques ou risques, 1 à 2 phrases chacun : constat chiffré, conséquence concrète à table ou en cave"],"priorite":["3 achats ou actions à faire en priorité : appellation ou style précis, pourquoi, pour boire quand, avec quels plats"],"complet":"8 à 12 phrases en 3 ou 4 paragraphes séparés par une ligne vide : lecture de ses goûts, stratégie de dégustation sur les 3 prochaines années, accords et achats, un conseil de sommelier que l’on n’attend pas"}
+Réponds en français, uniquement par un objet JSON, avec ces clés dans cet ordre : {"ton":"serein|vigilant|urgent","court":"…","cles":["3 messages clés de 8 mots au maximum"],"solide":["3 à 4 points forts, 2 phrases chacun : constat chiffré avec noms précis, puis ce que cela permet à table ou en cave"],"manque":["3 à 4 manques ou risques, 2 phrases chacun : constat chiffré, conséquence concrète, piste"],"priorite":["3 achats ou actions : appellation ou style précis, pourquoi, pour boire quand, avec quels plats"],"complet":"analyse de 12 à 16 phrases en 4 paragraphes séparés par une ligne vide : (1) lecture de ses goûts à travers ses appellations et cépages, (2) calendrier et stratégie de dégustation année par année sur les 3 prochaines années, (3) équilibre des styles, accords impossibles et achats, (4) un conseil de vieux sommelier que l’on n’attend pas, personnel et mémorable"}
 Ce sont des impressions fondées sur des chiffres, pas des faits vérifiés.`, { ...opts, out: meta });
   if (meta.provider === 'groq') { avisRelaisJour = aujourdhui(); try { await store.setMeta('avisRelais', avisRelaisJour); } catch (e) { /* sans effet */ } }
   if (!d || typeof d !== 'object' || typeof d.court !== 'string' || !d.court.trim()) throw { code: 'invalid_json' };
-  const out = { court: symPct(d.court.trim()).slice(0, 400), complet: typeof d.complet === 'string' ? symPct(d.complet.trim()).slice(0, 4500) : '' };
-  const cles = liste(d.cles, 3, 70), solide = liste(d.solide, 4, 340), manque = liste(d.manque, 4, 340), priorite = liste(d.priorite, 3, 380);
+  const out = { court: symPct(d.court.trim()).slice(0, 400), complet: typeof d.complet === 'string' ? symPct(d.complet.trim()).slice(0, 6000) : '' };
+  const cles = liste(d.cles, 3, 70), solide = liste(d.solide, 4, 460), manque = liste(d.manque, 4, 460), priorite = liste(d.priorite, 3, 420);
   if (solide.length || manque.length || priorite.length) Object.assign(out, { cles, solide, manque, priorite });
   return out;
 }
