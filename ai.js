@@ -146,11 +146,11 @@ const toB64 = blob => new Promise((resolve, reject) => {
   r.readAsDataURL(blob);
 });
 
-// Réduit la photo (800 px, JPEG) : lecture identique, coût bien moindre.
+// Réduit la photo (768 px, JPEG : une seule tuile d’image chez Gemini, 4 fois moins de jetons qu’à 800 px) : lecture identique, coût bien moindre.
 export async function shrinkImage(file) {
   try {
     const bm = await createImageBitmap(file);
-    const s = Math.min(1, 800 / Math.max(bm.width, bm.height));
+    const s = Math.min(1, 768 / Math.max(bm.width, bm.height));
     const c = document.createElement('canvas');
     c.width = Math.max(1, Math.round(bm.width * s)); c.height = Math.max(1, Math.round(bm.height * s));
     c.getContext('2d').drawImage(bm, 0, 0, c.width, c.height);
@@ -210,7 +210,7 @@ async function callOnce(s, prompt, images, signal, out) {
     const j = await httpJson('https://api.anthropic.com/v1/messages', {
       method: 'POST', signal,
       headers: { 'content-type': 'application/json', 'x-api-key': s.key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({ model: s.model, max_tokens: 4096, messages: [{ role: 'user', content }] }),
+      body: JSON.stringify({ model: s.model, max_tokens: (out && out.maxOut) || 4096, messages: [{ role: 'user', content }] }),
     });
     const t = (j.content || []).filter(p => p.type === 'text').map(p => p.text).join('');
     if (!t) throw { code: j.stop_reason === 'refusal' ? 'blocked' : 'invalid_json' };
@@ -230,17 +230,25 @@ async function callOnce(s, prompt, images, signal, out) {
   }
   // Gemini ; avec `wantSearch`, il consulte le web (Google Search) avant de répondre.
   const parts = [{ text: prompt }, ...b64.map(d => ({ inline_data: { mime_type: 'image/jpeg', data: d } }))];
+  // Réflexion réduite (« low ») pour les tâches de lecture : bien plus rapide, même résultat. Refusée par un modèle ou le relais : on refait sans.
+  const gen = think => { const g = { temperature: 0.2 }; if (think) g.thinkingConfig = { thinkingLevel: think }; return g; };
+  let think = (out && out.think) || '';
   const call = search => httpJson((s.gratuit ? PROXY : 'https://generativelanguage.googleapis.com') + '/v1beta/models/' + encodeURIComponent(s.model) + ':generateContent', {
     method: 'POST', signal,
     headers: s.gratuit ? { 'Content-Type': 'application/json', 'x-appareil': appareil, 'x-unites': String(s.unites || 1) } : { 'Content-Type': 'application/json', 'x-goog-api-key': s.key },
     body: JSON.stringify(search
-      ? { contents: [{ role: 'user', parts }], tools: [{ google_search: {} }], generationConfig: { temperature: 0.2 } }
-      : { contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', temperature: 0.2 } }),
+      ? { contents: [{ role: 'user', parts }], tools: [{ google_search: {} }], generationConfig: gen(think) }
+      : { contents: [{ role: 'user', parts }], generationConfig: { ...gen(think), responseMimeType: 'application/json' } }),
   });
   let search = !!(out && out.wantSearch);
   let j;
-  try { j = await call(search); }
-  catch (e) {
+  try {
+    try { j = await call(search); }
+    catch (e) {
+      if (!(think && e && (e.code === 'server' || e.code === 'bad_model'))) throw e;
+      think = ''; j = await call(search);
+    }
+  } catch (e) {
     // La recherche web est un plus : si le service la refuse, on refait la demande sans elle.
     if (!(search && e && e.code === 'server')) throw e;
     search = false; if (out) out.fallback = true;
@@ -322,7 +330,8 @@ const EXPERT = 'Tu es un sommelier expert de 30 ans d’expérience, qui connaî
 
 export async function scanLabel(file, opts) {
   const blob = await shrinkImage(file);
-  const d = await callJson(`${EXPERT} L’image est la photo d’une étiquette de bouteille de vin. Lis l’étiquette et identifie le vin. N’invente jamais un nom : écris ce que tu lis. Réponds uniquement par un objet JSON de ce format : ${SCHEMA_LABEL}. Si l’image n’est pas une étiquette de vin lisible, réponds {"error":true}.`, { ...opts, images: [blob], task: 'label' });
+  // Lecture simple : réflexion minimale et réponse courte, pour la rapidité.
+  const d = await callJson(`Image : photo d’une étiquette de vin. Lis-la sans rien inventer. JSON : ${SCHEMA_LABEL}. Si ce n’est pas une étiquette lisible : {"error":true}.`, { ...opts, images: [blob], task: 'label', out: { think: 'low', maxOut: 500 } });
   if (!d || typeof d !== 'object' || d.error || !(d.name || d.dom)) throw { code: 'not_label' };
   return { name: d.name || d.dom, dom: d.dom || '', year: d.year, color: normColor(d.color), region: d.region || '', grape: d.grape || '', lecture: String(d.lecture || '').toLowerCase().startsWith('haute') ? 'haute' : 'douteuse' };
 }
@@ -416,7 +425,7 @@ export async function pickForDish(dish, candidates, opts) {
 // points solides, manques, priorités, et une analyse détaillée. Les anciens avis (court + complet) restent lisibles.
 const liste = (v, n, len) => (Array.isArray(v) ? v.map(x => String(x == null ? '' : x).trim().slice(0, len)).filter(Boolean).slice(0, n) : []);
 export async function avisCave(resume, opts = {}) {
-  const d = await callJson(`${EXPERT} Voici le résumé chiffré de ma cave, sans aucun nom de vin : ${JSON.stringify(resume)}. Fais une analyse d’expert, appuyée uniquement sur ces chiffres : concentration (région, appellation, cépage), répartition des couleurs et styles absents (blancs, rosés, bulles, vins de dessert), rythme de consommation (calendrier des bouteilles à boire, années creuses, pic), équilibre entre vins prêts, à garder et en urgence, profil des millésimes. Cite au moins un chiffre du résumé dans chaque constat. N’invente aucun vin, aucune note, aucun prix ; si une donnée manque, dis-le. Réponds en français, uniquement par un objet JSON de ce format : {"court":"le message le plus important, 2 phrases au maximum","cles":["3 messages clés de 8 mots au maximum"],"solide":["2 à 4 points forts, une phrase chacun, chiffrés"],"manque":["2 à 4 manques ou risques, une phrase chacun, chiffrés"],"priorite":["3 achats ou actions à faire en priorité : type de vin ou appellation, pourquoi, pour boire quand ; jamais de nom de cuvée ni de prix"],"complet":"analyse détaillée de 8 à 12 phrases en 3 ou 4 paragraphes séparés par une ligne vide, avec des conseils concrets d’accords et d’achats"}. Ce sont des impressions fondées sur des chiffres, pas des faits vérifiés.`, { ...opts });
+  const d = await callJson(`${EXPERT} Voici le résumé chiffré de ma cave, sans aucun nom de vin : ${JSON.stringify(resume)}. Fais une analyse d’expert, appuyée uniquement sur ces chiffres : concentration (région, appellation, cépage), répartition des couleurs et styles absents (blancs, rosés, bulles, vins de dessert), rythme de consommation (calendrier des bouteilles à boire, années creuses, pic), équilibre entre vins prêts, à garder et en urgence, profil des millésimes. Cite au moins un chiffre du résumé dans chaque constat. N’invente aucun vin, aucune note, aucun prix ; si une donnée manque, dis-le. Réponds en français, uniquement par un objet JSON de ce format : {"court":"le message le plus important, 2 phrases au maximum","cles":["3 messages clés de 8 mots au maximum"],"solide":["2 à 4 points forts, une phrase chacun, chiffrés"],"manque":["2 à 4 manques ou risques, une phrase chacun, chiffrés"],"priorite":["3 achats ou actions à faire en priorité : type de vin ou appellation, pourquoi, pour boire quand ; jamais de nom de cuvée ni de prix"],"complet":"analyse détaillée de 6 à 10 phrases en 3 ou 4 paragraphes séparés par une ligne vide, qui APPROFONDIT sans répéter les blocs précédents : conseils concrets d’accords et d’achats"}. Ce sont des impressions fondées sur des chiffres, pas des faits vérifiés.`, { ...opts });
   if (!d || typeof d !== 'object' || typeof d.court !== 'string' || !d.court.trim()) throw { code: 'invalid_json' };
   const out = { court: d.court.trim().slice(0, 400), complet: typeof d.complet === 'string' ? d.complet.trim().slice(0, 3500) : '' };
   const cles = liste(d.cles, 3, 70), solide = liste(d.solide, 4, 260), manque = liste(d.manque, 4, 260), priorite = liste(d.priorite, 3, 300);

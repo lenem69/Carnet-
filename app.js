@@ -7,6 +7,7 @@ import * as IMP from './importer.js';
 import { saveFile, readText } from './files.js';
 import * as Stats from './stats.js';
 import * as Notes from './notes.js';
+import { demoWines, isDemo } from './demo.js';
 import { apogee, apogeeTexte, apogeeCourte } from './apogee.js';
 import { chiffres, statutOf } from './chiffres.js';
 const STATUT_LIBELLE = { pret: 'Prêt à boire', garder: 'À garder', urgence: 'Urgence' };
@@ -340,16 +341,18 @@ function renderList() {
   $('#chips').innerHTML = pastille + chips.map(c => `<button class="chip${c === S.filt ? ' on' : ''}" data-c="${c}">${c} <span class="n">${counts[c] || 0}</span></button>`).join('');
   if (!S.ready) { $('#list').innerHTML = '<p class="empty">Chargement de votre cave…</p>'; return; }
   if (!S.wines.length) {
-    $('#list').innerHTML = `<div class="empty"><p><b>Votre cave est vide.</b></p><p>Ajoutez vos premières bouteilles.</p><div class="stack">
-      <button class="btn" data-m="cam">📷 Scanner une étiquette</button><button class="btn o" data-m="img">🖼️ Importer des photos (plusieurs)</button>
+    $('#list').innerHTML = `<div class="empty vide"><p class="vt"><b>Bienvenue dans votre cave.</b></p><p>Pour voir tout de suite comment ça marche (tri, recherche, accords, dates de garde), essayez avec 15 bouteilles fictives. Vous les effacez d’un geste.</p><div class="stack">
+      <button class="btn" data-m="demo">🍷 Essayer avec une cave de démonstration (15 bouteilles)</button><p class="mu small ou">ou ajoutez vos propres bouteilles :</p>
+      <button class="btn o" data-m="cam">📷 Scanner une étiquette</button><button class="btn o" data-m="img">🖼️ Importer des photos (plusieurs)</button>
       <button class="btn o" data-m="xls">📊 Importer un tableur (Excel, CSV)</button><button class="btn o" data-m="man">✍️ Saisie manuelle</button>
       <button class="btn o" data-m="res">♻️ Restaurer une sauvegarde</button><button class="btn o" data-m="help">❔ Guide : importer toute ma cave</button></div></div>`;
     return;
   }
   const items = L.sortWines(filtered(), S.sort, YEAR);
-  if (!items.length) { $('#list').innerHTML = '<p class="empty">Aucun vin ne correspond.</p>'; return; }
+  const demoBar = S.wines.some(isDemo) ? `<div class="demobar"><span>🍷 <b>Cave de démonstration</b> : ces vins sont fictifs.</span><button class="btn o" type="button" data-m="democlear">Effacer la démo</button></div>` : '';
+  if (!items.length) { $('#list').innerHTML = demoBar + '<p class="empty">Aucun vin ne correspond.</p>'; return; }
   const shown = items.slice(0, S.limit);
-  $('#list').innerHTML = shown.map(w => card(w, 'cave')).join('') +
+  $('#list').innerHTML = demoBar + shown.map(w => card(w, 'cave')).join('') +
     (items.length > shown.length ? `<button class="btn o more" data-a="more">Afficher plus (${shown.length} sur ${items.length})</button>` : '');
 }
 
@@ -413,7 +416,7 @@ function renderDatalists() {
 function render() {
   renderStats(); renderBanners();
   $$('.tab').forEach(b => { const on = b.dataset.t === S.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
-  $('#vCave').hidden = S.tab !== 'cave'; $('#vBoire').hidden = S.tab !== 'boire'; $('#vChiffres').hidden = S.tab !== 'chiffres'; document.querySelector('.stats').hidden = S.tab === 'chiffres';
+  $('#vCave').hidden = S.tab !== 'cave'; $('#vBoire').hidden = S.tab !== 'boire'; $('#vChiffres').hidden = S.tab !== 'chiffres'; document.querySelector('.stats').hidden = S.tab === 'chiffres' || (S.ready && !S.wines.length);   // pas de compteurs à zéro sur une cave vide
   if (S.tab === 'cave') renderList(); else if (S.tab === 'boire') renderBoire(); else renderChiffres();
   avisSiChange();
 }
@@ -575,7 +578,7 @@ async function saveForm() {
   }
   S.wines.push(nw);
   const ok = await persist(() => store.putWines([nw]));
-  if (ok) { if ($('#fT').textContent === 'Ajouter un vin') Stats.track('add_manuel'); Stats.noteWines(S.wines.length); }
+  if (ok) { if ($('#fT').textContent === 'Ajouter un vin') Stats.track('add_manuel'); Stats.noteWines(S.wines.filter(w => !isDemo(w)).length); }
   finishSave(nw, ok, '« ' + nw.name + ' » enregistré dans votre cave.');
 }
 
@@ -745,11 +748,20 @@ async function scanFiles(files) {
   if (!files.length || !requireAI()) return;
   const log = openLog(`Analyse de ${files.length} photo(s)…`, files.map((f, i) => f.name || 'Photo ' + (i + 1)), 'Chaque photo prend 5 à 30 secondes. Gardez l’appli ouverte.');
   let added = 0, dups = 0, fails = 0, single = null;
+  // Avec une clé personnelle, la photo suivante est lue pendant que la précédente est enregistrée (2 lectures à la fois au plus).
+  // Les résultats sont traités dans l’ordre : la détection des doublons ne change pas. Clé gratuite partagée : une seule à la fois.
+  const prefetch = AI.avisPossible();
+  const lus = [];
+  const lire = i => lus[i] || (lus[i] = AI.scanLabel(files[i], { signal: log.signal, onWait: s => log.set(i, 'run', `Limite de l’IA atteinte, nouvel essai dans ${s} s…`) }).then(d => ({ d }), e => ({ e })));
   for (let i = 0; i < files.length; i++) {
     if (log.stopped) { for (let j = i; j < files.length; j++) log.set(j, 'skip', 'Non traité (arrêté)'); break; }
     log.set(i, 'run', 'Lecture de l’étiquette…');
     try {
-      const d = await AI.scanLabel(files[i], { signal: log.signal, onWait: s => log.set(i, 'run', `Limite de l’IA atteinte, nouvel essai dans ${s} s…`) });
+      const p = lire(i);
+      if (prefetch && i + 1 < files.length) lire(i + 1);
+      const res = await p;
+      if (res.e) throw res.e;
+      const d = res.d;
       const w = L.normalizeWine({ ...d, qty: 1, check: d.lecture !== 'haute' });
       const label = [w.name, w.dom, w.year].filter(Boolean).join(' · ');
       const ex = S.wines.find(x => L.keyOf(x) === L.keyOf(w));
@@ -775,7 +787,7 @@ async function scanFiles(files) {
     }
   }
   if (files.length > 1) Stats.track('add_photos', added); else if (single) Stats.track('add_scan');
-  Stats.noteWines(S.wines.length + (single ? 1 : 0));
+  Stats.noteWines(S.wines.filter(w => !isDemo(w)).length + (single ? 1 : 0));
   log.manual = fails > 0;
   log.finish(single ? 'Étiquette reconnue' : `Terminé : ${added} ajouté(s), ${dups} doublon(s), ${fails} échec(s)`);
   if (single) { hideSheet('sLog'); openForm(single, 'Vérifier la fiche scannée'); }
@@ -981,7 +993,7 @@ async function importSheet(file) {
   S.wines = S.wines.map(w => byId.get(w.id) || w).concat(r.added);
   S.tab = 'cave'; S.filt = 'Tous'; S.sort = 'recent'; $('#sort').value = 'recent'; S.limit = PAGE;
   render();
-  Stats.track('add_tableur', r.added.length); Stats.noteWines(S.wines.length);
+  Stats.track('add_tableur', r.added.length); Stats.noteWines(S.wines.filter(w => !isDemo(w)).length);
   const chk = r.added.filter(w => w.check).length;
   toast(`✅ ${r.added.length} vin(s) ajouté(s)${r.merged ? ', ' + r.merged + ' doublon(s) additionné(s)' : ''}${ignored ? ', ' + ignored + ' déjà en cave (inchangé' + (ignored > 1 ? 's' : '') + ')' : ''}${r.skipped ? ', ' + r.skipped + ' ligne(s) ignorée(s)' : ''}${chk ? '. ' + chk + ' à vérifier (filtre « À vérifier »)' : ''}.`);
 }
@@ -1170,12 +1182,37 @@ async function checkUpdate() {
 }
 
 /* ============ Menu et événements ============ */
+// Cave de démonstration : ajout et retrait. Seuls les vins « demo- » sont concernés ; les vôtres ne sont jamais touchés.
+async function chargerDemo() {
+  const ajout = demoWines(YEAR).map(x => L.normalizeWine(x)).filter(w => w && !S.wines.some(e => e.id === w.id));
+  if (!ajout.length) return;
+  const ok = await persist(() => store.putWines(ajout));
+  if (!ok) return;   // persist() a déjà expliqué l’échec ; aucun message de réussite
+  S.wines.push(...ajout);
+  S.filt = 'Tous'; S.statut = ''; S.q = ''; if ($('#q')) $('#q').value = '';
+  render();
+  toast('Cave de démonstration chargée : 15 bouteilles fictives. Explorez les onglets, puis touchez « Effacer la démo ».');
+}
+async function effacerDemo() {
+  const ids = S.wines.filter(isDemo).map(w => w.id);
+  if (!ids.length) return;
+  const c = await ask('Effacer la cave de démonstration ?', `Les ${ids.length} vins fictifs seront retirés. Vos propres vins ne sont pas touchés.`, [
+    { label: 'Effacer la démo', value: 'yes', kind: 'danger' }, { label: 'Garder', value: null, kind: 'o' }]);
+  if (c !== 'yes') return;
+  if (!(await persist(() => store.deleteWines(ids)))) return;
+  S.wines = S.wines.filter(w => !isDemo(w));
+  render();
+  toast('Cave de démonstration effacée.');
+}
+
 function menuAction(m) {
   const pick = id => { closeSheet('sMenu'); $(id).click(); };
   if (m === 'cam') { if (requireAI()) pick('#fCam'); }
   else if (m === 'img') { if (requireAI()) pick('#fImg'); }
   else if (m === 'xls') pick('#fXls');
   else if (m === 'man') openForm(null);
+  else if (m === 'demo') chargerDemo();
+  else if (m === 'democlear') effacerDemo();
   else if (m === 'enr') { closeSheet('sMenu'); enrichAll(); }
   else if (m === 'bk') doBackup();
   else if (m === 'res') pick('#fJson');

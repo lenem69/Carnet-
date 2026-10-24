@@ -40,7 +40,7 @@ T('réglages : rubriques IA, Données, Application présentes',['IA (optionnelle
 T('réglages : champs IA toujours utilisables',await page.evaluate(()=>{const e=document.querySelector('#ai-key');return !!e&&e.offsetParent!==null;}));
 T('réglages : info hors connexion',(await H.txt(page,'#sSet')).includes('Hors connexion'));
 await page.evaluate(()=>document.querySelector('#st-news').click());await H.sl(500);
-T('réglages : « Voir les nouveautés » affiche la liste',(await H.txt(page,'#sDlg')).includes('Nouvelle identité'),await H.txt(page,'#sDlg'));
+T('réglages : « Voir les nouveautés » affiche la liste',(await H.txt(page,'#sDlg')).includes('cave de démonstration'),await H.txt(page,'#sDlg'));
 await H.tapText(page,'#dlgB button','Fermer');await H.sl(400);
 await page.evaluate(()=>document.querySelector('#st-esprit').click());await H.sl(500);
 const es=await H.txt(page,'#sEsprit');

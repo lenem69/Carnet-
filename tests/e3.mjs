@@ -78,7 +78,7 @@ const tq=await H.txt(page,'#toasts');T('mémoire pleine : erreur explicite, pas 
 await page.reload();await H.sl(1500);
 await H.click(page,'#bSet');await H.sl(500);T('réglages : infos de stockage',(await H.txt(page,'#st-info')).includes('vin(s) enregistré(s)'));
 await H.click(page,'#st-erase');await H.tapText(page,'#dlgB button','Continuer');await H.sl(200);await H.tapText(page,'#dlgB button','Tout effacer');await H.sl(800);
-T('effacer : double confirmation puis cave vide',(await H.txt(page,'#list')).includes('Votre cave est vide'));
+T('effacer : double confirmation puis cave vide',(await H.txt(page,'#list')).includes('Bienvenue dans votre cave'));
 await page.reload();await H.sl(1000);T('effacement persisté',(await H.txt(page,'#sB'))==='0');
 // modèle de tableur
 await H.click(page,'#fab');await H.tapText(page,'#sMenu button','Guide');await H.click(page,'#h-tpl');await H.sl(500);

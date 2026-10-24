@@ -330,3 +330,11 @@ details.adv[open] summary { margin-bottom: 6px; }
 .ab-wa { border-left-color: var(--wa); } .ab-wa h4 { color: var(--wa); }
 .ab-pr { border-left-color: var(--ac); background: var(--soft); } .ab-pr h4 { color: var(--ac); }
 .avis-complet p { font-size: 15px; }
+
+/* Cave vide et cave de démonstration (1.26.0) */
+.stats[hidden] { display: none; }
+.empty.vide { text-align: left; padding: 8px 4px; }
+.empty.vide .vt { font-family: Georgia, 'Times New Roman', serif; font-size: 22px; margin: 4px 0 8px; color: var(--wine, #6b1d2a); }
+.empty.vide .ou { text-align: center; margin: 14px 0 2px; }
+.demobar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 12px; margin-bottom: 10px; border: 1px dashed #c9a24a; border-radius: 12px; background: rgba(201, 162, 74, .12); font-size: 14px; }
+.demobar .btn { width: auto; min-height: 40px; padding: 6px 14px; }
