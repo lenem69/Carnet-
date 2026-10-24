@@ -50,16 +50,16 @@ const PAR_APPELLATION = {
   'chassagne montrachet': [8, 7], 'saint aubin': [6, 6], 'santenay': [7, 5], 'maranges': [6, null], 'mercurey': [6, 5], 'givry': [5, 4], 'rully': [5, 4],
   'montagny': [null, 4], 'pouilly fuisse': [null, 6], 'saint veran': [null, 4], 'macon': [3, 3], 'chablis': [null, 6], 'petit chablis': [null, 3], 'irancy': [6, null],
   // Bordeaux
-  'bordeaux': [5, 3], 'bordeaux superieur': [6, 3], 'entre deux mers': [null, 2], 'medoc': [7, null], 'haut medoc': [8, null], 'listrac medoc': [8, null], 'moulis en medoc': [8, null],
+  'bordeaux': [4, 3], 'bordeaux superieur': [5, 3], 'entre deux mers': [null, 2], 'medoc': [7, null], 'haut medoc': [8, null], 'listrac medoc': [8, null], 'moulis en medoc': [8, null],
   'pauillac': [12, null], 'saint julien': [12, null], 'saint estephe': [11, null], 'margaux': [11, null], 'pessac leognan': [10, 7], 'graves': [8, 5],
   'pomerol': [12, null], 'lalande de pomerol': [8, null], 'saint emilion': [8, null], 'saint emilion grand cru': [10, null], 'lussac saint emilion': [7, null],
   'montagne saint emilion': [7, null], 'puisseguin saint emilion': [7, null], 'saint georges saint emilion': [7, null], 'fronsac': [8, null], 'canon fronsac': [8, null],
   'cotes de bourg': [6, null], 'blaye': [6, null], 'cotes de blaye': [6, 3], 'blaye cotes de bordeaux': [6, null], 'castillon cotes de bordeaux': [7, null],
   'cotes de bordeaux': [6, 3], 'francs cotes de bordeaux': [6, null], 'loupiac': [null, 15], 'sainte croix du mont': [null, 15], 'cadillac': [null, 12], 'cerons': [null, 12],
   // Rhône
-  'hermitage': [15, 12], 'cote rotie': [12, null], 'cornas': [12, null], 'saint joseph': [8, 5], 'crozes hermitage': [7, 4], 'condrieu': [null, 3],
+  'hermitage': [15, 12], 'cote rotie': [12, null], 'cornas': [12, null], 'saint joseph': [7, 5], 'crozes hermitage': [5, 4], 'condrieu': [null, 3],
   'chateau grillet': [null, 6], 'saint peray': [null, 4], 'chateauneuf du pape': [12, 7], 'gigondas': [10, null], 'vacqueyras': [8, 4], 'lirac': [6, 3],
-  'cairanne': [7, 3], 'rasteau': [7, null], 'vinsobres': [7, null], 'beaumes de venise': [7, null], 'cotes du rhone villages': [5, 3], 'cotes du rhone': [4, 3],
+  'cairanne': [7, 3], 'rasteau': [7, null], 'vinsobres': [7, null], 'beaumes de venise': [7, null], 'cotes du rhone villages': [4, 3], 'cotes du rhone': [3, 3],
   'ventoux': [4, 3], 'luberon': [4, 3], 'costieres de nimes': [4, 3],
   // Loire
   'chinon': [6, 5], 'bourgueil': [6, null], 'saint nicolas de bourgueil': [6, null], 'saumur champigny': [6, null], 'saumur': [4, 5], 'anjou': [4, 5],
@@ -67,8 +67,8 @@ const PAR_APPELLATION = {
   'vouvray': [null, 8], 'montlouis sur loire': [null, 7], 'jasnieres': [null, 8], 'sancerre': [4, 4], 'pouilly fume': [null, 4], 'menetou salon': [4, 3], 'quincy': [null, 3],
   'reuilly': [3, 3], 'muscadet': [null, 3], 'muscadet sevre et maine': [null, 4], 'touraine': [3, 3], 'cheverny': [3, 3], 'cour cheverny': [null, 6], 'valencay': [3, 3],
   // Beaujolais
-  'beaujolais': [4, 3], 'beaujolais villages': [4, null], 'morgon': [6, null], 'moulin a vent': [7, null], 'chenas': [6, null], 'julienas': [5, null],
-  'cote de brouilly': [5, null], 'brouilly': [4, null], 'fleurie': [4, null], 'chiroubles': [3, null], 'regnie': [4, null], 'saint amour': [4, null],
+  'beaujolais': [4, 3], 'beaujolais villages': [4, null], 'morgon': [8, null], 'moulin a vent': [9, null], 'chenas': [7, null], 'julienas': [6, null],
+  'cote de brouilly': [6, null], 'brouilly': [4, null], 'fleurie': [5, null], 'chiroubles': [3, null], 'regnie': [4, null], 'saint amour': [4, null],
   // Alsace
   'alsace riesling': [null, 6], 'alsace pinot gris': [5, 5], 'alsace gewurztraminer': [null, 5], 'alsace pinot noir': [4, null], 'alsace pinot blanc': [null, 3],
   'alsace sylvaner': [null, 3], 'alsace muscat': [null, 3], 'alsace edelzwicker': [null, 3],
@@ -154,8 +154,9 @@ export function apogee(w, annee = new Date().getFullYear()) {
   }
   else r = REGLES.autre;
 
+  const L = largeur(r);
   let pic = millesime + r.ans;
-  let from = pic - 2; let to = pic + 2;
+  let from = pic - L.h; let to = pic + L.h;
   // Cohérence : l'apogée ne sort jamais de la fenêtre de garde enregistrée (saisie, bible ou IA).
   // Si la règle tombe en dehors, le pic est ramené dans la fenêtre et la période d'apogée est recoupée avec elle.
   let ajuste = false;
@@ -171,7 +172,28 @@ export function apogee(w, annee = new Date().getFullYear()) {
     }
   }
   const statut = annee < from ? 'À garder' : annee > to ? 'Urgence' : 'Prêt à boire';
-  return { pic, from, to, statut, regle: r.label, ans: r.ans, sansMillesime: false, ajuste };
+  return { pic, from, to, statut, regle: r.label, ans: r.ans, sansMillesime: false, ajuste, cat: L.cat, avant: L.avant, apres: L.apres };
+}
+
+// Largeur de la période d'apogée autour du pic, et marge de la fenêtre de dégustation avant et après (années).
+// Plus un vin tient longtemps, plus la période d'apogée est large, mais jamais au point de couvrir une décennie entière.
+// La fenêtre de dégustation (garde) contient toujours la période d'apogée, avec une marge avant et une marge après.
+export function largeur(r) {
+  const ans = r.ans;
+  if (ans >= 20) return { cat: 'longue', h: 4, avant: 4, apres: 10 };
+  if (ans >= 12) return { cat: 'prestige', h: 3, avant: 3, apres: 6 };
+  if (ans >= 8) return { cat: 'structure', h: 2, avant: 2, apres: 4 };
+  if (ans <= 3) return { cat: 'leger', h: 1, avant: 1, apres: 2 };
+  return { cat: 'courant', h: 2, avant: 2, apres: 3 };
+}
+
+// Fenêtre de dégustation proposée (garde) pour un vin : contient la période d'apogée. Sans millésime : null.
+export function fenetreGarde(w) {
+  const a = apogee({ ...w, from: null, to: null });
+  if (a.sansMillesime) return null;
+  const debut = Math.max(Number(w.year) + 1, a.from - a.avant);
+  const fin = a.to + a.apres;
+  return { from: Math.min(debut, a.from), to: Math.max(fin, a.to) };
 }
 
 // Où en est l'apogée elle-même (et non le statut du vin, qui dépend de la fenêtre de garde) : évite de contredire la pastille de la carte.

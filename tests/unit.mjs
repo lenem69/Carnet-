@@ -240,9 +240,9 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   T('niveau : Montrachet grand cru → +15', AN('Montrachet', 'Montrachet', 'Blanc') === 15);
   T('niveau : Gevrey-Chambertin village → +9, Chambertin grand cru → +15', AN('Gevrey-Chambertin', 'Gevrey-Chambertin', 'Rouge') === 9 && AN('Chambertin', 'Chambertin', 'Rouge') === 15);
   T('niveau : Chambolle-Musigny village → +8, Vosne-Romanée village → +8 (table), Romanée-Conti → +15', AN('Chambolle-Musigny', 'Chambolle-Musigny', 'Rouge') === 8 && AN('Vosne-Romanée', 'Vosne-Romanée', 'Rouge') === 8 && AN('Romanée-Conti', 'Romanée-Conti', 'Rouge') === 15);
-  T('niveau : Crozes-Hermitage → +7, Hermitage → +11 (table)', AN('Crozes-Hermitage', 'Crozes-Hermitage', 'Rouge') === 7 && AN('Hermitage', 'Hermitage', 'Rouge') === 11);
-  T('appellation : Pauillac +12, Saint-Émilion Grand Cru +10, Châteauneuf-du-Pape +12, Côte-Rôtie +11, Morgon +6, Muscadet +3, Chablis blanc +6',
-    AN('Cuvée', 'Pauillac', 'Rouge') === 12 && AN('Cuvée', 'Saint-Émilion Grand Cru', 'Rouge') === 10 && AN('Cuvée', 'Châteauneuf-du-Pape', 'Rouge') === 12 && AN('Cuvée', 'Côte-Rôtie', 'Rouge') === 11 && AN('Cuvée', 'Morgon', 'Rouge') === 6 && AN('Cuvée', 'Muscadet', 'Blanc') === 3 && AN('Cuvée', 'Chablis', 'Blanc') === 6);
+  T('niveau : Crozes-Hermitage → +5, Hermitage → +11 (table)', AN('Crozes-Hermitage', 'Crozes-Hermitage', 'Rouge') === 5 && AN('Hermitage', 'Hermitage', 'Rouge') === 11);
+  T('appellation : Pauillac +12, Saint-Émilion Grand Cru +10, Châteauneuf-du-Pape +12, Côte-Rôtie +11, Morgon +8, Muscadet +3, Chablis blanc +6',
+    AN('Cuvée', 'Pauillac', 'Rouge') === 12 && AN('Cuvée', 'Saint-Émilion Grand Cru', 'Rouge') === 10 && AN('Cuvée', 'Châteauneuf-du-Pape', 'Rouge') === 12 && AN('Cuvée', 'Côte-Rôtie', 'Rouge') === 11 && AN('Cuvée', 'Morgon', 'Rouge') === 8 && AN('Cuvée', 'Muscadet', 'Blanc') === 3 && AN('Cuvée', 'Chablis', 'Blanc') === 6);
   {
     // Audit de toute la liste connue : seuls les vrais grands crus (ou appellations « Grand Cru ») prennent la règle du grand vin.
     const { TAXONOMIE } = await import('../taxonomie.js');
@@ -255,7 +255,7 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
     T('audit : tous les « Premier Cru » rouges → +12', p1.length === 0, p1.join(', '));
   }
   T('apogée : rappel court sur la carte', A.apogeeCourte(t6)==='Apogée 2031 · à venir' && A.apogeeCourte(t1)==='Prêt à boire (sans millésime)', A.apogeeCourte(t6));
-  T('apogée : phrase de la fiche contient le pic et la fenêtre', /Apogée estimée 2031 \(entre 2029 et 2033\)/.test(A.apogeeTexte(t6)), A.apogeeTexte(t6));
+  T('apogée : phrase de la fiche contient le pic et la fenêtre', /Apogée estimée 2031 \(entre 2028 et 2034\)/.test(A.apogeeTexte(t6)), A.apogeeTexte(t6));
   // Cohérence apogée / fenêtre de garde : l'apogée ne sort jamais de la fenêtre enregistrée.
   {
     const couleurs = ['Rouge', 'Blanc', 'Rosé', 'Pétillant'];
@@ -398,6 +398,20 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
     const rb = ctx.self.FondIA.bibleGarde(b, B);
     const pick = w => JSON.stringify({ from: w.from, to: w.to, src: w.src, conf: w.conf });
     T('bible de fond = logique de la page : ' + raw.name, ra === rb && pick(a) === pick(b), JSON.stringify([pick(a), pick(b)]));
+  }
+  {
+    // Cohérence : la fenêtre de dégustation de chaque ligne de la bible contient la période d'apogée calculée, sans correction.
+    const bib = JSON.parse(fs.readFileSync(new URL('../bible/bible.json', import.meta.url), 'utf8'));
+    const CC = { R: 'Rouge', B: 'Blanc', D: 'Rosé', E: 'Pétillant' };
+    let hors = [], larges = [];
+    for (const r of bib.rows) for (const [y, cell] of Object.entries(r.y)) {
+      const [, from, to] = cell;
+      const a = A.apogee({ name: r.a, dom: '', region: r.a, color: CC[r.c], year: Number(y), from, to }, 2026);
+      if (a.ajuste || a.from < from || a.to > to) hors.push(r.a + ' ' + y);
+      if (to - from > 25) larges.push(r.a + ' ' + y + ' ' + (to - from));
+    }
+    T('cohérence : apogée toujours dans la fenêtre de dégustation (bible)', hors.length === 0, hors.slice(0, 8).join(', '));
+    T('cohérence : aucune fenêtre de dégustation de plus de 25 ans', larges.length === 0, larges.slice(0, 8).join(', '));
   }
   console.log(out.slice(o0).join('\n'));
 }
