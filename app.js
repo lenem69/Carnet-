@@ -690,7 +690,14 @@ async function onCardAction(e) {
       const d = await AI.makeFiche(w);
       Stats.track('fiches_ia'); if (d.conf === 'vérifiée') Stats.track('fiches_verif');
       const c = copieIA(w, d);
-      if (await persist(() => store.putWines([c]))) remplace(w, c);
+      if (await persist(() => store.putWines([c]))) {
+        remplace(w, c);
+        const chg = ['grape', 'story', 'from', 'to'].some(k => w[k] !== c[k]) || JSON.stringify(w.pairings) !== JSON.stringify(c.pairings);
+        S.highlight = c.id;
+        render();
+        toast(chg ? '✅ ' + ficheMsg(d) + ' Ouvrez « Fiche et accords » pour la lire.' : 'La fiche est déjà à jour : l’IA n’a rien trouvé à changer (vos saisies sont conservées).');
+        return;
+      }
       render();
     } catch (err) { btn.disabled = false; btn.textContent = '✨ Fiche (IA)'; errToast(AI.errText(err)); }
   }
