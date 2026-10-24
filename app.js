@@ -26,7 +26,7 @@ const PAGE = 100;
 const BACKUP_DAYS = 60;
 const S = {
   wines: [], tab: 'cave', filt: 'Tous', sort: 'name', q: '', limit: PAGE, bmode: 'year',
-  editId: null, formExtra: {}, lastBackup: 0, update: null, ready: false, highlight: null, title: 'Ma cave', bible: null,
+  editId: null, formExtra: {}, lastBackup: 0, update: null, ready: false, highlight: null, ouvert: new Set(), title: 'Ma cave', bible: null,
 };
 const DEFAULT_TITLE = 'Ma cave';
 
@@ -260,7 +260,7 @@ function card(w, mode, why) {
   ${why ? `<p class="why">💡 ${esc(why)}</p>` : ''}
   <div class="row"><div><h4>${esc(w.name)}${w.year ? ' ' + esc(w.year) : ''}</h4><p>${esc([w.dom, w.region].filter(Boolean).join(' · '))}</p></div>${qty}</div>
   ${meta || tags ? `<div class="ml">${meta ? `<p class="mm">${meta}</p>` : ''}${tags ? `<p class="stl">${tags}</p>` : ''}</div>` : ''}
-  <div class="fr">${hasFiche || apo || svc || tags2 ? `<details><summary>Fiche et accords</summary>${tags2 ? `<p class="mu small sec">${tags2}</p>` : ''}${degLigne(w)}${apo ? `<p class="mu small">${esc(apo)}</p>` : ''}${svc ? `<p class="mu small">${esc(svc)}</p>` : ''}${repAppel && (!w.grape || !w.pairings.length) ? `<p class="mu small">${esc(repAppel)}</p>` : ''}${majIA.length ? `<p class="mu small">Mis à jour par l’IA : ${esc(majIA.join(', '))}.</p>` : ''}${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : degLigne(w) + journalHtml(w, mode)}<button class="am" type="button" data-a="menu" aria-haspopup="dialog">⋯ Actions</button></div>
+  <div class="fr">${hasFiche || apo || svc || tags2 ? `<details${S.ouvert.has(w.id) ? ' open' : ''}><summary>Fiche et accords</summary>${tags2 ? `<p class="mu small sec">${tags2}</p>` : ''}${degLigne(w)}${apo ? `<p class="mu small">${esc(apo)}</p>` : ''}${svc ? `<p class="mu small">${esc(svc)}</p>` : ''}${repAppel && (!w.grape || !w.pairings.length) ? `<p class="mu small">${esc(repAppel)}</p>` : ''}${majIA.length ? `<p class="mu small">Mis à jour par l’IA : ${esc(majIA.join(', '))}.</p>` : ''}${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : degLigne(w) + journalHtml(w, mode)}<button class="am" type="button" data-a="menu" aria-haspopup="dialog">⋯ Actions</button></div>
   <div class="acts-h" hidden>${!w.story && !w.pairings.length ? '<button data-a="gen" type="button">✨ Fiche (IA)</button>' : ''}<button data-a="e" type="button">Modifier</button>${mode === 'cave' ? '<button data-a="d" type="button">Supprimer</button>' : ''}</div>
 </div>`;
 }
@@ -693,8 +693,11 @@ async function onCardAction(e) {
       if (await persist(() => store.putWines([c]))) {
         remplace(w, c);
         const chg = ['grape', 'story', 'from', 'to'].some(k => w[k] !== c[k]) || JSON.stringify(w.pairings) !== JSON.stringify(c.pairings);
-        S.highlight = c.id;
+        S.highlight = c.id; S.ouvert.add(c.id);
         render();
+        const el = document.querySelector(`.w[data-id="${CSS.escape(c.id)}"]`);
+        if (el) el.scrollIntoView({ block: 'center' });
+        setTimeout(() => { if (S.highlight === c.id) { S.highlight = null; const e2 = document.querySelector(`.w[data-id="${CSS.escape(c.id)}"]`); if (e2) e2.classList.remove('hl'); } }, 2500);
         toast(chg ? '✅ ' + ficheMsg(d) + ' Ouvrez « Fiche et accords » pour la lire.' : 'La fiche est déjà à jour : l’IA n’a rien trouvé à changer (vos saisies sont conservées).');
         return;
       }
@@ -1564,8 +1567,10 @@ async function autoStep() {
       Stats.track('fiches_ia', changed.length);
       if (await persist(() => store.putWines(changed.map(x => x[1])))) {
         changed.forEach(([w, c]) => remplace(w, c));
-        auto.lastOk = Date.now(); render();
-        if (changed.some(([w]) => S.highlight === w.id)) toast('✨ Fiche complétée par l’IA');
+        auto.lastOk = Date.now();
+        if (g !== 'valeur') changed.forEach(([, c]) => S.ouvert.add(c.id));
+        render();
+        if (g !== 'valeur') toast('✨ ' + changed.length + (changed.length > 1 ? ' fiches mises à jour' : ' fiche mise à jour') + ' par l’IA');
       } else changed.forEach(([w]) => { auto.tries[w.id] = (auto.tries[w.id] || 0) + 1; });
     }
     auto.pauseUntil = 0;

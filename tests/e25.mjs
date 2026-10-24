@@ -1,0 +1,26 @@
+// Fiche (IA) manuelle depuis « ⋯ Actions » : la fiche se met à jour et s’ouvre toute seule, avec un message de résultat.
+import {start} from './server.mjs';import * as H from './h.mjs';
+H.deploy();const srv=await start(8123);const b=await H.browser();
+const S=H.suite('Fiche IA visible');const T=S.T;
+const G=o=>({json:{candidates:[{content:{parts:[{text:JSON.stringify(o)}]}}]}});
+const ai=async()=>G({grape:'Syrah',story:'Histoire TESTFICHE de la cuvée.',from:2024,to:2034,pairings:['agneau','gibier'],conf:'estimée'});
+const r=await H.newPage(b,{ai});const page=r.page;
+const errs=[];page.on('pageerror',e=>errs.push(e.message));
+await page.goto(H.URL0);await H.sl(900);
+await page.evaluate(async()=>{localStorage.setItem('cave-gratuit','off');localStorage.setItem('cave-ai',JSON.stringify({provider:'gemini',key:'AIzaPERSO',model:'gemini-3.5-flash-lite'}));
+  const s=await import('./store.js');await s.replaceAll([{id:'a',name:'Vin A',year:2018,qty:2,from:2020,to:2035,src:{},dom:'D',color:'Rouge',region:'Cornas',grape:'',price:20,created:1,updated:1,story:'',pairings:[],check:false,conf:'',sources:[],tastings:[]}]);
+  await s.setMeta('bienvenue',{prenom:'Jeff',date:1});});
+await page.reload();await H.sl(1500);
+await page.evaluate(()=>document.querySelectorAll('.modal.show').forEach(m=>m.classList.remove('show')));
+await page.evaluate(()=>document.querySelector('#list .w [data-a="menu"]').click());await H.sl(400);
+await page.evaluate(()=>document.querySelector('#sAct [data-x="gen"]').click());await H.sl(1800);
+const ouvert=await page.evaluate(()=>{const d=document.querySelector('#list .w details');return !!d&&d.open;});
+T('fiche : la carte s’ouvre après la génération',ouvert);
+const tx=await page.evaluate(()=>document.querySelector('#list .w').textContent);
+T('fiche : le nouveau texte est affiché',tx.includes('TESTFICHE')&&tx.includes('agneau'),tx.slice(0,200));
+const msg=await H.txt(page,'#toasts');
+T('fiche : un message de résultat est affiché',msg.includes('Fiche'),msg);
+T('aucune erreur JavaScript de page',errs.length===0,errs.join(' / '));
+S.out.forEach(l=>console.log(l));
+console.log(`\n${S.out.filter(l=>l.startsWith('PASS')).length} réussis, ${S.out.filter(l=>l.startsWith('FAIL')).length} échec(s)`);
+await b.close();srv.close?.();process.exit(S.out.some(l=>l.startsWith('FAIL'))?1:0);

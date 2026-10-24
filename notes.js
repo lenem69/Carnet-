@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.26.5': ['Fiche (IA) : la fiche mise à jour s’ouvre toute seule sous vos yeux, aussi bien quand vous la générez que quand l’appli complète vos fiches en arrière-plan avec votre clé (message « fiche mise à jour par l’IA »).'],
   '1.26.4': ['Fiche (IA) depuis « ⋯ Actions » : un message clair indique maintenant le résultat (fiche mise à jour, ou déjà à jour avec vos saisies conservées) et la carte est mise en évidence.'],
   '1.26.3': ['IA gratuite : l’appel gratuit du jour est réservé à la lecture d’étiquette (scan). Les fiches, l’estimation de valeur et les suggestions de plat par IA demandent votre propre clé gratuite, expliquée dans ⚙ Réglages ; les fiches automatiques se limitent à la base des vins tant qu’aucune clé n’est saisie.', 'Scan : quand la limite du jour est atteinte, la fenêtre d’explication s’affiche maintenant bien (le menu se ferme).'],
   '1.26.2': ['Fin des contradictions sur la garde : un vin ne peut plus être à la fois « À garder » et « Passé ». Les anciennes fiches dont les dates de garde étaient à l’envers sont remises dans l’ordre toutes seules.', 'Fiche et accords : le mot « apogée » n’est plus répété ; l’étiquette dit « garde d’après la bible ».'],
