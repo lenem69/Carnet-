@@ -11,7 +11,7 @@
   const RECH = 5;             // vins par appel de recherche web
   const ESSAIS = 2, VERROU_MS = 5 * 60e3;
   const PROXY = 'https://cave-ia.m-jeanfrancois-morin.workers.dev';   // clé gratuite partagée (sous limite par appareil)
-  const LIMITE_GRATUITE = 5;  // vins par jour et par appareil, en mode gratuit
+  const LIMITE_GRATUITE = 1;  // vin par jour et par appareil, en mode gratuit
   const CHAMPS = ['grape', 'story', 'pairings', 'from', 'to'];
   const COULEUR_BIBLE = { Rouge: ['R'], Blanc: ['B', 'D'], Pétillant: ['E'] };
   const vide = v => v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length);

@@ -1,4 +1,4 @@
-// Clé gratuite partagée : passe par le proxy avec l’identifiant d’appareil, limite de 5 vins par jour, clé personnelle prioritaire, fenêtre de limite.
+// Clé gratuite partagée : passe par le proxy avec l’identifiant d’appareil, limite de 1 vin par jour, clé personnelle prioritaire, fenêtre de limite.
 import {start} from './server.mjs';import * as H from './h.mjs';
 H.deploy();const srv=await start(8123);const b=await H.browser();
 const S=H.suite('Clé gratuite');const T=S.T;
@@ -25,6 +25,8 @@ T('sans clé personnelle : appel vers le proxy',!!c1,calls.map(c=>c.url).join(' 
 T('appel proxy : identifiant d’appareil et nombre de vins, sans clé Google',c1&&c1.headers['x-appareil']===appareil&&c1.headers['x-unites']==='1'&&!c1.headers['x-goog-api-key'],JSON.stringify(c1&&c1.headers));
 const cpt=await page.evaluate(async()=>{const s=await import('./store.js');return s.getMeta('gratuit');});
 T('compteur du jour : 1 vin compté',cpt&&cpt.vins===1&&cpt.jour===aujourdhui(),JSON.stringify(cpt));
+const r0=await page.evaluate(async()=>(await import('./ai.js')).gratuitReste());
+T('après un vin : plus d’IA gratuite aujourd’hui',r0===0,r0);
 
 // Le service gratuit refuse (403) : message clair, qui n'accuse pas une clé que l'utilisateur n'a pas.
 mode='403';

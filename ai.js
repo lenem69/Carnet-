@@ -41,7 +41,7 @@ export function getConfig(provider) {
 // Clé gratuite partagée (proxy) : utilisée seulement tant que l’appareil n’a pas atteint sa limite du jour, et seulement
 // si aucune clé personnelle n’est saisie. Hors ligne ou désactivée (cave-gratuit = off, pour les tests), elle n’existe pas.
 export const PROXY = 'https://cave-ia.m-jeanfrancois-morin.workers.dev';
-export const LIMITE_GRATUITE = 5;   // vins par jour et par appareil
+export const LIMITE_GRATUITE = 1;   // vin par jour et par appareil : une seule action d’IA gratuite par jour, tout le reste est bridé
 let gratuit = { jour: '', vins: 0 };
 let appareil = '';
 const aujourdhui = () => new Date().toISOString().slice(0, 10);
@@ -117,7 +117,7 @@ export function usable() {
 
 export const ERR = {
   no_key: 'Aucune IA configurée. Ajoutez une clé dans Réglages (⚙).',
-  limite_gratuite: 'Limite du jour atteinte avec la clé d’essai. Pour continuer, ajoutez votre propre clé gratuite dans Réglages (⚙) : la marche à suivre y est expliquée pas à pas.',
+  limite_gratuite: 'Vous avez utilisé l’IA gratuite d’aujourd’hui (un vin par jour), elle revient demain. Pour l’utiliser sans cette limite, ajoutez votre propre clé gratuite dans ⚙ Réglages : la marche à suivre y est expliquée pas à pas.',
   bad_key: 'Clé IA refusée. Vérifiez-la dans Réglages (⚙).',
   service_gratuit: 'Le service gratuit est momentanément indisponible. Réessayez plus tard, ou ajoutez votre propre clé gratuite dans ⚙ Réglages.',
   bad_model: 'Modèle IA introuvable. Corrigez le nom du modèle dans Réglages (⚙).',

@@ -668,7 +668,7 @@ function requireAI() {
 async function limiteWindow() {
   await whenFree();
   const c = await ask('Limite du jour atteinte',
-    'Vous avez utilisé les fiches gratuites d’aujourd’hui. La limite se remet à zéro chaque jour. Pour continuer tout de suite, ajoutez votre propre clé gratuite Gemini dans ⚙ Réglages : la marche à suivre y est expliquée pas à pas.',
+    'Vous avez utilisé l’IA gratuite d’aujourd’hui : elle est limitée à un vin par jour et revient demain. Pour l’utiliser sans cette limite, ajoutez votre propre clé gratuite Gemini dans ⚙ Réglages : la marche à suivre y est expliquée pas à pas.',
     [{ label: 'Plus tard', value: 'plus', kind: 'o' }, { label: 'Ouvrir Réglages', value: 'reglages' }]);
   if (c === 'reglages') openSettings();
 }
