@@ -188,11 +188,15 @@ export function largeur(r) {
 }
 
 // Fenêtre de dégustation proposée (garde) pour un vin : contient la période d'apogée. Sans millésime : null.
-export function fenetreGarde(w) {
+// La qualité du millésime (note 1 à 5 de la bible) allonge ou raccourcit la fin de la fenêtre de dégustation :
+// 1 ou 2 : vin qui s'essouffle plus vite ; 4 ou 5 : vin qui tient plus longtemps. L'apogée elle-même n'est jamais coupée.
+const DELTA_QUALITE = { 1: -2, 2: -1, 3: 0, 4: 1, 5: 2 };
+export function fenetreGarde(w, qualite = 3) {
   const a = apogee({ ...w, from: null, to: null });
   if (a.sansMillesime) return null;
   const debut = Math.max(Number(w.year) + 1, a.from - a.avant);
-  const fin = a.to + a.apres;
+  const apres = Math.max(0, a.apres + (DELTA_QUALITE[Number(qualite)] ?? 0));
+  const fin = a.to + apres;
   return { from: Math.min(debut, a.from), to: Math.max(fin, a.to) };
 }
 

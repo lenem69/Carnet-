@@ -1,211 +1,211 @@
 zone	sous_zone	couleur	millesime	qualite	apogee_debut	apogee_fin	caractere	fiabilite	sources
-Beaujolais	Beaujolais	R	2005	4	2006	2014	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
+Beaujolais	Beaujolais	R	2005	4	2006	2015	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
 Beaujolais	Beaujolais	R	2006	3	2007	2015	été contrasté, fin de saison meilleure, résultats inégaux selon producteurs	A	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;alpinewines.co.uk
-Beaujolais	Beaujolais	R	2007	2	2008	2016	manque de soleil et mildiou, vins plus minces, crus au-dessus des régionaux	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
-Beaujolais	Beaujolais	R	2008	2	2009	2017	pluie, grêle et pourriture, tri indispensable, vins parfois verts	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
-Beaujolais	Beaujolais	R	2009	4	2010	2018	été solaire, maturité riche et régulière, vins généreux et charnus	A	winescholarguild.com;viniphile.fr;lacompagniedesbonnesbouteilles.fr
-Beaujolais	Beaujolais	R	2010	4	2011	2019	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
-Beaujolais	Beaujolais	R	2011	4	2012	2020	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Beaujolais	R	2007	2	2008	2015	manque de soleil et mildiou, vins plus minces, crus au-dessus des régionaux	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
+Beaujolais	Beaujolais	R	2008	2	2009	2016	pluie, grêle et pourriture, tri indispensable, vins parfois verts	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
+Beaujolais	Beaujolais	R	2009	4	2010	2019	été solaire, maturité riche et régulière, vins généreux et charnus	A	winescholarguild.com;viniphile.fr;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Beaujolais	R	2010	4	2011	2020	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
+Beaujolais	Beaujolais	R	2011	4	2012	2021	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Beaujolais	R	2012	3	2013	2021	très petite récolte, vins légers, frais et fruités, plaisir rapide	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Beaujolais	R	2013	3	2014	2022	printemps froid, récolte tardive, hétérogène, frais mais parfois vert	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
-Beaujolais	Beaujolais	R	2014	4	2015	2023	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Beaujolais	R	2015	4	2016	2024	chaud et précoce, fruit mûr et dense, texture veloutée, garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Beaujolais	R	2014	4	2015	2024	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Beaujolais	R	2015	4	2016	2025	chaud et précoce, fruit mûr et dense, texture veloutée, garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
 Beaujolais	Beaujolais	R	2016	3	2017	2025	grêle dans le nord, vins frais, floraux et bien structurés	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Beaujolais	R	2017	4	2018	2026	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Beaujolais	R	2018	4	2019	2027	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Beaujolais	R	2019	4	2020	2028	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Beaujolais	R	2020	4	2021	2029	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Beaujolais	R	2017	4	2018	2027	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Beaujolais	R	2018	4	2019	2028	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Beaujolais	R	2019	4	2020	2029	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Beaujolais	R	2020	4	2021	2030	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Beaujolais	R	2021	3	2022	2030	gel puis pluie, récolte tardive, vins fins, croquants, peu alcoolisés	A	hachette-vins.com;beaujolais.com;idealwine.net
-Beaujolais	Beaujolais	R	2022	4	2023	2031	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Beaujolais	R	2023	4	2024	2032	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Beaujolais	R	2024	2	2025	2033	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
-Beaujolais	Beaujolais	R	2025	4	2026	2034	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
-Beaujolais	Beaujolais-Villages	R	2005	4	2006	2014	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
+Beaujolais	Beaujolais	R	2022	4	2023	2032	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Beaujolais	R	2023	4	2024	2033	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Beaujolais	R	2024	2	2025	2032	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
+Beaujolais	Beaujolais	R	2025	4	2026	2035	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
+Beaujolais	Beaujolais-Villages	R	2005	4	2006	2015	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
 Beaujolais	Beaujolais-Villages	R	2006	3	2007	2015	été contrasté, fin de saison meilleure, résultats inégaux selon producteurs	A	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;alpinewines.co.uk
-Beaujolais	Beaujolais-Villages	R	2007	2	2008	2016	manque de soleil et mildiou, vins plus minces, crus au-dessus des régionaux	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
-Beaujolais	Beaujolais-Villages	R	2008	2	2009	2017	pluie, grêle et pourriture, tri indispensable, vins parfois verts	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
-Beaujolais	Beaujolais-Villages	R	2009	4	2010	2018	été solaire, maturité riche et régulière, vins généreux et charnus	A	winescholarguild.com;viniphile.fr;lacompagniedesbonnesbouteilles.fr
-Beaujolais	Beaujolais-Villages	R	2010	4	2011	2019	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
-Beaujolais	Beaujolais-Villages	R	2011	4	2012	2020	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Beaujolais-Villages	R	2007	2	2008	2015	manque de soleil et mildiou, vins plus minces, crus au-dessus des régionaux	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
+Beaujolais	Beaujolais-Villages	R	2008	2	2009	2016	pluie, grêle et pourriture, tri indispensable, vins parfois verts	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
+Beaujolais	Beaujolais-Villages	R	2009	4	2010	2019	été solaire, maturité riche et régulière, vins généreux et charnus	A	winescholarguild.com;viniphile.fr;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Beaujolais-Villages	R	2010	4	2011	2020	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
+Beaujolais	Beaujolais-Villages	R	2011	4	2012	2021	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Beaujolais-Villages	R	2012	3	2013	2021	très petite récolte, vins légers, frais et fruités, plaisir rapide	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Beaujolais-Villages	R	2013	3	2014	2022	printemps froid, récolte tardive, hétérogène, frais mais parfois vert	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
-Beaujolais	Beaujolais-Villages	R	2014	4	2015	2023	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Beaujolais-Villages	R	2015	4	2016	2024	chaud et précoce, fruit mûr et dense, texture veloutée, garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Beaujolais-Villages	R	2014	4	2015	2024	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Beaujolais-Villages	R	2015	4	2016	2025	chaud et précoce, fruit mûr et dense, texture veloutée, garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
 Beaujolais	Beaujolais-Villages	R	2016	3	2017	2025	grêle dans le nord, vins frais, floraux et bien structurés	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Beaujolais-Villages	R	2017	4	2018	2026	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Beaujolais-Villages	R	2018	4	2019	2027	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Beaujolais-Villages	R	2019	4	2020	2028	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Beaujolais-Villages	R	2020	4	2021	2029	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Beaujolais-Villages	R	2017	4	2018	2027	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Beaujolais-Villages	R	2018	4	2019	2028	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Beaujolais-Villages	R	2019	4	2020	2029	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Beaujolais-Villages	R	2020	4	2021	2030	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Beaujolais-Villages	R	2021	3	2022	2030	gel puis pluie, récolte tardive, vins fins, croquants, peu alcoolisés	A	hachette-vins.com;beaujolais.com;idealwine.net
-Beaujolais	Beaujolais-Villages	R	2022	4	2023	2031	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Beaujolais-Villages	R	2023	4	2024	2032	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Beaujolais-Villages	R	2024	2	2025	2033	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
-Beaujolais	Beaujolais-Villages	R	2025	4	2026	2034	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
-Beaujolais	Morgon	R	2005	4	2009	2019	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
+Beaujolais	Beaujolais-Villages	R	2022	4	2023	2032	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Beaujolais-Villages	R	2023	4	2024	2033	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Beaujolais-Villages	R	2024	2	2025	2032	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
+Beaujolais	Beaujolais-Villages	R	2025	4	2026	2035	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
+Beaujolais	Morgon	R	2005	4	2009	2020	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
 Beaujolais	Morgon	R	2006	3	2010	2020	été contrasté, fin de saison meilleure, résultats inégaux selon producteurs	A	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;alpinewines.co.uk
 Beaujolais	Morgon	R	2007	3	2011	2021	manque de soleil et mildiou, vins plus minces, crus au-dessus des régionaux	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
 Beaujolais	Morgon	R	2008	3	2012	2022	pluie, grêle et pourriture, tri indispensable, vins parfois verts	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
-Beaujolais	Morgon	R	2009	5	2013	2023	été solaire, maturité riche et régulière, vins généreux et charnus	B	winescholarguild.com;viniphile.fr;connaissance
-Beaujolais	Morgon	R	2010	4	2014	2024	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
-Beaujolais	Morgon	R	2011	4	2015	2025	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Morgon	R	2009	5	2013	2025	été solaire, maturité riche et régulière, vins généreux et charnus	B	winescholarguild.com;viniphile.fr;connaissance
+Beaujolais	Morgon	R	2010	4	2014	2025	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
+Beaujolais	Morgon	R	2011	4	2015	2026	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Morgon	R	2012	3	2016	2026	très petite récolte, vins légers, frais et fruités, plaisir rapide	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Morgon	R	2013	3	2017	2027	printemps froid, récolte tardive, hétérogène, frais mais parfois vert	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
-Beaujolais	Morgon	R	2014	4	2018	2028	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Morgon	R	2015	5	2019	2029	chaud et précoce, fruit mûr et dense, texture veloutée, garde	A	hachette-vins.com;beaujolais.com;connaissance;decanter.com
-Beaujolais	Morgon	R	2016	4	2020	2030	grêle dans le nord, vins frais, floraux et bien structurés	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Morgon	R	2017	4	2021	2031	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Morgon	R	2018	4	2022	2032	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Morgon	R	2019	4	2023	2033	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com;decanter.com
-Beaujolais	Morgon	R	2020	4	2024	2034	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Morgon	R	2014	4	2018	2029	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Morgon	R	2015	5	2019	2031	chaud et précoce, fruit mûr et dense, texture veloutée, garde	A	hachette-vins.com;beaujolais.com;connaissance;decanter.com
+Beaujolais	Morgon	R	2016	4	2020	2031	grêle dans le nord, vins frais, floraux et bien structurés	B	hachette-vins.com;beaujolais.com;connaissance
+Beaujolais	Morgon	R	2017	4	2021	2032	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Morgon	R	2018	4	2022	2033	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Morgon	R	2019	4	2023	2034	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com;decanter.com
+Beaujolais	Morgon	R	2020	4	2024	2035	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Morgon	R	2021	3	2025	2035	gel puis pluie, récolte tardive, vins fins, croquants, peu alcoolisés	A	hachette-vins.com;beaujolais.com;idealwine.net
-Beaujolais	Morgon	R	2022	5	2026	2036	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	A	hachette-vins.com;beaujolais.com;connaissance;decanter.com
-Beaujolais	Morgon	R	2023	4	2027	2037	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Morgon	R	2024	2	2028	2038	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
-Beaujolais	Morgon	R	2025	4	2029	2039	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
-Beaujolais	Moulin-à-Vent	R	2005	4	2011	2021	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
+Beaujolais	Morgon	R	2022	5	2026	2038	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	A	hachette-vins.com;beaujolais.com;connaissance;decanter.com
+Beaujolais	Morgon	R	2023	4	2027	2038	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Morgon	R	2024	2	2028	2037	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
+Beaujolais	Morgon	R	2025	4	2029	2040	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
+Beaujolais	Moulin-à-Vent	R	2005	4	2011	2022	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
 Beaujolais	Moulin-à-Vent	R	2006	3	2012	2022	été contrasté, fin de saison meilleure, résultats inégaux selon producteurs	A	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;alpinewines.co.uk
 Beaujolais	Moulin-à-Vent	R	2007	3	2013	2023	manque de soleil et mildiou, vins plus minces, crus au-dessus des régionaux	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
 Beaujolais	Moulin-à-Vent	R	2008	3	2014	2024	pluie, grêle et pourriture, tri indispensable, vins parfois verts	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
-Beaujolais	Moulin-à-Vent	R	2009	5	2015	2025	été solaire, maturité riche et régulière, vins généreux et charnus	B	winescholarguild.com;viniphile.fr;connaissance
-Beaujolais	Moulin-à-Vent	R	2010	4	2016	2026	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
-Beaujolais	Moulin-à-Vent	R	2011	4	2017	2027	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Moulin-à-Vent	R	2009	5	2015	2027	été solaire, maturité riche et régulière, vins généreux et charnus	B	winescholarguild.com;viniphile.fr;connaissance
+Beaujolais	Moulin-à-Vent	R	2010	4	2016	2027	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
+Beaujolais	Moulin-à-Vent	R	2011	4	2017	2028	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Moulin-à-Vent	R	2012	3	2018	2028	très petite récolte, vins légers, frais et fruités, plaisir rapide	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Moulin-à-Vent	R	2013	3	2019	2029	printemps froid, récolte tardive, hétérogène, frais mais parfois vert	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
-Beaujolais	Moulin-à-Vent	R	2014	4	2020	2030	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Moulin-à-Vent	R	2015	5	2021	2031	chaud et précoce, fruit mûr et dense, texture veloutée, garde	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Moulin-à-Vent	R	2016	4	2022	2032	grêle dans le nord, vins frais, floraux et bien structurés	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Moulin-à-Vent	R	2017	4	2023	2033	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Moulin-à-Vent	R	2018	4	2024	2034	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Moulin-à-Vent	R	2019	4	2025	2035	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Moulin-à-Vent	R	2020	4	2026	2036	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Moulin-à-Vent	R	2014	4	2020	2031	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Moulin-à-Vent	R	2015	5	2021	2033	chaud et précoce, fruit mûr et dense, texture veloutée, garde	B	hachette-vins.com;beaujolais.com;connaissance
+Beaujolais	Moulin-à-Vent	R	2016	4	2022	2033	grêle dans le nord, vins frais, floraux et bien structurés	B	hachette-vins.com;beaujolais.com;connaissance
+Beaujolais	Moulin-à-Vent	R	2017	4	2023	2034	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Moulin-à-Vent	R	2018	4	2024	2035	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Moulin-à-Vent	R	2019	4	2025	2036	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Moulin-à-Vent	R	2020	4	2026	2037	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Moulin-à-Vent	R	2021	3	2027	2037	gel puis pluie, récolte tardive, vins fins, croquants, peu alcoolisés	A	hachette-vins.com;beaujolais.com;idealwine.net
-Beaujolais	Moulin-à-Vent	R	2022	5	2028	2038	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Moulin-à-Vent	R	2023	4	2029	2039	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Moulin-à-Vent	R	2024	2	2030	2040	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
-Beaujolais	Moulin-à-Vent	R	2025	4	2031	2041	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
-Beaujolais	Fleurie	R	2005	4	2006	2015	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
+Beaujolais	Moulin-à-Vent	R	2022	5	2028	2040	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	B	hachette-vins.com;beaujolais.com;connaissance
+Beaujolais	Moulin-à-Vent	R	2023	4	2029	2040	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Moulin-à-Vent	R	2024	2	2030	2039	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
+Beaujolais	Moulin-à-Vent	R	2025	4	2031	2042	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
+Beaujolais	Fleurie	R	2005	4	2006	2016	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
 Beaujolais	Fleurie	R	2006	3	2007	2016	été contrasté, fin de saison meilleure, résultats inégaux selon producteurs	A	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;alpinewines.co.uk
 Beaujolais	Fleurie	R	2007	3	2008	2017	manque de soleil et mildiou, vins plus minces, crus au-dessus des régionaux	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
 Beaujolais	Fleurie	R	2008	3	2009	2018	pluie, grêle et pourriture, tri indispensable, vins parfois verts	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
-Beaujolais	Fleurie	R	2009	5	2010	2019	été solaire, maturité riche et régulière, vins généreux et charnus	B	winescholarguild.com;viniphile.fr;connaissance
-Beaujolais	Fleurie	R	2010	4	2011	2020	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
-Beaujolais	Fleurie	R	2011	4	2012	2021	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Fleurie	R	2009	5	2010	2021	été solaire, maturité riche et régulière, vins généreux et charnus	B	winescholarguild.com;viniphile.fr;connaissance
+Beaujolais	Fleurie	R	2010	4	2011	2021	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
+Beaujolais	Fleurie	R	2011	4	2012	2022	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Fleurie	R	2012	3	2013	2022	très petite récolte, vins légers, frais et fruités, plaisir rapide	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Fleurie	R	2013	3	2014	2023	printemps froid, récolte tardive, hétérogène, frais mais parfois vert	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
-Beaujolais	Fleurie	R	2014	4	2015	2024	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Fleurie	R	2015	5	2016	2025	chaud et précoce, fruit mûr et dense, texture veloutée, garde	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Fleurie	R	2016	4	2017	2026	grêle dans le nord, vins frais, floraux et bien structurés	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Fleurie	R	2017	4	2018	2027	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Fleurie	R	2018	4	2019	2028	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Fleurie	R	2019	4	2020	2029	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Fleurie	R	2020	4	2021	2030	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Fleurie	R	2014	4	2015	2025	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Fleurie	R	2015	5	2016	2027	chaud et précoce, fruit mûr et dense, texture veloutée, garde	B	hachette-vins.com;beaujolais.com;connaissance
+Beaujolais	Fleurie	R	2016	4	2017	2027	grêle dans le nord, vins frais, floraux et bien structurés	B	hachette-vins.com;beaujolais.com;connaissance
+Beaujolais	Fleurie	R	2017	4	2018	2028	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Fleurie	R	2018	4	2019	2029	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Fleurie	R	2019	4	2020	2030	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Fleurie	R	2020	4	2021	2031	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Fleurie	R	2021	3	2022	2031	gel puis pluie, récolte tardive, vins fins, croquants, peu alcoolisés	A	hachette-vins.com;beaujolais.com;idealwine.net
-Beaujolais	Fleurie	R	2022	5	2023	2032	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Fleurie	R	2023	4	2024	2033	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Fleurie	R	2024	2	2025	2034	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
-Beaujolais	Fleurie	R	2025	4	2026	2035	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
-Beaujolais	Côte de Brouilly	R	2005	4	2007	2016	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
+Beaujolais	Fleurie	R	2022	5	2023	2034	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	B	hachette-vins.com;beaujolais.com;connaissance
+Beaujolais	Fleurie	R	2023	4	2024	2034	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Fleurie	R	2024	2	2025	2033	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
+Beaujolais	Fleurie	R	2025	4	2026	2036	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
+Beaujolais	Côte de Brouilly	R	2005	4	2007	2017	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
 Beaujolais	Côte de Brouilly	R	2006	3	2008	2017	été contrasté, fin de saison meilleure, résultats inégaux selon producteurs	A	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;alpinewines.co.uk
 Beaujolais	Côte de Brouilly	R	2007	3	2009	2018	manque de soleil et mildiou, vins plus minces, crus au-dessus des régionaux	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
 Beaujolais	Côte de Brouilly	R	2008	3	2010	2019	pluie, grêle et pourriture, tri indispensable, vins parfois verts	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
-Beaujolais	Côte de Brouilly	R	2009	5	2011	2020	été solaire, maturité riche et régulière, vins généreux et charnus	B	winescholarguild.com;viniphile.fr;connaissance
-Beaujolais	Côte de Brouilly	R	2010	4	2012	2021	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
-Beaujolais	Côte de Brouilly	R	2011	4	2013	2022	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Côte de Brouilly	R	2009	5	2011	2022	été solaire, maturité riche et régulière, vins généreux et charnus	B	winescholarguild.com;viniphile.fr;connaissance
+Beaujolais	Côte de Brouilly	R	2010	4	2012	2022	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
+Beaujolais	Côte de Brouilly	R	2011	4	2013	2023	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Côte de Brouilly	R	2012	3	2014	2023	très petite récolte, vins légers, frais et fruités, plaisir rapide	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Côte de Brouilly	R	2013	3	2015	2024	printemps froid, récolte tardive, hétérogène, frais mais parfois vert	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
-Beaujolais	Côte de Brouilly	R	2014	4	2016	2025	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Côte de Brouilly	R	2015	5	2017	2026	chaud et précoce, fruit mûr et dense, texture veloutée, garde	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Côte de Brouilly	R	2016	4	2018	2027	grêle dans le nord, vins frais, floraux et bien structurés	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Côte de Brouilly	R	2017	4	2019	2028	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Côte de Brouilly	R	2018	4	2020	2029	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Côte de Brouilly	R	2019	4	2021	2030	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Côte de Brouilly	R	2020	4	2022	2031	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Côte de Brouilly	R	2014	4	2016	2026	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Côte de Brouilly	R	2015	5	2017	2028	chaud et précoce, fruit mûr et dense, texture veloutée, garde	B	hachette-vins.com;beaujolais.com;connaissance
+Beaujolais	Côte de Brouilly	R	2016	4	2018	2028	grêle dans le nord, vins frais, floraux et bien structurés	B	hachette-vins.com;beaujolais.com;connaissance
+Beaujolais	Côte de Brouilly	R	2017	4	2019	2029	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Côte de Brouilly	R	2018	4	2020	2030	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Côte de Brouilly	R	2019	4	2021	2031	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Côte de Brouilly	R	2020	4	2022	2032	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Côte de Brouilly	R	2021	3	2023	2032	gel puis pluie, récolte tardive, vins fins, croquants, peu alcoolisés	A	hachette-vins.com;beaujolais.com;idealwine.net
-Beaujolais	Côte de Brouilly	R	2022	5	2024	2033	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Côte de Brouilly	R	2023	4	2025	2034	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Côte de Brouilly	R	2024	2	2026	2035	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
-Beaujolais	Côte de Brouilly	R	2025	4	2027	2036	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
-Beaujolais	Brouilly	R	2005	4	2006	2014	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
+Beaujolais	Côte de Brouilly	R	2022	5	2024	2035	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	B	hachette-vins.com;beaujolais.com;connaissance
+Beaujolais	Côte de Brouilly	R	2023	4	2025	2035	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Côte de Brouilly	R	2024	2	2026	2034	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
+Beaujolais	Côte de Brouilly	R	2025	4	2027	2037	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
+Beaujolais	Brouilly	R	2005	4	2006	2015	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
 Beaujolais	Brouilly	R	2006	3	2007	2015	été contrasté, fin de saison meilleure, résultats inégaux selon producteurs	A	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;alpinewines.co.uk
 Beaujolais	Brouilly	R	2007	3	2008	2016	manque de soleil et mildiou, vins plus minces, crus au-dessus des régionaux	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
 Beaujolais	Brouilly	R	2008	3	2009	2017	pluie, grêle et pourriture, tri indispensable, vins parfois verts	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
-Beaujolais	Brouilly	R	2009	5	2010	2018	été solaire, maturité riche et régulière, vins généreux et charnus	B	winescholarguild.com;viniphile.fr;connaissance
-Beaujolais	Brouilly	R	2010	4	2011	2019	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
-Beaujolais	Brouilly	R	2011	4	2012	2020	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Brouilly	R	2009	5	2010	2020	été solaire, maturité riche et régulière, vins généreux et charnus	B	winescholarguild.com;viniphile.fr;connaissance
+Beaujolais	Brouilly	R	2010	4	2011	2020	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
+Beaujolais	Brouilly	R	2011	4	2012	2021	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Brouilly	R	2012	3	2013	2021	très petite récolte, vins légers, frais et fruités, plaisir rapide	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Brouilly	R	2013	3	2014	2022	printemps froid, récolte tardive, hétérogène, frais mais parfois vert	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
-Beaujolais	Brouilly	R	2014	4	2015	2023	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Brouilly	R	2015	4	2016	2024	chaud et précoce, fruit mûr et dense, texture veloutée, garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Brouilly	R	2016	4	2017	2025	grêle dans le nord, vins frais, floraux et bien structurés	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Brouilly	R	2017	4	2018	2026	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Brouilly	R	2018	4	2019	2027	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Brouilly	R	2019	4	2020	2028	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Brouilly	R	2020	4	2021	2029	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Brouilly	R	2014	4	2015	2024	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Brouilly	R	2015	4	2016	2025	chaud et précoce, fruit mûr et dense, texture veloutée, garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Brouilly	R	2016	4	2017	2026	grêle dans le nord, vins frais, floraux et bien structurés	B	hachette-vins.com;beaujolais.com;connaissance
+Beaujolais	Brouilly	R	2017	4	2018	2027	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Brouilly	R	2018	4	2019	2028	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Brouilly	R	2019	4	2020	2029	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Brouilly	R	2020	4	2021	2030	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Brouilly	R	2021	3	2022	2030	gel puis pluie, récolte tardive, vins fins, croquants, peu alcoolisés	A	hachette-vins.com;beaujolais.com;idealwine.net
-Beaujolais	Brouilly	R	2022	4	2023	2031	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Brouilly	R	2023	4	2024	2032	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Brouilly	R	2024	2	2025	2033	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
-Beaujolais	Brouilly	R	2025	4	2026	2034	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
-Beaujolais	Crus du nord du Beaujolais	R	2005	4	2007	2016	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
+Beaujolais	Brouilly	R	2022	4	2023	2032	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Brouilly	R	2023	4	2024	2033	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Brouilly	R	2024	2	2025	2032	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
+Beaujolais	Brouilly	R	2025	4	2026	2035	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
+Beaujolais	Crus du nord du Beaujolais	R	2005	4	2007	2017	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
 Beaujolais	Crus du nord du Beaujolais	R	2006	3	2008	2017	été contrasté, fin de saison meilleure, résultats inégaux selon producteurs	A	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;alpinewines.co.uk
 Beaujolais	Crus du nord du Beaujolais	R	2007	3	2009	2018	manque de soleil et mildiou, vins plus minces, crus au-dessus des régionaux	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
 Beaujolais	Crus du nord du Beaujolais	R	2008	3	2010	2019	pluie, grêle et pourriture, tri indispensable, vins parfois verts	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
-Beaujolais	Crus du nord du Beaujolais	R	2009	5	2011	2020	été solaire, maturité riche et régulière, vins généreux et charnus	B	winescholarguild.com;viniphile.fr;connaissance
-Beaujolais	Crus du nord du Beaujolais	R	2010	4	2012	2021	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
-Beaujolais	Crus du nord du Beaujolais	R	2011	4	2013	2022	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Crus du nord du Beaujolais	R	2009	5	2011	2022	été solaire, maturité riche et régulière, vins généreux et charnus	B	winescholarguild.com;viniphile.fr;connaissance
+Beaujolais	Crus du nord du Beaujolais	R	2010	4	2012	2022	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
+Beaujolais	Crus du nord du Beaujolais	R	2011	4	2013	2023	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Crus du nord du Beaujolais	R	2012	3	2014	2023	très petite récolte, vins légers, frais et fruités, plaisir rapide	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Crus du nord du Beaujolais	R	2013	3	2015	2024	printemps froid, récolte tardive, hétérogène, frais mais parfois vert	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
-Beaujolais	Crus du nord du Beaujolais	R	2014	4	2016	2025	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Crus du nord du Beaujolais	R	2015	4	2017	2026	chaud et précoce, fruit mûr et dense, texture veloutée, garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Crus du nord du Beaujolais	R	2014	4	2016	2026	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Crus du nord du Beaujolais	R	2015	4	2017	2027	chaud et précoce, fruit mûr et dense, texture veloutée, garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
 Beaujolais	Crus du nord du Beaujolais	R	2016	3	2018	2027	grêle dans le nord, vins frais, floraux et bien structurés	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Crus du nord du Beaujolais	R	2017	4	2019	2028	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Crus du nord du Beaujolais	R	2018	4	2020	2029	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Crus du nord du Beaujolais	R	2019	4	2021	2030	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Crus du nord du Beaujolais	R	2020	4	2022	2031	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Crus du nord du Beaujolais	R	2017	4	2019	2029	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Crus du nord du Beaujolais	R	2018	4	2020	2030	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Crus du nord du Beaujolais	R	2019	4	2021	2031	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Crus du nord du Beaujolais	R	2020	4	2022	2032	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Crus du nord du Beaujolais	R	2021	3	2023	2032	gel puis pluie, récolte tardive, vins fins, croquants, peu alcoolisés	A	hachette-vins.com;beaujolais.com;idealwine.net
-Beaujolais	Crus du nord du Beaujolais	R	2022	5	2024	2033	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Crus du nord du Beaujolais	R	2023	4	2025	2034	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Crus du nord du Beaujolais	R	2024	2	2026	2035	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
-Beaujolais	Crus du nord du Beaujolais	R	2025	4	2027	2036	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
-Beaujolais	Crus légers et floraux	R	2005	4	2007	2016	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
+Beaujolais	Crus du nord du Beaujolais	R	2022	5	2024	2035	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	B	hachette-vins.com;beaujolais.com;connaissance
+Beaujolais	Crus du nord du Beaujolais	R	2023	4	2025	2035	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Crus du nord du Beaujolais	R	2024	2	2026	2034	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
+Beaujolais	Crus du nord du Beaujolais	R	2025	4	2027	2037	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
+Beaujolais	Crus légers et floraux	R	2005	4	2007	2017	chaud et sec, raisins sains et concentrés, couleur profonde, vin charnu	A	winescholarguild.com;alpinewines.co.uk;viniphile.fr
 Beaujolais	Crus légers et floraux	R	2006	3	2008	2017	été contrasté, fin de saison meilleure, résultats inégaux selon producteurs	A	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;alpinewines.co.uk
 Beaujolais	Crus légers et floraux	R	2007	3	2009	2018	manque de soleil et mildiou, vins plus minces, crus au-dessus des régionaux	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
 Beaujolais	Crus légers et floraux	R	2008	3	2010	2019	pluie, grêle et pourriture, tri indispensable, vins parfois verts	B	lacompagniedesbonnesbouteilles.fr;winescholarguild.com;connaissance
-Beaujolais	Crus légers et floraux	R	2009	5	2011	2020	été solaire, maturité riche et régulière, vins généreux et charnus	B	winescholarguild.com;viniphile.fr;connaissance
-Beaujolais	Crus légers et floraux	R	2010	4	2012	2021	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
-Beaujolais	Crus légers et floraux	R	2011	4	2013	2022	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Crus légers et floraux	R	2009	5	2011	2022	été solaire, maturité riche et régulière, vins généreux et charnus	B	winescholarguild.com;viniphile.fr;connaissance
+Beaujolais	Crus légers et floraux	R	2010	4	2012	2022	petite récolte, floraison difficile, acidité vive, vins droits et frais	A	winescholarguild.com;lacompagniedesbonnesbouteilles.fr;beaujolaisandco.fr
+Beaujolais	Crus légers et floraux	R	2011	4	2013	2023	précoce, fruit mûr et généreux, équilibre frais, bon potentiel pour les crus	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Crus légers et floraux	R	2012	3	2014	2023	très petite récolte, vins légers, frais et fruités, plaisir rapide	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Crus légers et floraux	R	2013	3	2015	2024	printemps froid, récolte tardive, hétérogène, frais mais parfois vert	A	winescholarguild.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
-Beaujolais	Crus légers et floraux	R	2014	4	2016	2025	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Crus légers et floraux	R	2015	4	2017	2026	chaud et précoce, fruit mûr et dense, texture veloutée, garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Crus légers et floraux	R	2014	4	2016	2026	classique et équilibré, fruit net, tanins soyeux, belle tension	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Crus légers et floraux	R	2015	4	2017	2027	chaud et précoce, fruit mûr et dense, texture veloutée, garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
 Beaujolais	Crus légers et floraux	R	2016	3	2018	2027	grêle dans le nord, vins frais, floraux et bien structurés	B	hachette-vins.com;beaujolais.com;connaissance
-Beaujolais	Crus légers et floraux	R	2017	4	2019	2028	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Crus légers et floraux	R	2018	4	2020	2029	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Crus légers et floraux	R	2019	4	2021	2030	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Crus légers et floraux	R	2020	4	2022	2031	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
+Beaujolais	Crus légers et floraux	R	2017	4	2019	2029	équilibré et gourmand, tanins soyeux, grêle localisée, fruit épicé	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Crus légers et floraux	R	2018	4	2020	2030	été chaud et sec, vins riches, denses et structurés, belle garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Crus légers et floraux	R	2019	4	2021	2031	chaud, petite récolte, vins sombres et charnus, fraîcheur préservée	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Crus légers et floraux	R	2020	4	2022	2032	très précoce, été sec, concentration élevée, tanins fins, maturité solaire	A	hachette-vins.com;beaujolais.com;lacompagniedesbonnesbouteilles.fr
 Beaujolais	Crus légers et floraux	R	2021	3	2023	2032	gel puis pluie, récolte tardive, vins fins, croquants, peu alcoolisés	A	hachette-vins.com;beaujolais.com;idealwine.net
-Beaujolais	Crus légers et floraux	R	2022	4	2024	2033	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Crus légers et floraux	R	2023	4	2025	2034	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
-Beaujolais	Crus légers et floraux	R	2024	2	2026	2035	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
-Beaujolais	Crus légers et floraux	R	2025	4	2027	2036	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
-Beaujolais	Beaujolais	B	2005	4	2006	2011	blanc rare, année chaude, rond et mûr (estimation)	C	connaissance
+Beaujolais	Crus légers et floraux	R	2022	4	2024	2034	chaud et sec, rendements réduits, vins concentrés et sombres, longue garde	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Crus légers et floraux	R	2023	4	2025	2035	généreux, frais et élégant, fruit croquant, bon équilibre	A	hachette-vins.com;beaujolais.com;winescholarguild.com
+Beaujolais	Crus légers et floraux	R	2024	2	2026	2034	année pluvieuse, maturité lente, vins légers, frais, à boire jeunes	B	macommune.info;latele.ch;beaujolais.com
+Beaujolais	Crus légers et floraux	R	2025	4	2027	2037	précoce et chaude, faible rendement, tanins fermes, promesse provisoire	B	lyonmag.com;beaujolais.com;lapassionduvin.com
+Beaujolais	Beaujolais	B	2005	4	2006	2012	blanc rare, année chaude, rond et mûr (estimation)	C	connaissance
 Beaujolais	Beaujolais	B	2006	3	2007	2012	blanc rare, année contrastée, résultat inégal (estimation)	C	connaissance
-Beaujolais	Beaujolais	B	2007	2	2008	2013	blanc rare, année fraîche, tendu et léger (estimation)	C	connaissance
-Beaujolais	Beaujolais	B	2008	2	2009	2014	blanc rare, année humide, tendu, tri nécessaire (estimation)	C	connaissance
-Beaujolais	Beaujolais	B	2009	4	2010	2015	blanc rare, année solaire, rond et mûr (estimation)	C	connaissance
-Beaujolais	Beaujolais	B	2010	4	2011	2016	blanc rare, petite récolte, acidité vive, tendu (estimation)	C	connaissance
-Beaujolais	Beaujolais	B	2011	4	2012	2017	blanc mûr et généreux, fraîcheur correcte	B	winescholarguild.com;beaujolais.com
+Beaujolais	Beaujolais	B	2007	2	2008	2012	blanc rare, année fraîche, tendu et léger (estimation)	C	connaissance
+Beaujolais	Beaujolais	B	2008	2	2009	2013	blanc rare, année humide, tendu, tri nécessaire (estimation)	C	connaissance
+Beaujolais	Beaujolais	B	2009	4	2010	2016	blanc rare, année solaire, rond et mûr (estimation)	C	connaissance
+Beaujolais	Beaujolais	B	2010	4	2011	2017	blanc rare, petite récolte, acidité vive, tendu (estimation)	C	connaissance
+Beaujolais	Beaujolais	B	2011	4	2012	2018	blanc mûr et généreux, fraîcheur correcte	B	winescholarguild.com;beaujolais.com
 Beaujolais	Beaujolais	B	2012	3	2013	2018	blanc en faible volume, frais et léger	B	winescholarguild.com;beaujolais.com
 Beaujolais	Beaujolais	B	2013	3	2014	2019	blanc tardif, vif, acidité marquée selon la maturité	B	winescholarguild.com;beaujolais.com
-Beaujolais	Beaujolais	B	2014	4	2015	2020	blanc classique, équilibré, tendu et fruité	B	hachette-vins.com;beaujolais.com
-Beaujolais	Beaujolais	B	2015	4	2016	2021	blanc riche et mûr, rond, acidité modérée	B	hachette-vins.com;beaujolais.com
+Beaujolais	Beaujolais	B	2014	4	2015	2021	blanc classique, équilibré, tendu et fruité	B	hachette-vins.com;beaujolais.com
+Beaujolais	Beaujolais	B	2015	4	2016	2022	blanc riche et mûr, rond, acidité modérée	B	hachette-vins.com;beaujolais.com
 Beaujolais	Beaujolais	B	2016	3	2017	2022	blanc frais et équilibré, pertes locales dues à la grêle	B	hachette-vins.com;beaujolais.com
-Beaujolais	Beaujolais	B	2017	4	2018	2023	blanc équilibré, fruité, bonne fraîcheur	B	hachette-vins.com;beaujolais.com
-Beaujolais	Beaujolais	B	2018	4	2019	2024	blanc riche et mûr, gras, à boire plutôt jeune	B	hachette-vins.com;beaujolais.com
-Beaujolais	Beaujolais	B	2019	4	2020	2025	blanc mûr et ample, fraîcheur préservée	B	hachette-vins.com;beaujolais.com
-Beaujolais	Beaujolais	B	2020	4	2021	2026	blanc rond et séduisant, croquant, année très précoce	B	hachette-vins.com;beaujolais.com
+Beaujolais	Beaujolais	B	2017	4	2018	2024	blanc équilibré, fruité, bonne fraîcheur	B	hachette-vins.com;beaujolais.com
+Beaujolais	Beaujolais	B	2018	4	2019	2025	blanc riche et mûr, gras, à boire plutôt jeune	B	hachette-vins.com;beaujolais.com
+Beaujolais	Beaujolais	B	2019	4	2020	2026	blanc mûr et ample, fraîcheur préservée	B	hachette-vins.com;beaujolais.com
+Beaujolais	Beaujolais	B	2020	4	2021	2027	blanc rond et séduisant, croquant, année très précoce	B	hachette-vins.com;beaujolais.com
 Beaujolais	Beaujolais	B	2021	3	2022	2027	blanc frais et tendu, acidité nette, peu alcoolisé	B	hachette-vins.com;beaujolais.com
-Beaujolais	Beaujolais	B	2022	4	2023	2028	blanc charnu, notes exotiques, solaire, à boire jeune	B	hachette-vins.com;beaujolais.com
-Beaujolais	Beaujolais	B	2023	4	2024	2029	blanc frais, vif et précis, bon équilibre	B	hachette-vins.com;beaujolais.com
-Beaujolais	Beaujolais	B	2024	2	2025	2030	blanc léger et frais, année humide (estimation)	C	connaissance;macommune.info
-Beaujolais	Beaujolais	B	2025	4	2026	2031	blanc très précoce, vendangé fin août, appréciation provisoire	C	connaissance;beaujolais.com
+Beaujolais	Beaujolais	B	2022	4	2023	2029	blanc charnu, notes exotiques, solaire, à boire jeune	B	hachette-vins.com;beaujolais.com
+Beaujolais	Beaujolais	B	2023	4	2024	2030	blanc frais, vif et précis, bon équilibre	B	hachette-vins.com;beaujolais.com
+Beaujolais	Beaujolais	B	2024	2	2025	2029	blanc léger et frais, année humide (estimation)	C	connaissance;macommune.info
+Beaujolais	Beaujolais	B	2025	4	2026	2032	blanc très précoce, vendangé fin août, appréciation provisoire	C	connaissance;beaujolais.com

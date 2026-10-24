@@ -413,6 +413,14 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
     T('cohérence : apogée toujours dans la fenêtre de dégustation (bible)', hors.length === 0, hors.slice(0, 8).join(', '));
     T('cohérence : aucune fenêtre de dégustation de plus de 25 ans', larges.length === 0, larges.slice(0, 8).join(', '));
   }
+  {
+    // Qualité du millésime : une note faible raccourcit la fin de la fenêtre, une note forte la prolonge ; l'apogée reste dedans.
+    const w = { name: 'Morgon', dom: '', region: 'Morgon', color: 'Rouge', year: 2015 };
+    const f1 = A.fenetreGarde(w, 1), f5 = A.fenetreGarde(w, 5);
+    const ap = A.apogee({ ...w }, 2026);
+    T('qualité : note 1 raccourcit la garde, note 5 la prolonge', f1.to < f5.to, JSON.stringify([f1, f5]));
+    T('qualité : l’apogée reste dans la fenêtre quelle que soit la note', [f1, f5].every(f => f.from <= ap.from && f.to >= ap.to), JSON.stringify([f1, f5, ap.from, ap.to]));
+  }
   console.log(out.slice(o0).join('\n'));
 }
 
