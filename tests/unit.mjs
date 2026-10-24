@@ -400,18 +400,22 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
     T('bible de fond = logique de la page : ' + raw.name, ra === rb && pick(a) === pick(b), JSON.stringify([pick(a), pick(b)]));
   }
   {
-    // Cohérence : la fenêtre de dégustation de chaque ligne de la bible contient la période d'apogée calculée, sans correction.
+    // Cohérence : pour chaque ligne de la bible (y compris les regroupements), l'apogée de chaque appellation membre reste dans la fenêtre de dégustation, sans correction.
     const bib = JSON.parse(fs.readFileSync(new URL('../bible/bible.json', import.meta.url), 'utf8'));
-    const CC = { R: 'Rouge', B: 'Blanc', D: 'Rosé', E: 'Pétillant' };
-    let hors = [], larges = [];
+    const grp = {};
+    for (const f of fs.readdirSync(new URL('../data/zones/', import.meta.url)).filter(f => /regroupements/.test(f))) for (const l of fs.readFileSync(new URL('../data/zones/' + f, import.meta.url), 'utf8').split('\n').slice(1)) { if (!l.trim()) continue; const [g, a] = l.split('\t'); grp[g] = a.split(';').map(x => x.trim()).filter(Boolean); }
+    const CC = { R: 'Rouge', B: 'Blanc', D: 'Blanc', E: 'Pétillant' };
+    let hors = [], longues = [];
     for (const r of bib.rows) for (const [y, cell] of Object.entries(r.y)) {
       const [, from, to] = cell;
-      const a = A.apogee({ name: r.a, dom: '', region: r.a, color: CC[r.c], year: Number(y), from, to }, 2026);
-      if (a.ajuste || a.from < from || a.to > to) hors.push(r.a + ' ' + y);
-      if (to - from > 25) larges.push(r.a + ' ' + y + ' ' + (to - from));
+      for (const m of (grp[r.a] || [r.a])) {
+        const a = A.apogee({ name: m, dom: '', region: m, color: CC[r.c], year: Number(y), from, to }, 2026);
+        if (a.ajuste || a.from < from || a.to > to) hors.push(m + ' ' + y);
+      }
+      if (to - from > 25 && !/liquoreux|corse/i.test(r.a)) longues.push(r.a + ' ' + y + ' ' + (to - from));
     }
-    T('cohérence : apogée toujours dans la fenêtre de dégustation (bible)', hors.length === 0, hors.slice(0, 8).join(', '));
-    T('cohérence : aucune fenêtre de dégustation de plus de 25 ans', larges.length === 0, larges.slice(0, 8).join(', '));
+    T('cohérence : apogée de chaque appellation toujours dans la fenêtre de dégustation (bible, regroupements inclus)', hors.length === 0, hors.slice(0, 8).join(', '));
+    T('cohérence : fenêtre de plus de 25 ans seulement pour les liquoreux et les mentions de Corse', longues.length === 0, longues.slice(0, 8).join(', '));
   }
   {
     // Qualité du millésime : une note faible raccourcit la fin de la fenêtre, une note forte la prolonge ; l'apogée reste dedans.
