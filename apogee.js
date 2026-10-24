@@ -3,6 +3,7 @@
 import { norm } from './util.js';
 import { reconnaitre, reperage, estEtranger } from './chiffres.js';
 import { profil } from './profils.js';
+import { TABLE_APOGEE } from './apogee-table.js';
 
 // Nombre d'années après le millésime, avant le pic. La fenêtre d'apogée est pic ± 2 ans.
 export const REGLES = {
@@ -94,6 +95,19 @@ export function niveau(w) {
   return 'village';
 }
 
+// Repère de la table pour ce vin : { ans, fiab, min, max } ou null. Ne concerne ni les liquoreux ni le champagne (règles propres).
+const COUL = { Rouge: 'R', Blanc: 'B', 'Rosé': 'S', 'Pétillant': 'P' };
+export function refTable(w) {
+  const app = w && w.region ? reconnaitre(String(w.region)) : null;
+  const c = w && COUL[w.color];
+  if (!app || !c) return null;
+  const t = texteVin(w);
+  if (LIQUOREUX.test(t) || /champagne/.test(t)) return null;
+  const niv = (PRESTIGE.test(t) || /grand cru$/i.test(app[0])) && !/saint[- ]émilion|banyuls/i.test(app[0]) ? 'g' : (PREMIER_CRU.test(t) || /premier cru$/i.test(app[0])) ? 'p' : 'v';
+  const e = TABLE_APOGEE[`${cleTexte(app[0]).replace(/ (premier cru|grand cru)$/, '')}|${niv}|${c}`];
+  return e ? { ans: e[0], fiab: e[1], min: e[2], max: e[3] } : null;
+}
+
 // Calcule l'apogée d'un vin. annee = année en cours (pour le statut).
 // Renvoie { pic, from, to, statut, regle, ans, sansMillesime }.
 export function apogee(w, annee = new Date().getFullYear()) {
@@ -112,7 +126,9 @@ export function apogee(w, annee = new Date().getFullYear()) {
   const base = app ? (PAR_APPELLATION[cleTexte(app[0])] ?? PAR_APPELLATION[sansNiveau(app[0])]) : null;
   const nomApp = app ? app[0].replace(/ (Premier|Grand) Cru$/, '') : '';
   const enAns = (ans, label) => ({ ans, label });
+  const ref = refTable(w);
   if (LIQUOREUX.test(texte)) r = REGLES.liquoreux;
+  else if (ref && (ref.fiab === 'A' || ref.fiab === 'B') && !champagne) r = enAns(ref.ans, 'table de référence');
   else if (w.color === 'Pétillant' && champagne) r = REGLES.champagne;
   else if (PRESTIGE.test(texte) || (app && /grand cru$/i.test(app[0]) && !/saint[- ]émilion|banyuls/i.test(app[0]))) {
     // Grand cru : règle générale ; quelques régions vieillissent moins longtemps.

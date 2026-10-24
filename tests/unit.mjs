@@ -239,10 +239,10 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   T('niveau : Chassagne-Montrachet 1er cru rouge → +12, blanc → +10', AN('Chassagne-Montrachet 1er cru', 'Chassagne-Montrachet Premier Cru', 'Rouge') === 12 && AN('Chassagne-Montrachet 1er cru', 'Chassagne-Montrachet Premier Cru', 'Blanc') === 10);
   T('niveau : Montrachet grand cru → +15', AN('Montrachet', 'Montrachet', 'Blanc') === 15);
   T('niveau : Gevrey-Chambertin village → +9, Chambertin grand cru → +15', AN('Gevrey-Chambertin', 'Gevrey-Chambertin', 'Rouge') === 9 && AN('Chambertin', 'Chambertin', 'Rouge') === 15);
-  T('niveau : Chambolle-Musigny village → +8, Vosne-Romanée village → +10, Romanée-Conti → +15', AN('Chambolle-Musigny', 'Chambolle-Musigny', 'Rouge') === 8 && AN('Vosne-Romanée', 'Vosne-Romanée', 'Rouge') === 10 && AN('Romanée-Conti', 'Romanée-Conti', 'Rouge') === 15);
-  T('niveau : Crozes-Hermitage → +7, Hermitage → +15', AN('Crozes-Hermitage', 'Crozes-Hermitage', 'Rouge') === 7 && AN('Hermitage', 'Hermitage', 'Rouge') === 15);
-  T('appellation : Pauillac +12, Saint-Émilion Grand Cru +10, Châteauneuf-du-Pape +12, Côte-Rôtie +12, Morgon +6, Muscadet +3, Chablis blanc +6',
-    AN('Cuvée', 'Pauillac', 'Rouge') === 12 && AN('Cuvée', 'Saint-Émilion Grand Cru', 'Rouge') === 10 && AN('Cuvée', 'Châteauneuf-du-Pape', 'Rouge') === 12 && AN('Cuvée', 'Côte-Rôtie', 'Rouge') === 12 && AN('Cuvée', 'Morgon', 'Rouge') === 6 && AN('Cuvée', 'Muscadet', 'Blanc') === 3 && AN('Cuvée', 'Chablis', 'Blanc') === 6);
+  T('niveau : Chambolle-Musigny village → +8, Vosne-Romanée village → +8 (table), Romanée-Conti → +15', AN('Chambolle-Musigny', 'Chambolle-Musigny', 'Rouge') === 8 && AN('Vosne-Romanée', 'Vosne-Romanée', 'Rouge') === 8 && AN('Romanée-Conti', 'Romanée-Conti', 'Rouge') === 15);
+  T('niveau : Crozes-Hermitage → +7, Hermitage → +11 (table)', AN('Crozes-Hermitage', 'Crozes-Hermitage', 'Rouge') === 7 && AN('Hermitage', 'Hermitage', 'Rouge') === 11);
+  T('appellation : Pauillac +12, Saint-Émilion Grand Cru +10, Châteauneuf-du-Pape +12, Côte-Rôtie +11, Morgon +6, Muscadet +3, Chablis blanc +6',
+    AN('Cuvée', 'Pauillac', 'Rouge') === 12 && AN('Cuvée', 'Saint-Émilion Grand Cru', 'Rouge') === 10 && AN('Cuvée', 'Châteauneuf-du-Pape', 'Rouge') === 12 && AN('Cuvée', 'Côte-Rôtie', 'Rouge') === 11 && AN('Cuvée', 'Morgon', 'Rouge') === 6 && AN('Cuvée', 'Muscadet', 'Blanc') === 3 && AN('Cuvée', 'Chablis', 'Blanc') === 6);
   {
     // Audit de toute la liste connue : seuls les vrais grands crus (ou appellations « Grand Cru ») prennent la règle du grand vin.
     const { TAXONOMIE } = await import('../taxonomie.js');
