@@ -23,7 +23,7 @@ export async function newPage(b,{ai,width=390,height=780}={}){
     window.__dl=[];
     const of=window.fetch.bind(window);
     window.fetch=async(input,init={})=>{const url=typeof input==='string'?input:input.url;
-      if(/googleapis\.com|anthropic\.com|api\.example-ai\.com|cave-ia\.m-jeanfrancois-morin\.workers\.dev/.test(url)){
+      if(/googleapis\.com|anthropic\.com|api\.example-ai\.com|cave-ia\.m-jeanfrancois-morin\.workers\.dev|cave-groq\.m-jeanfrancois-morin\.workers\.dev/.test(url)){
         const sig=init.signal;if(sig&&sig.aborted)throw new DOMException('aborted','AbortError');
         const r=await window.__aiMock(url,init.headers||{},init.body||null);
         await new Promise((res,rej)=>{const t=setTimeout(res,r.delay);if(sig)sig.addEventListener('abort',()=>{clearTimeout(t);rej(new DOMException('aborted','AbortError'))},{once:true})});

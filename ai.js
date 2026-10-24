@@ -44,6 +44,14 @@ export const PROXY = 'https://cave-ia.m-jeanfrancois-morin.workers.dev';
 export const LIMITE_GRATUITE = 1;   // vin par jour et par appareil : une seule action d’IA gratuite par jour, tout le reste est bridé
 let gratuit = { jour: '', vins: 0 };
 let appareil = '';
+// Relais Groq : clé gratuite partagée, gardée secrète dans un relais Cloudflare (jamais dans l’appli ni le dépôt).
+// Sans clé personnelle, il prend le relais sans rien afficher (étiquettes après la lecture gratuite du jour, fiches, valeur,
+// accords, avis de Magic une fois par jour) ; avec une clé Gemini personnelle, il ne sert qu’en secours quand elle est épuisée.
+// Limite : LIMITE_RELAIS vins par jour et par appareil. Même interrupteur que la clé gratuite (cave-gratuit).
+export const RELAIS = 'https://cave-groq.m-jeanfrancois-morin.workers.dev';
+export const LIMITE_RELAIS = 10;
+let relais = { jour: '', vins: 0 };
+let avisRelaisJour = '';
 const aujourdhui = () => new Date().toISOString().slice(0, 10);
 export async function initGratuit() {
   try {
@@ -54,6 +62,8 @@ export async function initGratuit() {
     }
   } catch (e) { /* sans identifiant, la clé gratuite n’est pas proposée */ }
   try { const g = await store.getMeta('gratuit'); if (g && g.jour === aujourdhui()) gratuit = { jour: g.jour, vins: g.vins || 0 }; } catch (e) { /* compteur à zéro */ }
+  try { const g = await store.getMeta('relais'); if (g && g.jour === aujourdhui()) relais = { jour: g.jour, vins: g.vins || 0 }; } catch (e) { /* compteur à zéro */ }
+  try { avisRelaisJour = (await store.getMeta('avisRelais')) || ''; } catch (e) { /* sans effet */ }
   syncCfg();
 }
 const gratuitActif = () => { try { return localStorage.getItem('cave-gratuit') !== 'off'; } catch (e) { return true; } };
@@ -61,8 +71,24 @@ export const gratuitReste = () => Math.max(0, LIMITE_GRATUITE - (gratuit.jour ==
 // Mode Gemini : « direct » (clé personnelle), « gratuit » (clé partagée, sous la limite) ou '' (aucun).
 const modeGemini = () => { if (getConfig('gemini').key) return 'direct'; return appareil && gratuitActif() && gratuitReste() > 0 ? 'gratuit' : ''; };
 const gratuitBloque = () => !!appareil && gratuitActif() && !getConfig('gemini').key && gratuitReste() === 0;
-// Pour un lot : en mode gratuit, on ne demande que ce qui reste sous la limite du jour.
-export function capGratuit(list) { return modeGemini() === 'gratuit' ? list.slice(0, Math.max(1, gratuitReste())) : list; }
+export const relaisReste = () => Math.max(0, LIMITE_RELAIS - (relais.jour === aujourdhui() ? relais.vins : 0));
+const relaisDispo = () => !!appareil && gratuitActif() && relaisReste() > 0;
+// Une clé personnelle chez au moins un fournisseur (Gemini, Claude ou compatible OpenAI).
+const persoKeys = () => ORDER.some(p => !!getConfig(p).key);
+// Pour un lot : sans clé personnelle, on ne demande que ce qui reste sous la limite du jour du relais.
+export function capGratuit(list) {
+  if (!persoKeys() && relaisDispo()) return list.slice(0, Math.max(1, relaisReste()));
+  return modeGemini() === 'gratuit' ? list.slice(0, Math.max(1, gratuitReste())) : list;
+}
+async function compterRelais(n) {
+  const jour = aujourdhui();
+  if (relais.jour !== jour) relais = { jour, vins: 0 };
+  try { const g = await store.getMeta('relais'); if (g && g.jour === jour && g.vins > relais.vins) relais.vins = g.vins; } catch (e) { /* compteur local */ }
+  relais.vins += n;
+  try { await store.setMeta('relais', { ...relais }); } catch (e) { /* le compteur reste en mémoire pour cette session */ }
+}
+// Le relais refuse l’appareil (limite du jour atteinte côté serveur) : on aligne le compteur local.
+async function relaisPlein() { relais = { jour: aujourdhui(), vins: LIMITE_RELAIS }; try { await store.setMeta('relais', { ...relais }); } catch (e) { /* sans effet */ } }
 async function compter(n) {
   const jour = aujourdhui();
   if (gratuit.jour !== jour) gratuit = { jour, vins: 0 };
@@ -71,7 +97,7 @@ async function compter(n) {
   gratuit.vins += n;
   try { await store.setMeta('gratuit', { ...gratuit }); } catch (e) { /* le compteur reste en mémoire pour cette session */ }
 }
-export const configured = () => ORDER.filter(p => (p === 'gemini' ? !!modeGemini() : getConfig(p).key));
+export const configured = () => { const l = ORDER.filter(p => (p === 'gemini' ? !!modeGemini() : getConfig(p).key)); if (relaisDispo()) l.push('groq'); return l; };
 export function getSettings() {
   const r = readRaw();
   const provider = r.provider || configured()[0] || 'gemini';
@@ -92,13 +118,21 @@ export function syncCfg() {
   try { store.setMeta('gratuitOn', gratuitActif()).catch(() => {}); } catch (e) { /* sans effet */ }
 }
 export const ready = () => configured().length > 0;
+// La lecture gratuite d’étiquette du jour est utilisée et aucune clé personnelle.
 export const limiteAtteinte = () => gratuitBloque();
+// Lecture d’étiquette possible : Gemini (clé perso ou lecture gratuite du jour), Claude ou compatible OpenAI. Le relais n’a pas de vision.
+export const scanDispo = () => ORDER.some(p => (p === 'gemini' ? !!modeGemini() : !!getConfig(p).key));
+export const relaisPossible = relaisDispo;
+// Relais épuisé pour aujourd’hui, sans clé personnelle : on invite à saisir sa clé Gemini.
+export const relaisEpuise = () => !!appareil && gratuitActif() && !persoKeys() && relaisReste() === 0;
 // Le service gratuit partagé ne permet qu’un appel : pas de seconde lecture en cas de doute.
 const enGratuit = () => modeGemini() === 'gratuit';
-// L’avis de Magic se prépare tout seul à chaque changement : il ne consomme jamais la clé gratuite, seulement une clé personnelle.
-export const avisPossible = () => configured().some(p => p !== 'gemini' || !!getConfig('gemini').key);
-// L’appel gratuit du jour est réservé à la lecture d’étiquette : tout le reste (fiches, valeur, accords, avis) demande une clé personnelle.
-export const iaPerso = avisPossible;
+// Une IA personnelle est disponible (clé saisie par l’utilisateur).
+export const iaPerso = () => configured().some(p => p !== 'groq' && (p !== 'gemini' || !!getConfig('gemini').key));
+// IA utilisable pour les fiches, la valeur et les accords : clé personnelle, ou relais offert sous sa limite du jour.
+export const iaDispo = () => iaPerso() || relaisDispo();
+// L’avis de Magic se prépare tout seul à chaque changement : avec le relais offert, une seule fois par jour au plus.
+export const avisPossible = () => iaPerso() || (relaisDispo() && avisRelaisJour !== aujourdhui());
 // Clé Gemini personnelle saisie : seule condition pour les fiches automatiques et la recherche web (la clé gratuite partagée n’y sert jamais).
 export const geminiPerso = () => !!getConfig('gemini').key;
 
@@ -124,7 +158,8 @@ export function usable() {
 export const ERR = {
   no_key: 'Aucune IA configurée. Ajoutez une clé dans Réglages (⚙).',
   cle_perso: 'Cette fonction demande votre propre clé gratuite : ajoutez-la dans ⚙ Réglages, la marche à suivre y est expliquée pas à pas. L’IA gratuite du jour sert à lire les étiquettes.',
-  limite_gratuite: 'Vous avez utilisé l’IA gratuite d’aujourd’hui (un vin par jour), elle revient demain. Pour l’utiliser sans cette limite, ajoutez votre propre clé gratuite dans ⚙ Réglages : la marche à suivre y est expliquée pas à pas.',
+  limite_gratuite: 'Vous avez utilisé l’IA offerte d’aujourd’hui, elle revient demain. Pour l’utiliser sans limite, ajoutez votre propre clé gratuite Gemini dans ⚙ Réglages : la marche à suivre y est expliquée pas à pas.',
+  relais_indispo: 'L’IA offerte n’est pas disponible pour le moment. Pour l’utiliser sans attendre, ajoutez votre propre clé gratuite Gemini dans ⚙ Réglages : la marche à suivre y est expliquée pas à pas.',
   bad_key: 'Clé IA refusée. Vérifiez-la dans Réglages (⚙).',
   service_gratuit: 'Le service gratuit est momentanément indisponible. Réessayez plus tard, ou ajoutez votre propre clé gratuite dans ⚙ Réglages.',
   bad_model: 'Modèle IA introuvable. Corrigez le nom du modèle dans Réglages (⚙).',
@@ -208,7 +243,7 @@ export function webSources(cand) {
 }
 
 async function callOnce(s, prompt, images, signal, out) {
-  if (!s.key && !s.gratuit) throw { code: 'no_key' };
+  if (!s.key && !s.gratuit && !s.relais) throw { code: 'no_key' };
   const b64 = [];
   for (const im of images) b64.push(await toB64(im));
   if (s.provider === 'anthropic') {
@@ -221,6 +256,18 @@ async function callOnce(s, prompt, images, signal, out) {
     });
     const t = (j.content || []).filter(p => p.type === 'text').map(p => p.text).join('');
     if (!t) throw { code: j.stop_reason === 'refusal' ? 'blocked' : 'invalid_json' };
+    return parseJsonLoose(t);
+  }
+  if (s.provider === 'groq') {
+    // Format compatible OpenAI, texte seul ; le relais choisit le modèle et ajoute la clé.
+    const content = prompt;
+    const j = await httpJson(RELAIS + '/v1/chat/completions', {
+      method: 'POST', signal,
+      headers: { 'Content-Type': 'application/json', 'x-appareil': appareil, 'x-unites': String(s.unites || 1) },
+      body: JSON.stringify({ messages: [{ role: 'user', content }], response_format: { type: 'json_object' }, temperature: 0.2, max_tokens: (out && out.maxOut) || 4096 }),
+    });
+    const t = j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
+    if (!t) throw { code: 'invalid_json' };
     return parseJsonLoose(t);
   }
   if (s.provider === 'openai') {
@@ -297,37 +344,52 @@ async function callProvider(s, prompt, { images = [], signal, onWait, out } = {}
 // on passe tout de suite à la suivante. Le délai d’attente n’est utilisé que s’il ne reste plus d’autre choix.
 // `only` force un fournisseur (test de connexion).
 export async function callJson(prompt, opts = {}) {
-  let list = opts.only ? configured().filter(p => p === opts.only) : usable();
+  // Le relais offert sert aussi de secours à une clé Gemini personnelle (sauf passe automatique et test de clé : noRelais).
+  let list = opts.only ? configured().filter(p => p === opts.only || (p === 'groq' && opts.only === 'gemini')) : usable();
+  // Le relais n'a pas de modèle d'image (la lecture d'étiquette reste à Gemini) : il ne sert qu'au texte.
+  if (opts.noRelais || (opts.images && opts.images.length)) list = list.filter(p => p !== 'groq');
   // Sans clé Gemini personnelle, la clé gratuite partagée ne sert qu’à lire une étiquette (opts.gratuitOk).
   const sansPerso = !getConfig('gemini').key;
   if (sansPerso && !opts.gratuitOk) list = list.filter(p => p !== 'gemini');
-  if (!list.length) throw { code: sansPerso && !opts.gratuitOk && !!appareil && gratuitActif() ? 'cle_perso' : gratuitBloque() ? 'limite_gratuite' : 'no_key' };
-  let lastErr;
+  if (!list.length) throw { code: relaisEpuise() ? 'limite_gratuite' : sansPerso && !opts.gratuitOk && !!appareil && gratuitActif() ? 'cle_perso' : gratuitBloque() ? 'limite_gratuite' : 'no_key' };
+  let lastErr, firstErr;
   for (let i = 0; i < list.length; i++) {
     const prov = list[i]; const last = i === list.length - 1;
-    const s = { provider: prov, ...getConfig(prov) };
+    const s = prov === 'groq' ? { provider: 'groq', key: '', model: '', base: '', relais: true } : { provider: prov, ...getConfig(prov) };
     if (prov === 'gemini' && !s.key) { s.gratuit = true; s.unites = Math.max(1, opts.unites || 1); }
-    s.model = modelFor(prov, opts.task, s.model);
+    if (prov === 'groq') s.unites = Math.max(1, Math.min(relaisReste() || 1, opts.unites || 1));
+    else s.model = modelFor(prov, opts.task, s.model);
     try {
-      const r = await callProvider(s, prompt, opts, last && !opts.noRetry ? cfg.retries : 0);
+      const r = await callProvider(s, prompt, opts, last && !opts.noRetry && !s.relais ? cfg.retries : 0);
       uncool(prov); stat('ia_ok');
       if (s.gratuit) await compter(s.unites);
+      if (s.relais) await compterRelais(s.unites);
       if (opts.out) opts.out.provider = prov;
       return r;
     } catch (e) {
       if (e && e.name === 'AbortError') throw e;
+      // Relais offert : limite du jour (appareil ou quota partagé) ou panne. Sans clé personnelle, on invite à saisir sa clé ;
+      // en secours d’une clé personnelle, on garde l’erreur de cette clé, la seule qui parle à l’utilisateur.
+      if (s.relais) {
+        if (e && e.code === 'rate_limited') { await relaisPlein(); e = { code: 'limite_gratuite' }; }
+        else if (e && ['network', 'timeout', 'server', 'bad_key', 'bad_model', 'invalid_json'].includes(e.code)) e = { code: 'relais_indispo', message: e.message || '' };
+        if (firstErr && persoKeys()) e = firstErr;
+        if (!['limite_gratuite'].includes(e.code)) cool('groq', { code: 'server' });
+        throw e;
+      }
       // la clé partagée est épuisée côté serveur : on le dit comme une limite du jour, pas comme une panne
       if (s.gratuit && e && e.code === 'rate_limited') e = { code: 'limite_gratuite' };
       // refus ou panne du service gratuit : ce n’est pas la clé de l’utilisateur, on ne lui demande donc pas de la vérifier
       else if (s.gratuit && e && ['bad_key', 'bad_model', 'server'].includes(e.code)) e = { code: 'service_gratuit', message: e.message || '' };
-      lastErr = e;
+      lastErr = e; if (!firstErr) firstErr = e;
       const code = e && e.code;
       if (STAT_OF[code]) stat(STAT_OF[code]);
       const sticky = !['bad_image', 'not_label', 'blocked'].includes(code);
       if (!opts.only && sticky) cool(prov, e);
       if (last || !sticky) throw e;
       stat('ia_relais');
-      if (hooks.onSwitch) hooks.onSwitch(prov, list[i + 1], e);
+      // Passage au relais offert : sans rien afficher.
+      if (hooks.onSwitch && list[i + 1] !== 'groq' && !s.gratuit) hooks.onSwitch(prov, list[i + 1], e);
     }
   }
   throw lastErr;
@@ -486,7 +548,9 @@ export async function pickForDish(dish, candidates, opts) {
 // points solides, manques, priorités, et une analyse détaillée. Les anciens avis (court + complet) restent lisibles.
 const liste = (v, n, len) => (Array.isArray(v) ? v.map(x => symPct(String(x == null ? '' : x).trim()).slice(0, len)).filter(Boolean).slice(0, n) : []);
 export async function avisCave(resume, opts = {}) {
-  const d = await callJson(`${EXPERT} Voici le résumé chiffré de ma cave, sans aucun nom de vin : ${JSON.stringify(resume)}. Fais une analyse d’expert, appuyée uniquement sur ces chiffres : concentration (région, appellation, cépage), répartition des couleurs et styles absents (blancs, rosés, bulles, vins de dessert), rythme de consommation (calendrier des bouteilles à boire, années creuses, pic), équilibre entre vins prêts, à garder et en urgence, profil des millésimes. Cite au moins un chiffre du résumé dans chaque constat. N’invente aucun vin, aucune note, aucun prix ; si une donnée manque, dis-le. Réponds en français, uniquement par un objet JSON de ce format : {"court":"le message le plus important, 2 phrases au maximum","cles":["3 messages clés de 8 mots au maximum"],"solide":["2 à 4 points forts, une phrase chacun, chiffrés"],"manque":["2 à 4 manques ou risques, une phrase chacun, chiffrés"],"priorite":["3 achats ou actions à faire en priorité : type de vin ou appellation, pourquoi, pour boire quand ; jamais de nom de cuvée ni de prix"],"complet":"analyse détaillée de 6 à 10 phrases en 3 ou 4 paragraphes séparés par une ligne vide, qui APPROFONDIT sans répéter les blocs précédents : conseils concrets d’accords et d’achats"}. Ce sont des impressions fondées sur des chiffres, pas des faits vérifiés.`, { ...opts });
+  const meta = {};
+  const d = await callJson(`${EXPERT} Voici le résumé chiffré de ma cave, sans aucun nom de vin : ${JSON.stringify(resume)}. Fais une analyse d’expert, appuyée uniquement sur ces chiffres : concentration (région, appellation, cépage), répartition des couleurs et styles absents (blancs, rosés, bulles, vins de dessert), rythme de consommation (calendrier des bouteilles à boire, années creuses, pic), équilibre entre vins prêts, à garder et en urgence, profil des millésimes. Cite au moins un chiffre du résumé dans chaque constat. N’invente aucun vin, aucune note, aucun prix ; si une donnée manque, dis-le. Réponds en français, uniquement par un objet JSON de ce format : {"court":"le message le plus important, 2 phrases au maximum","cles":["3 messages clés de 8 mots au maximum"],"solide":["2 à 4 points forts, une phrase chacun, chiffrés"],"manque":["2 à 4 manques ou risques, une phrase chacun, chiffrés"],"priorite":["3 achats ou actions à faire en priorité : type de vin ou appellation, pourquoi, pour boire quand ; jamais de nom de cuvée ni de prix"],"complet":"analyse détaillée de 6 à 10 phrases en 3 ou 4 paragraphes séparés par une ligne vide, qui APPROFONDIT sans répéter les blocs précédents : conseils concrets d’accords et d’achats"}. Ce sont des impressions fondées sur des chiffres, pas des faits vérifiés.`, { ...opts, out: meta });
+  if (meta.provider === 'groq') { avisRelaisJour = aujourdhui(); try { await store.setMeta('avisRelais', avisRelaisJour); } catch (e) { /* sans effet */ } }
   if (!d || typeof d !== 'object' || typeof d.court !== 'string' || !d.court.trim()) throw { code: 'invalid_json' };
   const out = { court: symPct(d.court.trim()).slice(0, 400), complet: typeof d.complet === 'string' ? symPct(d.complet.trim()).slice(0, 3500) : '' };
   const cles = liste(d.cles, 3, 70), solide = liste(d.solide, 4, 260), manque = liste(d.manque, 4, 260), priorite = liste(d.priorite, 3, 300);
@@ -509,6 +573,6 @@ export async function estimeValeur(list, opts = {}) {
 }
 
 export async function testKey(opts) {
-  const d = await callJson('Réponds uniquement par l’objet JSON {"ok":true}.', opts);
+  const d = await callJson('Réponds uniquement par l’objet JSON {"ok":true}.', { ...opts, noRelais: true });
   return !!(d && d.ok);
 }

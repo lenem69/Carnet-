@@ -724,24 +724,27 @@ function ficheMsg(d) {
 function copieIA(w, d) { return L.applyAi(JSON.parse(JSON.stringify(w)), d); }
 function remplace(w, c) { const i = S.wines.indexOf(w); if (i >= 0) S.wines[i] = c; }
 
-// Fonctions autres que la lecture d'étiquette (fiches, valeur…) : elles demandent une clé personnelle, l'appel gratuit du jour est réservé au scan.
+// Fonctions autres que la lecture d'étiquette (fiches, valeur…) : clé personnelle, ou relais offert sous sa limite du jour.
 function requireAIPerso() {
-  if (AI.iaPerso()) return true;
+  if (AI.iaDispo()) return true;
+  if (AI.relaisEpuise()) { limiteWindow(); return false; }
   if (AI.ready() || AI.limiteAtteinte()) { errToastReglages(AI.errText({ code: 'cle_perso' })); return false; }
   return requireAI();
 }
 function requireAI() {
-  if (AI.ready()) return true;
-  if (AI.limiteAtteinte()) { limiteWindow(); return false; }
+  if (AI.scanDispo()) return true;
+  if (AI.limiteAtteinte()) { limiteWindow(true); return false; }
+  if (AI.ready()) { errToastReglages(AI.errText({ code: 'cle_perso' })); return false; }
   errToast(AI.ERR.no_key);
   openSettings();
   return false;
 }
 // Fenêtre affichée quand la limite du jour est atteinte et qu'aucune clé personnelle n'est saisie.
-async function limiteWindow() {
+async function limiteWindow(scan) {
   await whenFree();
-  const c = await ask('Limite du jour atteinte',
-    'Vous avez utilisé l’IA gratuite d’aujourd’hui : elle est limitée à un vin par jour et revient demain. Pour l’utiliser sans cette limite, ajoutez votre propre clé gratuite Gemini dans ⚙ Réglages : la marche à suivre y est expliquée pas à pas.',
+  const c = await ask('Limite du jour atteinte', scan
+    ? 'Vous avez utilisé la lecture d’étiquette gratuite d’aujourd’hui : elle est limitée à une photo par jour et revient demain. Pour lire autant d’étiquettes que vous voulez, ajoutez votre propre clé gratuite Gemini dans ⚙ Réglages : la marche à suivre y est expliquée pas à pas.'
+    : `Vous avez utilisé l’IA offerte d’aujourd’hui : elle est limitée à ${AI.LIMITE_RELAIS} vins par jour et revient demain. Pour l’utiliser sans limite, ajoutez votre propre clé gratuite Gemini dans ⚙ Réglages : la marche à suivre y est expliquée pas à pas.`,
     [{ label: 'Plus tard', value: 'plus', kind: 'o' }, { label: 'Ouvrir Réglages', value: 'reglages' }]);
   if (c === 'reglages') openSettings();
 }
@@ -963,7 +966,7 @@ async function findForDish() {
     $('#blist').innerHTML = `<p class="mu small">${note}</p>` + (local.length ? local.map(r => card(r.w, 'boire', r.why)).join('')
       : '<p class="empty">Aucune suggestion : complétez les accords de vos fiches (✨ Fiche) ou configurez une IA dans Réglages.</p>');
   };
-  if (!AI.iaPerso()) { showLocal('Suggestions sans IA, d’après les accords enregistrés et la couleur.'); return; }
+  if (!AI.iaDispo()) { showLocal('Suggestions sans IA, d’après les accords enregistrés et la couleur.'); return; }
   // présélection locale : l'IA ne reçoit que 40 vins au plus, quel que soit la taille de la cave
   const pre = classerPlat(dish, 40).map(r => r.w);
   if (pre.length < 40) {
@@ -1561,7 +1564,7 @@ async function autoStep() {
   autoBusy = true; auto.calls++;
   store.setMeta('passeVerrou', Date.now()).catch(() => {});
   try {
-    const opts = { noRetry: true, only: 'gemini' };
+    const opts = { noRetry: true, only: 'gemini', noRelais: true };
     const res = g === 'fiche' ? await AI.makeFiches(lot, opts) : g === 'web' ? await AI.makeFichesWeb(lot, opts) : await AI.estimeValeur(lot, opts);
     const changed = [];
     for (const w of lot) {
@@ -1717,6 +1720,6 @@ async function boot() {
   render();
   store.protect();
   initSW();
-  (async () => { await AI.initGratuit(); await loadBible(); await showBienvenue(); await showNews(); await initStats(); initAuto(); })();
+  (async () => { await AI.initGratuit(); avisSiChange(); await loadBible(); await showBienvenue(); await showNews(); await initStats(); initAuto(); })();
 }
 boot();
