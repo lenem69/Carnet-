@@ -4,6 +4,7 @@ import { norm } from './util.js';
 import { reconnaitre, reperage, estEtranger } from './chiffres.js';
 import { profil } from './profils.js';
 import { TABLE_APOGEE } from './apogee-table.js';
+import { cle, niveauBourgogne, facteurBourgogne, COMMUNES, COTE_DE_BEAUNE, rangBordeaux, niveauAlsace, prestigeChampagne, cuveeCelebre } from './crus.js';
 
 // Nombre d'années après le millésime, avant le pic. La fenêtre d'apogée est pic ± 2 ans.
 export const REGLES = {
@@ -34,7 +35,7 @@ const ANNEE_MIN = 1900; const ANNEE_MAX = 2035;
 // Un village n'est pas un grand cru : « Chassagne-Montrachet », « Gevrey-Chambertin », « Chambolle-Musigny », « Vosne-Romanée », « Puligny-Montrachet »,
 // « Crozes-Hermitage » et « Saint-Émilion Grand Cru » contiennent le nom d'un grand cru ou d'un terme de prestige sans en être un.
 const VILLAGES = /\b(chassagne|puligny|gevrey|chambolle|vosne|crozes) (montrachet|chambertin|musigny|romanee|hermitage)\b/g;
-const cleTexte = t => norm(t).replace(/[-'’]/g, ' ').replace(/\s+/g, ' ').trim();
+const cleTexte = cle;
 export function texteVin(w) {
   return cleTexte([w.name, w.dom, w.grape, w.region].join(' | ')).replace(VILLAGES, '$1').replace(/saint emilion grand cru/g, 'saint emilion');
 }
@@ -45,7 +46,7 @@ const PAR_APPELLATION = {
   // Bourgogne
   'bourgogne': [5, 4], 'bourgogne aligote': [null, 3], 'bourgogne hautes cotes de nuits': [6, 5], 'hautes cotes de nuits': [6, 5], 'hautes cotes de beaune': [6, 5],
   'marsannay': [6, 4], 'fixin': [8, 6], 'gevrey chambertin': [9, null], 'morey saint denis': [9, 8], 'chambolle musigny': [8, null], 'vosne romanee': [10, null],
-  'nuits saint georges': [9, 6], 'aloxe corton': [9, 7], 'pernand vergelesses': [7, 6], 'savigny les beaune': [7, 5], 'beaune': [8, 6], 'pommard': [10, null],
+  'nuits saint georges': [9, 6], 'vougeot': [8, 6], 'ladoix': [7, 6], 'chorey les beaune': [6, 5], 'aloxe corton': [9, 7], 'pernand vergelesses': [7, 6], 'savigny les beaune': [7, 5], 'beaune': [8, 6], 'pommard': [10, null],
   'volnay': [9, null], 'monthelie': [7, 6], 'auxey duresses': [6, 6], 'saint romain': [5, 5], 'meursault': [6, 6], 'puligny montrachet': [null, 7],
   'chassagne montrachet': [8, 7], 'saint aubin': [6, 6], 'santenay': [7, 5], 'maranges': [6, null], 'mercurey': [6, 5], 'givry': [5, 4], 'rully': [5, 4],
   'montagny': [null, 4], 'pouilly fuisse': [null, 6], 'saint veran': [null, 4], 'macon': [3, 3], 'chablis': [null, 6], 'petit chablis': [null, 3], 'irancy': [6, null],
@@ -88,7 +89,10 @@ const PAR_APPELLATION = {
 // Nom d'appellation sans le niveau (« Chassagne-Montrachet Premier Cru » → « chassagne montrachet »).
 const sansNiveau = nom => cleTexte(nom).replace(/ (premier cru|grand cru)$/, '');
 // Niveau hiérarchique : grand cru > premier cru > village (ou appellation régionale). Le village n'est jamais un grand cru.
+// En Bourgogne et à Chablis, le niveau vient de crus.js (grands crus nommés, mention « 1er cru », super premiers crus).
 export function niveau(w) {
+  const app = w && w.region ? reconnaitre(String(w.region)) : null;
+  if (app && app[2] === 'Bourgogne') return niveauBourgogne(w.region, w.name, app).niveau;
   const t = texteVin(w);
   if (PRESTIGE.test(t)) return 'grand';
   if (PREMIER_CRU.test(t)) return 'premier';
@@ -110,12 +114,46 @@ export function refTable(w) {
 
 // Qualité du millésime (note 1 à 5 de la bible) : un millésime faible atteint son pic plus tôt, un grand millésime plus tard.
 // Les durées de référence (règles et table) valent pour un bon millésime (note 4) : c'est la référence neutre.
+// Amplitude : grand millésime +25 %, millésime faible −25 % (Clive Coates pour la Bourgogne), appliquée à toutes les régions.
 // L'écart est proportionnel à la durée de vie du vin (un grand vin de garde bouge de plusieurs années, un vin léger d'une seule).
-const DECALAGE_PIC = { 1: -0.4, 2: -0.28, 3: -0.12, 4: 0, 5: 0.1 };
+const DECALAGE_PIC = { 1: -0.4, 2: -0.25, 3: -0.1, 4: 0, 5: 0.25 };
 export const decalageQualite = (ans, q) => Math.round(ans * (DECALAGE_PIC[Number(q)] ?? 0));
 
+// Vins de très longue garde dont la fenêtre ne se déduit pas d'un pic entouré d'une marge (années après la récolte, bon millésime).
+// Vin jaune : début fixe à 10 ans (élevage de 6 ans et 3 mois sous voile, puis stabilisation), fin de 30 à 50 ans et plus.
+// Grands liquoreux de la Loire (Quarts-de-Chaume, Bonnezeaux) : garde de 20 à 60 ans et plus.
+const VIN_JAUNE = /vin jaune|chateau chalon/;
+const GRAND_LIQUOREUX_LOIRE = /quarts? de chaume|bonnezeaux/;
+const VT_SGN = /grains nobles|\bsgn\b|vendanges? tardives?|\bvt\b/;
+const FORMES_LONGUES = {
+  jaune: { pic: 25, debut: 10, fin: 40, gdebut: 8, gfin: 50, libelle: 'vin jaune' },
+  liqLoire: { pic: 30, debut: 20, fin: 45, gdebut: 15, gfin: 60, libelle: 'grand liquoreux de Loire' },
+};
+
+// Cépage d'un vin d'Alsace (clé de PAR_APPELLATION), pour fixer la durée de base d'un grand cru ou d'un lieu-dit. Inconnu : riesling.
+const CEPAGES_ALSACE = [[/gewurztraminer/, 'alsace gewurztraminer'], [/pinot gris|tokay/, 'alsace pinot gris'], [/muscat/, 'alsace muscat'], [/sylvaner/, 'alsace sylvaner'], [/pinot noir/, 'alsace pinot noir'], [/pinot blanc|auxerrois/, 'alsace pinot blanc'], [/riesling/, 'alsace riesling']];
+const cepageAlsace = texte => (CEPAGES_ALSACE.find(([re]) => re.test(texte)) || [0, 'alsace riesling'])[1];
+
+// Durée de base (années au pic, bon millésime) d'un vin de Bourgogne ou de Chablis au niveau « village » de sa commune.
+function baseBourgogne(w, app, n) {
+  const idx = w.color === 'Rouge' ? 0 : 1, col = w.color === 'Rouge' ? 'R' : 'B';
+  if (n.niveau === 'village') {
+    const ref = refTable({ region: w.region, color: w.color });
+    if (ref && (ref.fiab === 'A' || ref.fiab === 'B')) return ref.ans;
+  } else if (n.hote) {
+    const t = TABLE_APOGEE[`${n.hote}|v|${col}`];
+    if (t && (t[1] === 'A' || t[1] === 'B')) return t[0];
+  }
+  const cherche = k => (k && PAR_APPELLATION[k] && PAR_APPELLATION[k][idx] != null ? PAR_APPELLATION[k][idx] : null);
+  const k = app ? sansNiveau(app[0]) : '';
+  const v = cherche(n.hote) ?? cherche(k) ?? (/^bourgogne/.test(k) ? cherche('bourgogne') : null);
+  if (v != null) return v;
+  return idx === 0 ? REGLES.rougeStructure.ans : (!app || /^bourgogne/.test(norm(app[0])) ? REGLES.blancBourgogneRegional.ans : REGLES.blancBourgogne.ans);
+}
+
 // Calcule l'apogée d'un vin. annee = année en cours (pour le statut). qualite = note du millésime dans la bible (facultative).
-// Renvoie { pic, from, to, statut, regle, ans, sansMillesime }.
+// Principe : durée au pic = durée de base de l'appellation × coefficient de rang (niveau de cru, classement, cuvée) × note du millésime (voir crus.js).
+// Renvoie { pic, from, to, statut, regle, ans, sansMillesime, rang, forme, gFrom, gTo }.
 export function apogee(w, annee = new Date().getFullYear(), qualite) {
   const texte = texteVin(w);
   // Sans millésime (ex. Champagne brut non millésimé) : prêt à boire dès maintenant.
@@ -128,20 +166,63 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
   const grande = app ? app[2] : (w.region && !estEtranger(String(w.region)) ? reperage(String(w.region)) : null);
   const champagne = grande === 'Champagne' || /champagne/.test(texte);
 
-  let r;
+  let r; let forme = 'standard'; let rang = false; let premox = false; let fixe = null;
+  const rouge = w.color === 'Rouge', blanc = w.color === 'Blanc';
   const base = app ? (PAR_APPELLATION[cleTexte(app[0])] ?? PAR_APPELLATION[sansNiveau(app[0])]) : null;
   const nomApp = app ? app[0].replace(/ (Premier|Grand) Cru$/, '') : '';
   const enAns = (ans, label) => ({ ans, label });
   const ref = refTable(w);
-  if (LIQUOREUX.test(texte)) r = REGLES.liquoreux;
+  const bordeaux = (rouge || blanc) ? rangBordeaux(w.name, w.dom, w.region, w.color) : null;
+  const nivAlsace = grande === 'Alsace' && (rouge || blanc) && !LIQUOREUX.test(texte) ? niveauAlsace(w.region, w.name) : null;
+  if (grande === 'Bourgogne' && (rouge || blanc) && !champagne) {
+    // Bourgogne et Chablis : village × 1, premier cru × 1,5, grand cru × 2,2 (super premiers crus : comme un grand cru, grands crus plus souples × 1,8).
+    const n = niveauBourgogne(w.region, w.name, app);
+    const f = facteurBourgogne(n);
+    r = enAns(Math.max(1, Math.round(baseBourgogne(w, app, n) * f)), n.niveau === 'village' ? nomApp
+      : `${n.niveau === 'grand' ? 'grand cru' : 'premier cru'}${n.sup ? ' d’exception' : ''}${n.hote ? ` (${COMMUNES[n.hote]})` : ''}`);
+    forme = 'bourgogne'; rang = n.niveau !== 'village';
+    premox = blanc && !!n.hote && COTE_DE_BEAUNE.has(n.hote) && millesime >= 1996 && millesime <= 2014;
+  }
+  else if (blanc && (VIN_JAUNE.test(texte) || GRAND_LIQUOREUX_LOIRE.test(texte))) {
+    // Vins de très longue garde à fenêtre propre : vin jaune du Jura, grands liquoreux de la Loire.
+    fixe = VIN_JAUNE.test(texte) ? FORMES_LONGUES.jaune : FORMES_LONGUES.liqLoire;
+    r = enAns(fixe.pic, fixe.libelle); forme = 'longue'; rang = true;
+  }
+  else if (bordeaux) {
+    // Classement du château : coefficient sur la durée de l'appellation (liquoreux : sur la durée des liquoreux).
+    const idx = rouge ? 0 : 1;
+    const pBase = LIQUOREUX.test(texte) ? REGLES.liquoreux.ans : (base && base[idx] != null ? base[idx] : (rouge ? REGLES.rougeStructure.ans : REGLES.blancSec.ans));
+    r = enAns(Math.max(bordeaux.min, Math.round(pBase * bordeaux.f)), bordeaux.libelle); rang = true;
+  }
+  else if (grande === 'Alsace' && (rouge || blanc) && VT_SGN.test(texte)) {
+    // Vendanges tardives ×2 et sélection de grains nobles ×3,5 sur la durée du cépage.
+    const sgn = /grains nobles|\bsgn\b/.test(texte);
+    const b = PAR_APPELLATION[cepageAlsace(texte)];
+    const bp = (b && (b[rouge ? 0 : 1] ?? b[rouge ? 1 : 0])) ?? 6;
+    r = enAns(Math.round(bp * (sgn ? 3.5 : 2)), sgn ? 'sélection de grains nobles (Alsace)' : 'vendanges tardives (Alsace)'); rang = true;
+  }
+  else if (LIQUOREUX.test(texte)) r = REGLES.liquoreux;
   else if (ref && (ref.fiab === 'A' || ref.fiab === 'B') && !champagne) r = enAns(ref.ans, 'table de référence');
-  else if (w.color === 'Pétillant' && champagne) r = REGLES.champagne;
+  else if (w.color === 'Pétillant' && champagne) {
+    if (prestigeChampagne(w.name, w.dom)) { r = enAns(Math.round(REGLES.champagne.ans * 1.8), 'cuvée de prestige (champagne)'); rang = true; }
+    else r = /blanc de blancs/.test(texte) ? enAns(Math.round(REGLES.champagne.ans * 1.2), 'champagne blanc de blancs millésimé') : REGLES.champagne;
+  }
+  else if (nivAlsace) {
+    const b = PAR_APPELLATION[cepageAlsace(texte)];
+    const bp = (b && (b[rouge ? 0 : 1] ?? b[rouge ? 1 : 0])) ?? 6;
+    r = enAns(Math.round(bp * (nivAlsace === 'grand' ? 2 : 1.4)), nivAlsace === 'grand' ? 'grand cru d’Alsace' : 'lieu-dit d’Alsace'); rang = true;
+  }
+  else if (grande === 'Alsace' && (rouge || blanc)) {
+    // Alsace AOC sans grand cru ni lieu-dit : durée propre au cépage (la taxonomie range « Alsace » sous « Alsace Grand Cru », d'où ce cas à part).
+    const b = PAR_APPELLATION[cepageAlsace(texte)];
+    r = enAns((b && (b[rouge ? 0 : 1] ?? b[rouge ? 1 : 0])) ?? 5, 'Alsace');
+  }
   else if (PRESTIGE.test(texte) || (app && /grand cru$/i.test(app[0]) && !/saint[- ]émilion|banyuls/i.test(app[0]))) {
-    // Grand cru : règle générale ; quelques régions vieillissent moins longtemps.
-    r = /chablis|alsace/.test(texte) ? enAns(12, 'grand cru (Chablis, Alsace)') : REGLES.prestige;
+    // Grand cru hors Bourgogne et Alsace (Barolo, Brunello…) : règle générale.
+    r = REGLES.prestige; rang = true;
   }
   else if (PREMIER_CRU.test(texte) || (app && /premier cru$/i.test(app[0]))) {
-    r = w.color === 'Blanc' ? enAns(10, 'premier cru blanc') : REGLES.premierCru;
+    r = w.color === 'Blanc' ? enAns(10, 'premier cru blanc') : REGLES.premierCru; rang = true;
   }
   else if (w.color === 'Pétillant') r = REGLES.cremant;
   else if (w.color === 'Rosé') r = REGLES.rose;
@@ -154,16 +235,37 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
     else if (grande === 'Bordeaux' || grande === 'Vallée du Rhône' || grande === 'Bourgogne') r = REGLES.rougeStructure;
     else r = REGLES.rougeCourant;
   } else if (w.color === 'Blanc') {
-    // Bourgogne régional (« Bourgogne », Aligoté, Hautes-Côtes…) : 4 ans. Village (Meursault, Chablis…) : 6 ans. Inconnu : prudence, régional.
-    const regional = !app || /^bourgogne/.test(norm(app[0]));
-    r = grande === 'Bourgogne' ? (regional ? REGLES.blancBourgogneRegional : REGLES.blancBourgogne) : REGLES.blancSec;
+    r = REGLES.blancSec;
   }
   else r = REGLES.autre;
+  // Cuvée parcellaire ou domaine de référence : plus de garde que l'appellation, jamais moins.
+  if (forme === 'standard' && (rouge || blanc)) {
+    const cv = cuveeCelebre(w.name, w.dom, w.region);
+    if (cv && cv.ans > r.ans) { r = enAns(cv.ans, cv.libelle); rang = true; }
+  }
 
-  const L = largeur(r);
   const ansEff = Math.max(1, r.ans + decalageQualite(r.ans, qualite));
-  let pic = millesime + ansEff;
-  let from = pic - L.h; let to = pic + L.h;
+  const pic0 = millesime + ansEff;
+  let pic = pic0; let from; let to; let gFrom = null; let gTo = null; let L;
+  if (forme === 'bourgogne') {
+    // Forme propre à la Bourgogne : garde de 0,6 à 1,4 fois la durée au pic, apogée de 0,8 à 1,2 fois (exemples de Clive Coates).
+    const k = x => Math.round(ansEff * x);
+    from = millesime + k(0.8); to = millesime + k(1.2);
+    gFrom = millesime + Math.max(1, k(0.6)); gTo = millesime + k(1.4);
+    // Blancs de la Côte de Beaune 1996-2014 : oxydation prématurée possible, fin d'apogée raccourcie de 20 %, fin de garde de 15 %.
+    if (premox) { to = Math.max(pic, millesime + Math.round((to - millesime) * 0.8)); gTo = millesime + Math.round((gTo - millesime) * 0.85); }
+    from = Math.min(from, pic); to = Math.max(to, pic); gFrom = Math.min(gFrom, from); gTo = Math.max(gTo, to);
+    L = { cat: 'bourgogne', avant: from - gFrom, apres: gTo - to };
+  } else if (forme === 'longue') {
+    // Fenêtre propre : début fixe (élevage et stabilisation), fin allongée ou raccourcie par la note du millésime.
+    const d = Math.min(1.1, 1 + (DECALAGE_PIC[Number(qualite)] ?? 0)); // un grand millésime prolonge peu une fenêtre déjà très longue
+    from = Math.min(millesime + fixe.debut, pic); to = Math.max(millesime + Math.round(fixe.fin * d), pic);
+    gFrom = Math.min(millesime + fixe.gdebut, from); gTo = Math.max(millesime + Math.round(fixe.gfin * d), to);
+    L = { cat: 'longue-fixe', avant: from - gFrom, apres: gTo - to };
+  } else {
+    L = largeur(r);
+    from = pic - L.h; to = pic + L.h;
+  }
   // Cohérence : l'apogée ne sort jamais de la fenêtre de garde enregistrée (saisie, bible ou IA).
   // Si la règle tombe en dehors, le pic est ramené dans la fenêtre et la période d'apogée est recoupée avec elle.
   let ajuste = false;
@@ -179,7 +281,7 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
     }
   }
   const statut = annee < from ? 'À garder' : annee > to ? 'Urgence' : 'Prêt à boire';
-  return { pic, from, to, statut, regle: r.label, ans: ansEff, ansRegle: r.ans, sansMillesime: false, ajuste, cat: L.cat, avant: L.avant, apres: L.apres };
+  return { pic, from, to, statut, regle: r.label, ans: ansEff, ansRegle: r.ans, sansMillesime: false, ajuste, cat: L.cat, avant: L.avant, apres: L.apres, rang, forme, gFrom, gTo };
 }
 
 // Largeur de la période d'apogée autour du pic, et marge de la fenêtre de dégustation avant et après (années).
@@ -188,6 +290,7 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
 export function largeur(r) {
   const ans = r.ans;
   // La marge après l'apogée est proportionnelle à la durée de vie du vin : un grand vin de garde reste agréable bien après son pic.
+  if (ans >= 22) return { cat: 'longue', h: 4, avant: 4, apres: Math.min(14, Math.round(ans * 0.55)) }; // premiers crus classés, grands liquoreux
   if (ans >= 20) return { cat: 'longue', h: 4, avant: 4, apres: 6 };
   if (ans >= 12) return { cat: 'prestige', h: 3, avant: 3, apres: Math.min(12, Math.round(ans * 0.8)) };
   if (ans >= 8) return { cat: 'structure', h: 2, avant: 2, apres: Math.round(ans * 0.9) };
@@ -200,14 +303,22 @@ export function largeur(r) {
 // 1 ou 2 : vin qui s'essouffle plus vite ; 4 ou 5 : vin qui tient plus longtemps. L'apogée elle-même n'est jamais coupée.
 // L'effet est proportionnel à la durée de vie du vin (un grand vin de garde gagne ou perd plus d'années qu'un vin courant).
 const FACTEUR_APRES = { 1: -0.55, 2: -0.45, 3: -0.2, 4: 0, 5: 0.15 };
-export function fenetreGarde(w, qualite = 3) {
+export function fenetreGarde(w, qualite) {
   const a = apogee({ ...w, from: null, to: null }, undefined, qualite);
   if (a.sansMillesime) return null;
+  if (a.forme === 'bourgogne' || a.forme === 'longue') return { from: a.gFrom, to: a.gTo };
   const debut = Math.max(Number(w.year) + 1, a.from - a.avant);
   const delta = Math.round(a.ansRegle * (FACTEUR_APRES[Number(qualite)] ?? 0));
   const apres = Math.max(0, a.apres + delta);
   const fin = a.to + apres;
   return { from: Math.min(debut, a.from), to: Math.max(fin, a.to) };
+}
+
+// Fenêtre de garde d'un vin dont le rang (premier ou grand cru de Bourgogne, classement de Bordeaux, cuvée célèbre, prestige, grand cru d'Alsace) dépasse
+// celui de sa ligne dans la bible ; null pour les autres, que la ligne de la bible décrit déjà. Sert à la fiche (origine « calc »).
+export function fenetreRang(w, qualite) {
+  const a = apogee({ ...w, from: null, to: null }, undefined, qualite);
+  return a.rang && !a.sansMillesime ? fenetreGarde(w, qualite) : null;
 }
 
 // Où en est l'apogée elle-même (et non le statut du vin, qui dépend de la fenêtre de garde) : évite de contredire la pastille de la carte.
@@ -244,8 +355,9 @@ export function service(w) {
   if (w.color === 'Rosé') return r(8, 10);
   const rouge = w.color === 'Rouge', blanc = w.color === 'Blanc';
   if (!rouge && !blanc) return null;
-  if (PRESTIGE.test(texte)) return rouge ? r(16, 18) : r(11, 13);
-  if (PREMIER_CRU.test(texte)) return rouge ? r(16, 18) : r(10, 12);
+  const nv = niveau(w);
+  if (nv === 'grand') return rouge ? r(16, 18) : r(11, 13);
+  if (nv === 'premier') return rouge ? r(16, 18) : r(10, 12);
   if (VIN_LEGER.test(texte)) return rouge ? r(14, 16) : r(8, 10);
   if (rouge) {
     if (grande === 'Beaujolais' || grande === 'Vallée de la Loire') return r(13, 15);

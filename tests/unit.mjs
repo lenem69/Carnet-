@@ -219,27 +219,27 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   const t5 = ap({ name: 'Château de Fargues', color: 'Blanc', region: 'Sauternes', year: 2015, grape: 'Sémillon' }, 2026);
   T('apogée : Sauternes 2015 → liquoreux +20 ans, à garder en 2026', t5.pic === 2035 && t5.statut === 'À garder', JSON.stringify(t5));
   const t6 = ap({ name: 'Château Latour', color: 'Rouge', region: 'Pauillac', year: 2016 }, 2026);
-  T('apogée : premier grand cru 2016 → +15 ans, à garder en 2026', t6.pic === 2031 && t6.statut === 'À garder' && t6.ans === 15, JSON.stringify(t6));
+  T('apogée : premier cru classé (Latour) 2016 → +24 ans, apogée 2040, à garder en 2026', t6.pic === 2040 && t6.statut === 'À garder' && t6.ans === 24 && t6.rang === true, JSON.stringify(t6));
   const t7 = ap({ name: 'Chardonnay Vin de France', color: 'Blanc', region: 'Vin de France', year: 2024 }, 2026);
   T('apogée : VDF blanc 2024 → +2 ans (léger), pic 2026', t7.pic === 2026 && t7.ans === 2, JSON.stringify(t7));
   const t8 = ap({ name: 'Meursault Les Charmes', color: 'Blanc', region: 'Meursault', year: 2022 }, 2026);
-  T('apogée : blanc de Bourgogne village 2022 (Meursault) → +6 ans, prêt à boire en 2026', t8.pic === 2028 && t8.ans === 6 && t8.statut === 'Prêt à boire', JSON.stringify(t8));
+  T('apogée : blanc de Bourgogne village 2022 (Meursault) → +6 ans, apogée 2027-2029, déjà dans la fenêtre de garde en 2026', t8.pic === 2028 && t8.ans === 6 && t8.from === 2027 && t8.to === 2029 && t8.gFrom <= 2026 && t8.gTo >= 2030, JSON.stringify(t8));
   const t8b = ap({ name: 'Bourgogne Blanc Domaine X', color: 'Blanc', region: 'Bourgogne', year: 2022 }, 2026);
   T('apogée : blanc de Bourgogne régional 2022 → +4 ans', t8b.pic === 2026 && t8b.ans === 4, JSON.stringify(t8b));
   const t8c = ap({ name: 'Nuits-Saint-Georges 1er cru Les Saint-Georges', color: 'Rouge', region: 'Nuits St Georges', year: 2018 }, 2026);
   T('apogée : premier cru rouge 2018 → +12 ans, à garder en 2026', t8c.ans === 12 && t8c.pic === 2030 && t8c.statut === 'À garder', JSON.stringify(t8c));
   const t8d = ap({ name: 'Chambertin Grand Cru', color: 'Rouge', region: 'Gevrey-Chambertin', year: 2018 }, 2026);
-  T('apogée : grand cru rouge 2018 → +15 ans (le grand cru prime sur le premier cru)', t8d.ans === 15 && t8d.pic === 2033, JSON.stringify(t8d));
+  T('apogée : grand cru rouge 2018 (Chambertin) → +20 ans (village 9 × 2,2 ; le grand cru prime sur le premier cru)', t8d.ans === 20 && t8d.pic === 2038 && t8d.rang === true, JSON.stringify(t8d));
   const t9 = ap({ name: 'Rioja Gran Reserva', color: 'Rouge', region: 'Rioja', year: 2010 }, 2026);
   T('apogée : étranger prestige (gran reserva) → +15 ans', t9.ans === 15, JSON.stringify(t9));
   // Chaque niveau garde sa règle : village ≠ premier cru ≠ grand cru, et chaque appellation a la sienne.
   const AN = (name, region, color, year = 2018, extra = {}) => ap({ name, region, color, year, dom: 'Domaine X', ...extra }, 2026).ans;
   T('niveau : Chassagne-Montrachet village rouge → +8 (pas « grand vin »)', AN('Chassagne-Montrachet', 'Chassagne-Montrachet', 'Rouge') === 8, String(AN('Chassagne-Montrachet', 'Chassagne-Montrachet', 'Rouge')));
   T('niveau : Chassagne-Montrachet village blanc → +7', AN('Chassagne-Montrachet', 'Chassagne-Montrachet', 'Blanc') === 7);
-  T('niveau : Chassagne-Montrachet 1er cru rouge → +12, blanc → +10', AN('Chassagne-Montrachet 1er cru', 'Chassagne-Montrachet Premier Cru', 'Rouge') === 12 && AN('Chassagne-Montrachet 1er cru', 'Chassagne-Montrachet Premier Cru', 'Blanc') === 10);
+  T('niveau : Chassagne-Montrachet 1er cru rouge → +12, blanc → +11 (village × 1,5)', AN('Chassagne-Montrachet 1er cru', 'Chassagne-Montrachet Premier Cru', 'Rouge') === 12 && AN('Chassagne-Montrachet 1er cru', 'Chassagne-Montrachet Premier Cru', 'Blanc') === 11);
   T('niveau : Montrachet grand cru → +15', AN('Montrachet', 'Montrachet', 'Blanc') === 15);
-  T('niveau : Gevrey-Chambertin village → +9, Chambertin grand cru → +15', AN('Gevrey-Chambertin', 'Gevrey-Chambertin', 'Rouge') === 9 && AN('Chambertin', 'Chambertin', 'Rouge') === 15);
-  T('niveau : Chambolle-Musigny village → +8, Vosne-Romanée village → +8 (table), Romanée-Conti → +15', AN('Chambolle-Musigny', 'Chambolle-Musigny', 'Rouge') === 8 && AN('Vosne-Romanée', 'Vosne-Romanée', 'Rouge') === 8 && AN('Romanée-Conti', 'Romanée-Conti', 'Rouge') === 15);
+  T('niveau : Gevrey-Chambertin village → +9, 1er cru → +14, Chambertin grand cru → +20', AN('Gevrey-Chambertin', 'Gevrey-Chambertin', 'Rouge') === 9 && AN('X', 'Gevrey-Chambertin Premier Cru', 'Rouge') === 14 && AN('Chambertin', 'Chambertin', 'Rouge') === 20);
+  T('niveau : Chambolle-Musigny village → +8, Vosne-Romanée village → +8 (table), Romanée-Conti → +18 (village × 2,2)', AN('Chambolle-Musigny', 'Chambolle-Musigny', 'Rouge') === 8 && AN('Vosne-Romanée', 'Vosne-Romanée', 'Rouge') === 8 && AN('Romanée-Conti', 'Romanée-Conti', 'Rouge') === 18);
   T('niveau : Crozes-Hermitage → +5, Hermitage → +11 (table)', AN('Crozes-Hermitage', 'Crozes-Hermitage', 'Rouge') === 5 && AN('Hermitage', 'Hermitage', 'Rouge') === 11);
   T('appellation : Pauillac +13, Saint-Émilion Grand Cru +11, Châteauneuf-du-Pape +12, Côte-Rôtie +11, Morgon +8, Muscadet +3, Chablis blanc +6',
     AN('Cuvée', 'Pauillac', 'Rouge') === 13 && AN('Cuvée', 'Saint-Émilion Grand Cru', 'Rouge') === 11 && AN('Cuvée', 'Châteauneuf-du-Pape', 'Rouge') === 12 && AN('Cuvée', 'Côte-Rôtie', 'Rouge') === 11 && AN('Cuvée', 'Morgon', 'Rouge') === 8 && AN('Cuvée', 'Muscadet', 'Blanc') === 3 && AN('Cuvée', 'Chablis', 'Blanc') === 6);
@@ -247,15 +247,20 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
     // Audit de toute la liste connue : seuls les vrais grands crus (ou appellations « Grand Cru ») prennent la règle du grand vin.
     const { TAXONOMIE } = await import('../taxonomie.js');
     const noms = [...new Set(Object.values(TAXONOMIE).map(v => v[0]))];
-    const prestige = noms.filter(n => ['Rouge', 'Blanc'].some(c => ap({ name: 'Cuvée', dom: 'Domaine X', region: n, color: c, year: 2018 }, 2026).regle === 'grand cru ou grand vin'));
+    const prestige = noms.filter(n => ['Rouge', 'Blanc'].some(c => /^grand cru/.test(ap({ name: 'Cuvée', dom: 'Domaine X', region: n, color: c, year: 2018 }, 2026).regle)));
     const faux = prestige.filter(n => /^(chassagne|puligny|gevrey|chambolle|vosne|crozes)|premier cru|saint-émilion|ch[aâ]teauneuf|c[oô]te-r[oô]tie|cornas/i.test(n));
     T('audit : aucun village, premier cru ni appellation courante pris pour un grand vin', faux.length === 0, faux.join(', '));
-    T('audit : les grands crus connus gardent la règle du grand vin', ['Montrachet', 'Chambertin', 'Musigny', 'Romanée-Conti', 'Richebourg', 'Échezeaux'].every(n => prestige.includes(n)), prestige.join(', '));
-    const p1 = noms.filter(n => /Premier Cru$/.test(n)).filter(n => ap({ name: 'Cuvée', dom: 'Domaine X', region: n, color: 'Rouge', year: 2018 }, 2026).ans !== 12);
-    T('audit : tous les « Premier Cru » rouges → +12', p1.length === 0, p1.join(', '));
+    T('audit : les grands crus connus prennent la règle du grand cru', ['Montrachet', 'Chambertin', 'Musigny', 'Romanée-Conti', 'Richebourg', 'Échezeaux', 'Corton', 'Corton-Charlemagne', 'Clos de Vougeot', 'Bonnes-Mares', 'Clos de Tart', 'La Tâche', 'Chablis Grand Cru', 'Bâtard-Montrachet'].every(n => prestige.includes(n)), prestige.join(', '));
+    // Chaque « Premier Cru » vaut 1,5 fois (entre 1,3 et 1,7 après arrondi) la durée de sa commune, et le grand cru 2,2 fois.
+    const pc = noms.filter(n => /Premier Cru$/.test(n)).filter(n => ['Rouge', 'Blanc'].some(c => {
+      const a1 = ap({ name: 'Cuvée', dom: 'Domaine X', region: n, color: c, year: 2018 }, 2026), v1 = ap({ name: 'Cuvée', dom: 'Domaine X', region: n.replace(/ Premier Cru$/, ''), color: c, year: 2018 }, 2026);
+      const r = a1.ans / v1.ans;
+      return !/^premier cru/.test(a1.regle) || !(r >= 1.3 && r <= 1.7);
+    }));
+    T('audit : tous les « Premier Cru » = village × 1,5', pc.length === 0, pc.join(', '));
   }
-  T('apogée : rappel court sur la carte', A.apogeeCourte(t6)==='Apogée 2031 · à venir' && A.apogeeCourte(t1)==='Prêt à boire (sans millésime)', A.apogeeCourte(t6));
-  T('apogée : phrase de la fiche contient le pic et la fenêtre', /Apogée estimée 2031 \(entre 2028 et 2034\)/.test(A.apogeeTexte(t6)), A.apogeeTexte(t6));
+  T('apogée : rappel court sur la carte', A.apogeeCourte(t6)==='Apogée 2040 · à venir' && A.apogeeCourte(t1)==='Prêt à boire (sans millésime)', A.apogeeCourte(t6));
+  T('apogée : phrase de la fiche contient le pic et la fenêtre', /Apogée estimée 2040 \(entre 2036 et 2044\)/.test(A.apogeeTexte(t6)), A.apogeeTexte(t6));
   // Cohérence apogée / fenêtre de garde : l'apogée ne sort jamais de la fenêtre enregistrée.
   {
     const couleurs = ['Rouge', 'Blanc', 'Rosé', 'Pétillant'];
@@ -271,9 +276,9 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
     T(`apogée : jamais hors de la fenêtre de garde (${n} combinaisons)`, hors === 0, ex);
     T('apogée : rappel court sans mot de statut pouvant contredire la pastille', pbPhrase === 0, String(pbPhrase));
     const sans = ap({ name: 'X', dom: 'D', color: 'Rouge', region: 'Richebourg', year: 2020, from: '', to: '' }, 2026);
-    T('apogée : sans fenêtre enregistrée, règle inchangée (grand cru 2020 → 2035)', sans.pic === 2035 && sans.ajuste === false, JSON.stringify(sans));
+    T('apogée : sans fenêtre enregistrée, règle inchangée (grand cru 2020 → 2038)', sans.pic === 2038 && sans.ajuste === false, JSON.stringify(sans));
     const dedans = ap({ name: 'X', dom: 'D', color: 'Rouge', region: 'Richebourg', year: 2020, from: 2028, to: 2042 }, 2026);
-    T('apogée : déjà dans la fenêtre → inchangée', dedans.pic === 2035 && dedans.ajuste === false, JSON.stringify(dedans));
+    T('apogée : déjà dans la fenêtre → inchangée', dedans.pic === 2038 && dedans.ajuste === false, JSON.stringify(dedans));
     const hors2 = ap({ name: 'X', dom: 'D', color: 'Rouge', region: 'Richebourg', year: 2020, from: 2025, to: 2029 }, 2026);
     T('apogée : hors fenêtre → ramenée à la fin de la fenêtre et signalée', hors2.pic === 2029 && hors2.ajuste === true && /Ramenée dans la fenêtre/.test(A.apogeeTexte(hors2)), JSON.stringify(hors2));
   }
@@ -408,10 +413,10 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
       const [q, from, to] = cell; n++;
       const a = A.apogee({ name: r.a, dom: '', region: r.a, color: CC[r.c], year: Number(y), from, to }, 2026, q);
       if (a.ajuste || a.from < from || a.to > to) hors.push(r.a + ' ' + y);
-      if (to - from > 25) longues.push(r.a + ' ' + y + ' ' + (to - from));
+      if (to - from > (/Château-Chalon|Quarts de Chaume|Bonnezeaux/.test(r.a) ? 60 : 32)) longues.push(r.a + ' ' + y + ' ' + (to - from));
     }
     T('cohérence : apogée (avec la note du millésime) toujours dans la fenêtre de dégustation, ' + n + ' millésimes', hors.length === 0, hors.slice(0, 8).join(', '));
-    T('cohérence : aucune fenêtre de dégustation de plus de 25 ans', longues.length === 0, longues.slice(0, 8).join(', '));
+    T('cohérence : aucune fenêtre de dégustation de plus de 32 ans (60 pour le vin jaune et les grands liquoreux de la Loire)', longues.length === 0, longues.slice(0, 8).join(', '));
     // Les appellations regroupées dans la bible ont chacune leur ligne : l'appli cherche une appellation par son nom exact.
     const trouve = (region, color, year) => L.bibleEntry({ name: 'X', dom: 'D', region, color, year, src: {} }, bib);
     const manquants = [['Haut-Médoc', 'Rouge'], ['Médoc', 'Rouge'], ['Listrac-Médoc', 'Rouge'], ['Sauternes', 'Blanc'], ['Barsac', 'Blanc'], ['Nuits-Saint-Georges', 'Rouge']].filter(([r, c]) => !trouve(r, c, 2015));
@@ -431,3 +436,163 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   console.log(out.slice(o0).join('\n'));
 }
 
+// Niveaux de cru et rangs (1.30.0) : premiers et grands crus de Bourgogne, classements, cuvées, origine « calc »
+{
+  const o0 = out.length;
+  const bib = JSON.parse(fs.readFileSync(new URL('../bible/bible.json', import.meta.url), 'utf8'));
+  const vm = await import('vm');
+  const ctx = { self: {}, indexedDB: {}, fetch: null, console };
+  vm.runInNewContext(fs.readFileSync(new URL('../fond.js', import.meta.url), 'utf8'), ctx);
+  const ap = (region, name, color = 'Rouge', year = 2018, dom = 'Domaine X') => A.apogee({ name, dom, region, color, year }, 2026);
+  const cas = (titre, liste) => {
+    const faux = liste.filter(([r, n, c, attendu, ans]) => { const a = ap(r, n, c); return a.regle !== attendu || (ans != null && a.ans !== ans); }).map(([r, n, c]) => `${r} | ${n} → ${ap(r, n, c).regle} +${ap(r, n, c).ans}`);
+    T(titre, faux.length === 0, faux.join(' ; '));
+  };
+  // Bourgogne : le niveau se lit dans la région ou dans le nom ; le climat n'a pas besoin d'être connu.
+  cas('crus : premiers crus reconnus quelle que soit l’écriture (région ou nom, 1er ou Premier)', [
+    ['Gevrey-Chambertin 1er Cru', 'Les Cazetiers', 'Rouge', 'premier cru (Gevrey-Chambertin)', 14],
+    ['Gevrey-Chambertin', 'Gevrey-Chambertin 1er cru Les Cazetiers', 'Rouge', 'premier cru (Gevrey-Chambertin)', 14],
+    ['Meursault', 'Meursault Les Charmes 1er cru', 'Blanc', 'premier cru (Meursault)', 9],
+    ['Chassagne-Montrachet', 'Chassagne-Montrachet 1er cru Les Caillerets', 'Blanc', 'premier cru (Chassagne-Montrachet)', 11],
+    ['Rully', 'Rully 1er cru Les Chapitres', 'Blanc', 'premier cru (Rully)', 6],
+    ['Mercurey', 'Mercurey 1er cru Clos Voyen', 'Rouge', 'premier cru (Mercurey)', 6],
+    ['Montagny', 'Montagny 1er cru', 'Blanc', 'premier cru (Montagny)', 6],
+    ['Chablis', 'Chablis 1er cru Montée de Tonnerre', 'Blanc', 'premier cru (Chablis)', 9],
+    ['Pommard', 'Pommard 1er cru Les Rugiens', 'Rouge', 'premier cru (Pommard)', 15],
+    ['Santenay', 'Santenay 1er Cru', 'Rouge', 'premier cru (Santenay)', 11],
+  ]);
+  cas('crus : un vin sans mention de premier cru reste au niveau village', [
+    ['Gevrey-Chambertin', 'Cuvée', 'Rouge', 'Gevrey-Chambertin', 9], ['Meursault', 'Meursault Les Charmes', 'Blanc', 'Meursault', 6],
+    ['Chablis', 'Chablis', 'Blanc', 'Chablis', 6], ['Aloxe-Corton', 'Aloxe-Corton', 'Rouge', 'Aloxe-Corton', 9],
+    ['Nuits-Saint-Georges', 'Perrières', 'Rouge', 'Nuits-Saint-Georges', 8],
+  ]);
+  cas('crus : grands crus reconnus par leur nom, même saisis comme village (33 grands crus : échantillon)', [
+    ['Chambertin', 'Chambertin Grand Cru', 'Rouge', 'grand cru (Gevrey-Chambertin)', 20], ['Gevrey-Chambertin', 'Charmes-Chambertin', 'Rouge', 'grand cru (Gevrey-Chambertin)', 20],
+    ['Morey-Saint-Denis', 'Clos de Tart', 'Rouge', 'grand cru (Morey-Saint-Denis)', 20], ['Chambolle-Musigny', 'Bonnes-Mares', 'Rouge', 'grand cru (Chambolle-Musigny)', 18],
+    ['Clos de Vougeot', 'Clos de Vougeot Grand Cru', 'Rouge', 'grand cru (Vougeot)', 14], ['Vosne-Romanée', 'La Tâche', 'Rouge', 'grand cru (Vosne-Romanée)', 18],
+    ['Vosne-Romanée', 'Echezeaux', 'Rouge', 'grand cru (Vosne-Romanée)', 18], ['Corton', 'Corton Bressandes', 'Rouge', 'grand cru (Aloxe-Corton)', 20],
+    ['Aloxe-Corton', 'Corton-Charlemagne', 'Rouge', 'grand cru (Aloxe-Corton)', 20], ['Montrachet', 'Montrachet', 'Blanc', 'grand cru (Puligny-Montrachet)', 15],
+    ['Puligny-Montrachet', 'Bâtard-Montrachet', 'Blanc', 'grand cru (Puligny-Montrachet)', 15], ['Chassagne-Montrachet', 'Criots-Bâtard-Montrachet', 'Blanc', 'grand cru (Chassagne-Montrachet)', 15],
+    ['Chablis Grand Cru', 'Les Clos', 'Blanc', 'grand cru (Chablis)', 13], ['Chablis', 'Chablis Grand Cru Vaudésir', 'Blanc', 'grand cru (Chablis)', 13],
+  ]);
+  cas('crus : super premiers crus traités comme des grands crus (Clos Saint-Jacques, Cros Parantoux, Amoureuses, Perrières)', [
+    ['Gevrey-Chambertin', 'Clos Saint-Jacques 1er cru', 'Rouge', 'premier cru d’exception (Gevrey-Chambertin)', 20], ['Vosne-Romanée', 'Cros Parantoux', 'Rouge', 'premier cru d’exception (Vosne-Romanée)', 18],
+    ['Chambolle-Musigny', 'Les Amoureuses', 'Rouge', 'premier cru d’exception (Chambolle-Musigny)', 18], ['Meursault', 'Meursault 1er cru Les Perrières', 'Blanc', 'premier cru d’exception (Meursault)', 13],
+  ]);
+  {
+    // Ordre des niveaux : village < premier cru < grand cru (rouge), pour chaque millésime et chaque note.
+    const ok = [2005, 2010, 2015, 2018, 2022].every(y => [1, 2, 3, 4, 5].every(q => {
+      const f = (r, n) => A.fenetreGarde({ name: n, dom: 'D', region: r, color: 'Rouge', year: y }, q);
+      const v = f('Gevrey-Chambertin', 'Cuvée'), p = f('Gevrey-Chambertin 1er Cru', 'Les Cazetiers'), g = f('Chambertin', 'Chambertin');
+      return v.from < p.from && p.from < g.from && v.to < p.to && p.to < g.to;
+    }));
+    T('crus : la fenêtre de garde s’allonge avec le niveau (village < premier cru < grand cru), à toute note de millésime', ok);
+    // Blancs de la Côte de Beaune 1996-2014 : risque d'oxydation prématurée, fin de garde raccourcie ; pas de raccourcissement hors période ni en Côte de Nuits.
+    const w = (r, n, y, c = 'Blanc') => A.fenetreGarde({ name: n, dom: 'D', region: r, color: c, year: y }, 4);
+    const finPrem = y => w('Meursault Premier Cru', 'Meursault 1er cru Les Charmes', y).to - y;
+    T('crus : prémox : blanc de premier cru de la Côte de Beaune 2010 garde moins longtemps que le même vin en 2016', finPrem(2010) < finPrem(2016), `${finPrem(2010)} / ${finPrem(2016)}`);
+    const rouge = y => A.fenetreGarde({ name: 'X', dom: 'D', region: 'Pommard Premier Cru', color: 'Rouge', year: y }, 4);
+    T('crus : prémox : aucun raccourcissement pour un rouge', rouge(2010).to - 2010 === rouge(2016).to - 2016);
+    const nuits = y => w('Chablis Premier Cru', 'Chablis 1er cru', y).to - y;
+    T('crus : prémox : aucun raccourcissement pour un blanc hors Côte de Beaune (Chablis)', nuits(2010) === nuits(2016));
+  }
+  // Clive Coates (rouge, bon millésime) : village de la Côte de Nuits 5-12 ans, premier cru 7-19, grand cru 10-25/30 après la récolte.
+  {
+    const f = (r, n, c = 'Rouge') => { const g = A.fenetreGarde({ name: n, dom: 'D', region: r, color: c, year: 2015 }, 4); return [g.from - 2015, g.to - 2015]; };
+    const v = f('Gevrey-Chambertin', 'Cuvée'), p = f('Gevrey-Chambertin 1er Cru', 'Les Cazetiers'), g = f('Chambertin', 'Chambertin');
+    T('crus : repère Coates, village de Côte de Nuits environ 5-12 ans', v[0] >= 4 && v[0] <= 6 && v[1] >= 11 && v[1] <= 14, JSON.stringify(v));
+    T('crus : repère Coates, premier cru de Côte de Nuits environ 7-19 ans', p[0] >= 7 && p[0] <= 9 && p[1] >= 17 && p[1] <= 21, JSON.stringify(p));
+    T('crus : repère Coates, grand cru de Côte de Nuits environ 10-30 ans', g[0] >= 11 && g[0] <= 13 && g[1] >= 26 && g[1] <= 30, JSON.stringify(g));
+  }
+  // Bordeaux, Champagne, Alsace, cuvées : le rang du vin est lu dans son nom.
+  cas('rangs : classements de Bordeaux', [
+    ['Pauillac', 'Château Latour', 'Rouge', 'premier cru classé', 24], ['Margaux', 'Château Margaux', 'Rouge', 'premier cru classé', 22],
+    ['Pauillac', 'Château Pichon Longueville Comtesse de Lalande', 'Rouge', 'deuxième cru classé', 19], ['Margaux', 'Château Rauzan-Ségla', 'Rouge', 'deuxième cru classé', 17],
+    ['Pauillac', 'Château Lynch-Bages', 'Rouge', 'cru classé (3e à 5e)', 14], ['Saint-Julien', 'Château Talbot', 'Rouge', 'cru classé (3e à 5e)', 14],
+    ['Pessac-Léognan', 'Château Haut-Brion', 'Blanc', 'grand blanc de Pessac-Léognan', 18], ['Pomerol', 'Château Pétrus', 'Rouge', 'grand pomerol', 24],
+    ['Saint-Émilion Grand Cru', 'Château Angélus', 'Rouge', 'premier grand cru classé A', 22], ['Saint-Émilion Grand Cru', 'Château Canon', 'Rouge', 'premier grand cru classé B', 17],
+    ['Sauternes', 'Château d’Yquem', 'Blanc', 'premier cru supérieur', 30], ['Barsac', 'Château Climens', 'Blanc', 'premier cru classé', 23],
+  ]);
+  cas('rangs : second vins et homonymes ne prennent pas le rang du grand vin (Forts de Latour, Les Carmes Haut-Brion, un cru bourgeois)', [
+    ['Pauillac', 'Les Forts de Latour', 'Rouge', 'Pauillac', 13], ['Pessac-Léognan', 'Château Les Carmes Haut-Brion', 'Rouge', 'Pessac-Léognan', 11],
+    ['Pauillac', 'Cru bourgeois X', 'Rouge', 'Pauillac', 13], ['Pomerol', 'Château La Fleur-Pétrus', 'Rouge', 'grand pomerol', 18],
+  ]);
+  cas('rangs : champagne de prestige, grands crus et lieux-dits d’Alsace, cuvées parcellaires du Rhône', [
+    ['Champagne', 'Dom Pérignon', 'Pétillant', 'cuvée de prestige (champagne)', 18], ['Alsace Grand Cru', 'Riesling Schlossberg', 'Blanc', 'grand cru d’Alsace', 12],
+    ['Alsace', 'Riesling Lieu-dit Clos Saint-Urbain', 'Blanc', 'lieu-dit d’Alsace', 8], ['Côte-Rôtie', 'La Landonne', 'Rouge', 'cuvée parcellaire (Côte-Rôtie)', 20],
+    ['Châteauneuf-du-Pape', 'Château Rayas', 'Rouge', 'cuvée mythique (Châteauneuf-du-Pape)', 22],
+  ]);
+  cas('Alsace : un vin d’Alsace simple suit la durée de son cépage (il n’est plus pris pour un grand cru)', [
+    ['Alsace', 'Riesling', 'Blanc', 'Alsace', 6], ['Alsace', 'Pinot Gris', 'Blanc', 'Alsace', 5], ['Alsace', 'Sylvaner', 'Blanc', 'Alsace', 3],
+  ]);
+  // Éléments du rapport de Jeff : vin jaune, grands liquoreux de la Loire, Vendanges Tardives et SGN d'Alsace, Blanc de Blancs
+  {
+    const g = (region, name, color, year, q) => { const w = { name, dom: 'D', region, color, year }; return { a: A.apogee(w, 2026, q), f: A.fenetreGarde(w, q) }; };
+    const jaune = [1, 2, 3, 4, 5].map(q => g('Château-Chalon', 'Château-Chalon', 'Blanc', 2015, q));
+    T('vin jaune : début d’apogée fixe à millésime + 10 ans, quelle que soit la note', jaune.every(x => x.a.from === 2025 && x.a.regle === 'vin jaune'), JSON.stringify(jaune.map(x => x.a.from)));
+    T('vin jaune : fin d’apogée à +40 ans et garde jusqu’à +50 ans pour un bon millésime', jaune[3].a.to === 2055 && jaune[3].f.to === 2065 && jaune[3].f.from === 2023, JSON.stringify([jaune[3].a.to, jaune[3].f]));
+    T('vin jaune : l’apogée reste dans la fenêtre de garde à toutes les notes', jaune.every(x => x.f.from <= x.a.from && x.a.from <= x.a.pic && x.a.pic <= x.a.to && x.a.to <= x.f.to));
+    const arbois = g('Arbois', 'Vin Jaune', 'Blanc', 2015, 4);
+    T('vin jaune : un « Vin Jaune » d’Arbois suit la même règle (plus un liquoreux de 20 ans)', arbois.a.regle === 'vin jaune' && arbois.a.from === 2025, JSON.stringify(arbois.a));
+    const qdc = [1, 3, 4, 5].map(q => g('Quarts de Chaume', 'Quarts de Chaume', 'Blanc', 2015, q));
+    T('Loire : Quarts-de-Chaume et Bonnezeaux, garde de 15 à 60 ans et apogée de 20 à 45 ans pour un bon millésime', qdc[2].f.from === 2030 && qdc[2].f.to === 2075 && qdc[2].a.from === 2035 && qdc[2].a.to === 2060 && g('Bonnezeaux', 'Cuvée', 'Blanc', 2015, 4).a.regle === 'grand liquoreux de Loire', JSON.stringify([qdc[2].f, qdc[2].a.from, qdc[2].a.to]));
+    T('Loire : l’apogée reste dans la fenêtre de garde à toutes les notes', qdc.every(x => x.f.from <= x.a.from && x.a.to <= x.f.to));
+    const layon = g('Coteaux du Layon', 'Cuvée', 'Blanc', 2015, 4);
+    T('Loire : les autres liquoreux (Coteaux du Layon) gardent la règle des liquoreux (garde 12-30 ans)', layon.a.regle === 'vin liquoreux' && layon.f.from === 2027 && layon.f.to === 2045, JSON.stringify(layon.f));
+    const simple = g('Alsace', 'Riesling', 'Blanc', 2015, 4), vt = g('Alsace', 'Riesling Vendanges Tardives', 'Blanc', 2015, 4), sgn = g('Alsace', 'Riesling Sélection de Grains Nobles', 'Blanc', 2015, 4);
+    T('Alsace : Vendanges Tardives ×2 et SGN ×3,5 sur la durée du cépage (Riesling 6 ans : 6, 12, 21)', simple.a.ans === 6 && vt.a.ans === 12 && sgn.a.ans === 21 && simple.f.to < vt.f.to && vt.f.to < sgn.f.to, JSON.stringify([simple.a.ans, vt.a.ans, sgn.a.ans]));
+    T('Alsace : VT de Gewurztraminer 10 ans, abréviation « VT » comprise', g('Alsace', 'Gewurztraminer VT', 'Blanc', 2015, 4).a.ans === 10);
+    const ch = g('Champagne', 'Brut Millésimé', 'Pétillant', 2012, 4), bdb = g('Champagne', 'Blanc de Blancs Millésimé', 'Pétillant', 2012, 4), salon = g('Champagne', 'Salon Blanc de Blancs', 'Pétillant', 2012, 4);
+    T('Champagne : Blanc de Blancs millésimé +20 % (12 ans au lieu de 10), cuvée de prestige inchangée (18)', ch.a.ans === 10 && bdb.a.ans === 12 && salon.a.ans === 18, JSON.stringify([ch.a.ans, bdb.a.ans, salon.a.ans]));
+    T('Champagne : un champagne sans millésime n’a pas de date d’apogée (prêt à boire)', A.apogee({ name: 'Brut Réserve', dom: 'D', region: 'Champagne', color: 'Pétillant', year: '' }, 2026).sansMillesime === true);
+  }
+  // Écritures de l'appellation dans la bible
+  T('bible : écritures courantes d’une appellation (1er cru, contrôlée, tirets)', JSON.stringify(L.nomsBible('Chassagne-Montrachet 1er Cru Contrôlée')) === JSON.stringify(['chassagne montrachet 1er cru controlee', 'chassagne montrachet premier cru']) && L.nomsBible('Bourgogne Saint-Aubin').includes('saint aubin') && L.nomsBible('Corton Grand Cru').includes('corton'), JSON.stringify(L.nomsBible('Chassagne-Montrachet 1er Cru Contrôlée')));
+  const trouve = (region, color, year = 2018) => L.bibleEntry({ name: 'X', dom: 'D', region, color, year, src: {} }, bib);
+  const manque = [['Rully 1er Cru', 'Blanc'], ['Chassagne-Montrachet 1er Cru Contrôlée', 'Rouge'], ['Bourgogne Saint-Aubin', 'Blanc'], ['Gevrey Chambertin Premier Cru', 'Rouge'], ['Corton Grand Cru', 'Rouge'], ['Clos de Vougeot Grand Cru', 'Rouge'],
+    ['Mercurey 1er cru', 'Rouge'], ['Montagny Premier Cru', 'Blanc'], ['Pernand-Vergelesses 1er Cru', 'Blanc'], ['Fixin Premier Cru', 'Rouge'], ['Mazoyères-Chambertin', 'Rouge'], ['La Grande Rue', 'Rouge'], ['Vougeot Premier Cru', 'Rouge'], ['Blagny Premier Cru', 'Rouge']].filter(([r, c]) => !trouve(r, c));
+  T('bible : premiers et grands crus retrouvés sous leurs écritures courantes', manque.length === 0, JSON.stringify(manque));
+  T('bible : une appellation ambiguë ou inconnue ne trouve rien (pas de devinette)', trouve('Bourgogne Inconnue', 'Rouge') === null && trouve('', 'Rouge') === null);
+  T('bible : le 1er cru n’est jamais rabattu sur le village (« Rully 1er Cru » ne prend pas la ligne « Rully »)', (() => { const a = trouve('Rully 1er Cru', 'Blanc'), b = trouve('Rully', 'Blanc'); return a && b && (a.from !== b.from || a.to !== b.to); })());
+  T('bible : page et service worker lisent les noms de la même façon', ['Rully 1er Cru Les Chapitres', 'Chassagne-Montrachet 1er Cru Contrôlée', 'Bourgogne Saint-Aubin', 'Corton Grand Cru', 'Appellation Pauillac Contrôlée', 'Gevrey Chambertin', 'Saint-Émilion Grand Cru Classé', ''].every(r => JSON.stringify(L.nomsBible(r)) === JSON.stringify(ctx.self.FondIA.nomsBible(r))));
+  T('bible : douze communes ajoutées avec premiers crus, plus Mazoyères-Chambertin et La Grande Rue', ['Fixin', 'Vougeot', 'Ladoix', 'Pernand-Vergelesses', 'Monthélie', 'Auxey-Duresses', 'Maranges', 'Blagny', 'Rully', 'Mercurey', 'Givry', 'Montagny'].every(c => bib.rows.some(r => r.a === c + ' Premier Cru')) && bib.rows.some(r => r.a === 'Mazoyères-Chambertin') && bib.rows.some(r => r.a === 'La Grande Rue'));
+  T('bible : lignes dérivées jamais plus fiables que « B »', bib.rows.filter(r => /Premier Cru$/.test(r.a) || /Mazoyères|Grande Rue/.test(r.a)).every(r => !/^(Fixin|Vougeot|Ladoix|Pernand|Monthélie|Auxey|Maranges|Blagny|Rully|Mercurey|Givry|Montagny|Mazoyères|La Grande)/.test(r.a) || Object.values(r.y).every(c => c[3] !== 'A')));
+  // Origine « calc » : fenêtre calculée selon le rang du vin
+  {
+    const latour = () => L.normalizeWine({ name: 'Château Latour', dom: 'Château Latour', region: 'Pauillac', color: 'Rouge', year: 2016, qty: 1 });
+    const w = latour();
+    const e = L.bibleEntry(w, bib);
+    const sans = latour(); L.prefillFromBible(sans, bib);
+    T('calc : sans calcul, un premier cru classé reçoit la fenêtre de l’appellation (origine « bible »)', sans.src.from === 'bible' && sans.to - sans.from < 30 && e && sans.from === e.from, JSON.stringify([sans.from, sans.to, sans.src]));
+    const avec = latour(); const change = L.prefillFromBible(avec, bib, A.fenetreRang);
+    const ap1 = A.apogee(avec, 2026, e && e.q);
+    T('calc : avec le calcul, Latour reçoit sa propre fenêtre (origine « calc »), plus longue que celle de Pauillac', change && avec.src.from === 'calc' && avec.src.to === 'calc' && avec.from > sans.from && avec.to > sans.to, JSON.stringify([avec.from, avec.to, avec.src]));
+    T('calc : l’apogée affichée reste dans la fenêtre calculée, sans correction', !ap1.ajuste && ap1.from >= avec.from && ap1.to <= avec.to, JSON.stringify([ap1, avec.from, avec.to]));
+    T('calc : un second passage ne change rien', L.prefillFromBible(avec, bib, A.fenetreRang) === false);
+    const perso = latour(); perso.from = 2030; perso.to = 2050; perso.src = { from: 'user', to: 'user' };
+    L.prefillFromBible(perso, bib, A.fenetreRang);
+    T('calc : une garde saisie à la main n’est jamais remplacée', perso.from === 2030 && perso.to === 2050 && perso.src.from === 'user');
+    const ia = latour(); ia.from = 2028; ia.to = 2032; ia.src = { from: 'ai', to: 'ai' };
+    L.prefillFromBible(ia, bib, A.fenetreRang);
+    T('calc : la fenêtre calculée remplace celle de l’IA (la bible et le calcul passent avant), comme la bible seule', ia.src.from === 'calc' && ia.from === avec.from);
+    const simple = L.normalizeWine({ name: 'Cuvée', dom: 'D', region: 'Pauillac', color: 'Rouge', year: 2016, qty: 1 });
+    L.prefillFromBible(simple, bib, A.fenetreRang);
+    T('calc : un vin sans rang particulier garde la fenêtre de la bible (origine « bible »)', simple.src.from === 'bible', JSON.stringify(simple.src));
+    const rank2 = L.normalizeWine({ name: 'Chambertin', dom: 'D', region: 'Gevrey-Chambertin', color: 'Rouge', year: 2015, qty: 1 }); // région saisie au niveau village
+    L.prefillFromBible(rank2, bib, A.fenetreRang);
+    const vil = L.normalizeWine({ name: 'Cuvée', dom: 'D', region: 'Gevrey-Chambertin', color: 'Rouge', year: 2015, qty: 1 }); L.prefillFromBible(vil, bib, A.fenetreRang);
+    T('calc : un grand cru saisi sous « Gevrey-Chambertin » prend la fenêtre d’un grand cru, pas celle du village', rank2.src.from === 'calc' && rank2.from > vil.from + 5 && rank2.to > vil.to + 8, JSON.stringify([rank2.from, rank2.to, vil.from, vil.to]));
+    // Le service worker laisse la fenêtre calculée par la page
+    const sw = latour(); L.prefillFromBible(sw, bib, A.fenetreRang);
+    const avant = JSON.stringify([sw.from, sw.to, sw.src]);
+    const touche = ctx.self.FondIA.bibleGarde(sw, bib);
+    T('calc : la passe de fond (service worker) ne remplace pas une fenêtre « calc »', !touche && JSON.stringify([sw.from, sw.to, sw.src]) === avant, avant);
+    const norm1 = L.normalizeWine({ name: 'X', dom: 'D', year: 2016, color: 'Rouge', region: 'Pauillac', from: 2030, to: 2045, src: { from: 'calc', to: 'calc' } });
+    T('calc : l’origine « calc » survit à la normalisation de la fiche', norm1.src.from === 'calc' && norm1.src.to === 'calc');
+    const sans2 = L.prefillFromBible(L.normalizeWine({ name: 'Y', dom: 'D', year: 2016, color: 'Rouge', region: 'Région inconnue', qty: 1 }), bib, A.fenetreRang);
+    T('calc : sans bible ni rang, rien n’est inventé', sans2 === false);
+    const casse = L.prefillFromBible(latour(), bib, () => { throw new Error('boum'); });
+    T('calc : si le calcul échoue, la bible prend le relais sans erreur', casse === true);
+  }
+  console.log(out.slice(o0).join('\n'));
+}

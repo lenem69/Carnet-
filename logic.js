@@ -131,8 +131,8 @@ function toSources(v) {
   return v.filter(x => x && typeof x.u === 'string' && /^https:\/\//i.test(x.u)).slice(0, 5).map(x => ({ t: str(x.t).slice(0, 80) || 'Source', u: x.u }));
 }
 
-const ORIGINS = ['user', 'ai', 'bible'];
-// Champs que l'IA peut compléter ou corriger. Chacun porte son origine (src) : user (saisi à la main) | ai | bible.
+const ORIGINS = ['user', 'ai', 'bible', 'calc'];
+// Champs que l'IA peut compléter ou corriger. Chacun porte son origine (src) : user (saisi à la main) | ai | bible | calc (calculée par l'appli selon le rang du vin).
 export const AI_FIELDS = ['grape', 'story', 'pairings', 'from', 'to'];
 // Champs que la recherche web peut compléter (la garde compte pour « from »).
 export const DOUTE = ['grape', 'story', 'pairings', 'from'];
@@ -214,18 +214,49 @@ export function bibleValid(j) {
     && j.rows.every(r => r && typeof r.a === 'string' && typeof r.c === 'string' && r.y && typeof r.y === 'object');
 }
 const COLOR_BIBLE = { Rouge: ['R'], Blanc: ['B', 'D'], Pétillant: ['E'] };
-// Entrée de la bible pour une fiche, seulement si la correspondance est claire : appellation exacte et couleur sans ambiguïté.
+// Nom d'appellation comparable : sans accents, majuscules, tirets ni apostrophes (« Gevrey Chambertin » = « Gevrey-Chambertin »).
+const cleBible = s => norm(s).replace(/[-'’]/g, ' ').replace(/\s+/g, ' ').trim();
+// Noms sous lesquels chercher l'appellation d'une fiche dans la bible, du plus exact au plus large
+// (« Chassagne-Montrachet 1er Cru Contrôlée » → « chassagne montrachet premier cru » ; « Corton Grand Cru » → « corton » ; « Bourgogne Saint-Aubin » → « saint aubin »).
+// Même règle dans fond.js : voir tests/unit.mjs.
+export function nomsBible(region) {
+  const n0 = cleBible(region);
+  if (!n0) return [];
+  const noms = [n0];
+  const ajoute = v => { v = v.replace(/\s+/g, ' ').trim(); if (v && !noms.includes(v)) noms.push(v); };
+  let v = n0.replace(/\b(appellation|aoc|aop|origine|controlee?|protegee)\b/g, ' ').replace(/\b1er\b/g, 'premier');
+  ajoute(v);
+  const niv = v.match(/^(.+?) (premier|grand) cru\b/);
+  if (niv) { ajoute(niv[1] + ' ' + niv[2] + ' cru'); if (niv[2] === 'grand') ajoute(niv[1]); }
+  for (const x of [...noms]) if (/^bourgogne /.test(x)) ajoute(x.replace(/^bourgogne /, ''));
+  return noms;
+}
+const INDEX_BIBLE = new WeakMap();
+function indexBible(bible) {
+  let ix = INDEX_BIBLE.get(bible);
+  if (!ix) {
+    ix = new Map();
+    for (const r of bible.rows) { const k = cleBible(r.a); if (!ix.has(k)) ix.set(k, []); ix.get(k).push(r); }
+    INDEX_BIBLE.set(bible, ix);
+  }
+  return ix;
+}
+// Entrée de la bible pour une fiche, seulement si la correspondance est claire : appellation retrouvée (écritures courantes comprises) et couleur sans ambiguïté.
 export function bibleEntry(w, bible) {
   if (!bibleValid(bible) || !w || !w.region || !w.year) return null;
   const want = COLOR_BIBLE[w.color];
   if (!want) return null;
-  const name = norm(w.region);
-  const rows = bible.rows.filter(r => norm(r.a) === name && want.includes(r.c));
-  // Blanc : « B » (sec) ou « D » (doux) : si les deux existent pour cette appellation, on ne devine pas.
-  if (rows.length !== 1) return null;
-  const cell = rows[0].y[String(w.year)];
-  if (!Array.isArray(cell) || typeof cell[0] !== 'number') return null;
-  return { q: cell[0], from: cell[1], to: cell[2], f: cell[3] };
+  const ix = indexBible(bible);
+  for (const nom of nomsBible(w.region)) {
+    const rows = (ix.get(nom) || []).filter(r => want.includes(r.c));
+    if (!rows.length) continue;
+    // Blanc : « B » (sec) ou « D » (doux) : si les deux existent pour cette appellation, on ne devine pas.
+    if (rows.length !== 1) return null;
+    const cell = rows[0].y[String(w.year)];
+    if (!Array.isArray(cell) || typeof cell[0] !== 'number') return null;
+    return { q: cell[0], from: cell[1], to: cell[2], f: cell[3] };
+  }
+  return null;
 }
 // Note du millésime (1 à 5) dans la bible pour cette fiche, ou undefined : sert à décaler l'apogée (voir apogee.js).
 export function bibleQuality(w, bible) {
@@ -233,14 +264,22 @@ export function bibleQuality(w, bible) {
   return e ? e.q : undefined;
 }
 // Bible d'abord, à l'entrée d'un vin : la garde vient de la bible, sauf une garde saisie par l'utilisateur (origine « user »).
+// Un vin dont le rang dépasse celui de sa ligne de la bible (château classé, premier ou grand cru, cuvée célèbre) prend la fenêtre calculée
+// par l'appli (origine « calc »), pour que la garde et l'apogée affichées restent d'accord. calcul(fiche, note du millésime) → { from, to } | null.
 // Retourne true si la fiche a changé.
-export function prefillFromBible(w, bible) {
+export function prefillFromBible(w, bible, calcul) {
   const e = bibleEntry(w, bible);
-  if (!e) return false;
+  let g = e, origine = 'bible';
+  if (typeof calcul === 'function' && w && w.year) {
+    let c = null;
+    try { c = calcul(w, e ? e.q : undefined); } catch (err) { c = null; }
+    if (c && c.from && c.to) { g = c; origine = 'calc'; }
+  }
+  if (!g) return false;
   const avant = { from: w.from, to: w.to, src: JSON.stringify(w.src || {}) };
   const src = { ...(w.src || {}) };
-  if (src.from !== 'user' && w.from !== e.from) { w.from = e.from; src.from = 'bible'; }
-  if (src.to !== 'user' && w.to !== e.to) { w.to = e.to; src.to = 'bible'; }
+  if (src.from !== 'user' && w.from !== g.from) { w.from = g.from; src.from = origine; }
+  if (src.to !== 'user' && w.to !== g.to) { w.to = g.to; src.to = origine; }
   w.src = src;
   reparerFenetre(w); // une saisie de l'utilisateur d'un côté ne doit pas être contredite par la bible de l'autre
   if (w.from === avant.from && w.to === avant.to && JSON.stringify(w.src) === avant.src) return false;

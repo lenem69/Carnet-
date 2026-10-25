@@ -69,25 +69,53 @@
     return w;
   }
 
-  // Bible (même règle que logic.js) : la garde vient de la bible, sauf une garde saisie par l'utilisateur.
+  // Bible (même règle que logic.js) : la garde vient de la bible, sauf une garde saisie par l'utilisateur ou calculée par la page (origine « calc »).
+  const cleBible = s => norm(s).replace(/[-'’]/g, ' ').replace(/\s+/g, ' ').trim();
+  function nomsBible(region) {
+    const n0 = cleBible(region);
+    if (!n0) return [];
+    const noms = [n0];
+    const ajoute = v => { v = v.replace(/\s+/g, ' ').trim(); if (v && !noms.includes(v)) noms.push(v); };
+    let v = n0.replace(/\b(appellation|aoc|aop|origine|controlee?|protegee)\b/g, ' ').replace(/\b1er\b/g, 'premier');
+    ajoute(v);
+    const niv = v.match(/^(.+?) (premier|grand) cru\b/);
+    if (niv) { ajoute(niv[1] + ' ' + niv[2] + ' cru'); if (niv[2] === 'grand') ajoute(niv[1]); }
+    for (const x of [...noms]) if (/^bourgogne /.test(x)) ajoute(x.replace(/^bourgogne /, ''));
+    return noms;
+  }
+  const INDEX_BIBLE = new WeakMap();
+  function indexBible(bible) {
+    let ix = INDEX_BIBLE.get(bible);
+    if (!ix) {
+      ix = new Map();
+      for (const r of bible.rows) { if (!r || typeof r.a !== 'string') continue; const k = cleBible(r.a); if (!ix.has(k)) ix.set(k, []); ix.get(k).push(r); }
+      INDEX_BIBLE.set(bible, ix);
+    }
+    return ix;
+  }
   function bibleEntry(w, bible) {
     if (!bible || bible.v !== 1 || !Array.isArray(bible.rows) || !w.region || !w.year) return null;
     const want = COULEUR_BIBLE[w.color];
     if (!want) return null;
-    const nom = norm(w.region);
-    const rows = bible.rows.filter(r => r && norm(r.a) === nom && want.includes(r.c));
-    if (rows.length !== 1) return null;
-    const cell = rows[0].y && rows[0].y[String(w.year)];
-    if (!Array.isArray(cell) || typeof cell[0] !== 'number') return null;
-    return { from: cell[1], to: cell[2] };
+    const ix = indexBible(bible);
+    for (const nom of nomsBible(w.region)) {
+      const rows = (ix.get(nom) || []).filter(r => want.includes(r.c));
+      if (!rows.length) continue;
+      if (rows.length !== 1) return null;
+      const cell = rows[0].y && rows[0].y[String(w.year)];
+      if (!Array.isArray(cell) || typeof cell[0] !== 'number') return null;
+      return { from: cell[1], to: cell[2] };
+    }
+    return null;
   }
   function bibleGarde(w, bible) {
     const e = bibleEntry(w, bible);
     if (!e) return false;
     const avant = { from: w.from, to: w.to, src: JSON.stringify(w.src || {}) };
     const src = { ...(w.src || {}) };
-    if (src.from !== 'user' && w.from !== e.from) { w.from = e.from; src.from = 'bible'; }
-    if (src.to !== 'user' && w.to !== e.to) { w.to = e.to; src.to = 'bible'; }
+    // « calc » : fenêtre calculée par la page selon le rang du vin (classement, premier ou grand cru) : le fond n'y touche pas.
+    if (src.from !== 'user' && src.from !== 'calc' && w.from !== e.from) { w.from = e.from; src.from = 'bible'; }
+    if (src.to !== 'user' && src.to !== 'calc' && w.to !== e.to) { w.to = e.to; src.to = 'bible'; }
     w.src = src;
     reparerFenetre(w);
     if (w.from === avant.from && w.to === avant.to && JSON.stringify(w.src) === avant.src) return false;
@@ -462,5 +490,5 @@
 
   self.passeIA = passeIA;
   self.verifierVersion = verifierVersion;
-  self.FondIA = { appliquer, bibleGarde };
+  self.FondIA = { appliquer, bibleGarde, nomsBible };
 })();
