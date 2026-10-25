@@ -240,7 +240,32 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
   T('niveau : Montrachet grand cru → +15', AN('Montrachet', 'Montrachet', 'Blanc') === 15);
   T('niveau : Gevrey-Chambertin village → +9, 1er cru → +14, Chambertin grand cru → +20', AN('Gevrey-Chambertin', 'Gevrey-Chambertin', 'Rouge') === 9 && AN('X', 'Gevrey-Chambertin Premier Cru', 'Rouge') === 14 && AN('Chambertin', 'Chambertin', 'Rouge') === 20);
   T('niveau : Chambolle-Musigny village → +8, Vosne-Romanée village → +8 (table), Romanée-Conti → +18 (village × 2,2)', AN('Chambolle-Musigny', 'Chambolle-Musigny', 'Rouge') === 8 && AN('Vosne-Romanée', 'Vosne-Romanée', 'Rouge') === 8 && AN('Romanée-Conti', 'Romanée-Conti', 'Rouge') === 18);
-  T('niveau : Crozes-Hermitage → +5, Hermitage → +11 (table)', AN('Crozes-Hermitage', 'Crozes-Hermitage', 'Rouge') === 5 && AN('Hermitage', 'Hermitage', 'Rouge') === 11);
+  T('niveau : Crozes-Hermitage → +5, Hermitage → +15 (durée révisée, plus la table à +11)', AN('Crozes-Hermitage', 'Crozes-Hermitage', 'Rouge') === 5 && AN('Hermitage', 'Hermitage', 'Rouge') === 15);
+  // Revue critique du 25 octobre 2026 : les durées révisées en 1.29.2 priment sur la table de référence pour six appellations, et l'ordre des appellations de Bordeaux est cohérent.
+  {
+    const R = r => AN('Cuvée', r, 'Rouge');
+    T('Bordeaux : Bordeaux +4, Bordeaux Supérieur +5, Médoc +8, Saint-Julien +13, Margaux +12 (durées révisées, pas la table)', R('Bordeaux') === 4 && R('Bordeaux Supérieur') === 5 && R('Médoc') === 8 && R('Saint-Julien') === 13 && R('Margaux') === 12, JSON.stringify(['Bordeaux', 'Bordeaux Supérieur', 'Médoc', 'Saint-Julien', 'Margaux'].map(R)));
+    T('Bordeaux : l’ordre des durées est cohérent (Bordeaux < Supérieur < Médoc < Haut-Médoc ; Saint-Estèphe, Margaux, Saint-Julien ≤ Pauillac)',
+      R('Bordeaux') < R('Bordeaux Supérieur') && R('Bordeaux Supérieur') < R('Médoc') && R('Médoc') < R('Haut-Médoc') && R('Haut-Médoc') < R('Saint-Estèphe') && R('Saint-Estèphe') <= R('Pauillac') && R('Margaux') <= R('Pauillac') && R('Saint-Julien') <= R('Pauillac'));
+  }
+  // Apogée des blancs de Bourgogne : au milieu de la garde, jamais à sa fin (fiche de Jeff, Chassagne-Montrachet 1er cru Les Vides Bourse 2024).
+  {
+    const w = { name: 'Premier Cru "Les Vides Bourse" Chassagne-Montrachet', dom: 'Domaine Jouard', region: 'Chassagne-Montrachet 1er Cru Contrôlée', color: 'Blanc', year: 2024 };
+    const a = A.apogee(w, 2026, 4), g = A.fenetreGarde(w, 4);
+    T('blancs de Bourgogne : Chassagne-Montrachet 1er cru 2024 → apogée 2033 (2031-2035) dans une garde 2027-2038 inchangée', a.pic === 2033 && a.from === 2031 && a.to === 2035 && g.from === 2027 && g.to === 2038, JSON.stringify([a.pic, a.from, a.to, g]));
+    T('blancs de Bourgogne : la phrase de la fiche donne le pic réel (+9 ans) et non la durée de la règle', A.apogeeTexte(a).includes('+9 ans') && !A.apogeeTexte(a).includes('+11 ans'), A.apogeeTexte(a));
+    // Balayage : communes × niveaux × millésimes × notes du millésime ; l'apogée reste entre 30 % et 75 % de la garde (quand elle dure 4 ans ou plus) et dans la garde.
+    let n = 0; const mauvais = [];
+    for (const c of ['Meursault', 'Puligny-Montrachet', 'Chassagne-Montrachet', 'Chablis', 'Saint-Aubin', 'Pouilly-Fuissé', 'Rully', 'Montagny', 'Mâcon', 'Bourgogne', 'Savigny-lès-Beaune', 'Auxey-Duresses'])
+      for (const niv of ['', ' 1er Cru']) for (const y of [1996, 2005, 2010, 2014, 2018, 2022, 2024]) for (const q of [1, 2, 3, 4, 5]) {
+        const x = A.apogee({ name: 'Cuvée', dom: 'D', region: c + niv, color: 'Blanc', year: y }, 2026, q); n++;
+        const span = x.gTo - x.gFrom, u = span ? (x.pic - x.gFrom) / span : 0.5;
+        if (!(x.gFrom <= x.from && x.from <= x.pic && x.pic <= x.to && x.to <= x.gTo) || (span >= 4 && (u < 0.3 || u > 0.75))) mauvais.push(c + niv + ' ' + y + ' q' + q + ' ' + JSON.stringify([x.gFrom, x.from, x.pic, x.to, x.gTo]));
+      }
+    T('blancs de Bourgogne : sur ' + n + ' combinaisons, l’apogée est dans la garde et entre 30 % et 75 % de sa durée', mauvais.length === 0, mauvais.slice(0, 4).join(' ; '));
+    const gc = A.apogee({ name: 'Montrachet', dom: 'D', region: 'Montrachet', color: 'Blanc', year: 2015 }, 2026, 4), vil = A.apogee({ name: 'Cuvée', dom: 'D', region: 'Meursault', color: 'Blanc', year: 2022 }, 2026, 4);
+    T('blancs de Bourgogne : un village (Meursault 2022) garde son pic à +6, un grand cru (Montrachet) tombe vers le milieu de sa garde', vil.pic === 2028 && gc.pic - 2015 >= 12 && gc.pic - 2015 <= 15, JSON.stringify([vil.pic, gc.pic]));
+  }
   T('appellation : Pauillac +13, Saint-Émilion Grand Cru +11, Châteauneuf-du-Pape +12, Côte-Rôtie +11, Morgon +8, Muscadet +3, Chablis blanc +6',
     AN('Cuvée', 'Pauillac', 'Rouge') === 13 && AN('Cuvée', 'Saint-Émilion Grand Cru', 'Rouge') === 11 && AN('Cuvée', 'Châteauneuf-du-Pape', 'Rouge') === 12 && AN('Cuvée', 'Côte-Rôtie', 'Rouge') === 11 && AN('Cuvée', 'Morgon', 'Rouge') === 8 && AN('Cuvée', 'Muscadet', 'Blanc') === 3 && AN('Cuvée', 'Chablis', 'Blanc') === 6);
   {

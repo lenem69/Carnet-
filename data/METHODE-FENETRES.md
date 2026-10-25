@@ -1,14 +1,14 @@
-# Méthode : apogée et fenêtre de dégustation (version 1.31.0)
+# Méthode : apogée et fenêtre de dégustation (version 1.31.1)
 
 Une seule source de vérité : `apogee.js` (avec `crus.js` pour lire le rang d'un vin). La bible (`bible/bible.json`) ne contient que des fenêtres calculées par ce code, jamais éditées à la main.
 
 ## Le calcul
 1. **Durée au pic** (années après la récolte, pour un **bon millésime, note 4**) = **durée de base de l'appellation × coefficient de rang**, arrondie.
-   - Durée de base : table de référence (`apogee-table.js`, fiabilité A ou B), sinon `PAR_APPELLATION`, sinon règle générale par couleur et région.
+   - Durée de base : table de référence (`apogee-table.js`, fiabilité A ou B), sinon `PAR_APPELLATION`, sinon règle générale par couleur et région. **Exception (1.31.1)** : pour Bordeaux, Bordeaux Supérieur, Médoc, Saint-Julien, Margaux et Hermitage, la durée révisée de `PAR_APPELLATION` (décision de 1.29.2) prime sur la table (`PAR_PRIORITAIRE`), qui classait un Médoc au-dessus d'un Haut-Médoc, Margaux et Saint-Julien au-dessus de Pauillac, et l'Hermitage à 11 ans.
    - Coefficient de rang (voir « Rang du vin ») : 1 pour un vin sans rang particulier.
 2. **Note du millésime** (1 à 5 dans la bible) : décale le pic, proportionnellement à la durée de vie du vin (note 1 : -40 %, 2 : -25 %, 3 : -10 %, 4 : 0, 5 : +25 %). Sans note, c'est la référence (note 4). Les ordres de grandeur suivent Clive Coates : un grand millésime ajoute environ un quart, un millésime faible en retire un quart.
 3. **Forme de la fenêtre**
-   - **Bourgogne et Chablis** : apogée de 0,8 à 1,2 fois la durée au pic. Garde (fenêtre de dégustation) : rouges de 0,5 à 1,4 fois ; blancs de village et de premier cru de 0,3 fois (au moins 3 ans quand la commune est connue) à 1,25 fois, blancs de grand cru de 0,45 à 1,25 fois. Blancs de la Côte de Beaune de 1996 à 2014 (oxydation prématurée) : fin d'apogée -20 %, fin de garde -15 %.
+   - **Bourgogne et Chablis** : rouges : apogée de 0,8 à 1,2 fois la durée au pic. **Blancs (1.31.1)** : apogée placée à 55 % de la garde (pic ± 0,2 fois la durée au pic), car la garde des blancs s'ouvre à 3 ans et se ferme à 1,25 fois la durée au pic : un pic égal à la durée tombait à 73 % de la garde pour un premier cru (Chassagne 1er cru 2024 : pic +11 dans une garde de +3 à +14, maintenant +9). Un village (Meursault +6 dans 3-8) est inchangé. Garde (fenêtre de dégustation) : rouges de 0,5 à 1,4 fois ; blancs de village et de premier cru de 0,3 fois (au moins 3 ans quand la commune est connue) à 1,25 fois, blancs de grand cru de 0,45 à 1,25 fois. Blancs de la Côte de Beaune de 1996 à 2014 (oxydation prématurée) : fin d'apogée -20 %, fin de garde -15 %.
    - **Autres régions** : apogée = pic ± h (h selon la catégorie : léger ≤ 3 ans 1, courant 2, structuré 8-11 2, prestige 12-19 3, longue garde ≥ 20 4).
      - **Début de garde** = une part de la durée au pic : 0,5 pour les rouges (jamais plus de 10 ans : les critiques ouvrent la fenêtre des premiers crus classés 7 à 10 ans après la récolte), 0,4 pour les blancs secs, 0,33 pour les vins doux, 0,55 pour les champagnes. Un grand millésime (note 5) ne retarde pas le début.
      - **Fin de garde** = apogée + marge après, proportionnelle à la durée de vie (prestige rouge 0,8 ×, plafonnée à 12 ; prestige blanc sec 0,5 × ; structuré 0,9 × ; courant 3 à 4 ans ; léger 2 ; vins doux de 20 ans ou plus 0,35 ×, plafonnée à 12 ; 20-21 ans 6 ; 22 ans ou plus 0,55 ×, plafonnée à 14). **Rouges du Rhône, de Provence et du Sud-Ouest : marge × 0,65** (les critiques ferment la fenêtre plus près du pic qu'à Bordeaux). Un grand millésime n'allonge la fin que de 10 % de la durée au pic ; un millésime faible la raccourcit (-55 %, -45 %, -20 % de la durée au pic pour les notes 1, 2, 3).
@@ -52,6 +52,10 @@ Le calcul est confronté à 47 fenêtres de dégustation publiées (45 dans la f
 - Un rouge ou un blanc d'appellation ou de région reconnue, sans ligne dans la bible (Alsace simple, Vouvray, Barolo, Rioja, Napa…), reçoit la fenêtre calculée (origine « calc »). Région inconnue : rien n'est inventé.
 - Vouvray et Montlouis demi-secs : durée × 1,4. Grands rouges étrangers (Napa, Sonoma, Barossa, Coonawarra, Maipo, Ribera del Duero, Priorat, Bolgheri…) : 12 ans au pic (ils prenaient 5 à 6 ans).
 - Non repris du second rapport de Jeff : ses formules (début d'apogée = récolte + durée, millésime ×1,35 empilé) donnent Barolo 2016 à partir de 2034 et Hermitage 2015 jusqu'en 2047, au-delà de ce que publient les critiques. Hermitage hors La Chapelle, Côte-Rôtie, Saint-Joseph restent à confronter aux critiques.
+
+## Revue critique du 25 octobre 2026 (1.31.1)
+- Balayage de 26 160 combinaisons (appellations × couleurs × millésimes × notes) : l'apogée est toujours dans la garde, ni le pic ni le début de garde ne reculent quand la note du millésime monte. Deux anomalies trouvées et corrigées : blancs de Bourgogne (apogée trop tardive dans la garde) et table qui écrasait les durées révisées (six appellations).
+- Écarts relevés **et laissés tels quels** : champagne millésimé (règle de Jeff : pic à +10 ; les critiques ouvrent la garde à +8/+14 et la ferment à +18/+38, soit un milieu vers +15) ; Bordeaux rouges (fenêtres longues, pic dans le premier tiers, conforme aux critiques) ; table A/B : Savennières blanc B à 17 ans (durée de base 10), Pouilly-Fumé 2 ans, Mercurey rouge 4 ans, Saint-Véran blanc 6 ans (écarts de la table avec les durées révisées, non tranchés faute de seconde source).
 
 ## Reconstruire la bible
 Depuis la racine du dépôt : `sh data/construire-bible.sh` (assemblage et contrôle, recalcul des fenêtres, génération du JSON, extension des regroupements, ajout des niveaux). Puis `cd tests && npm test`.

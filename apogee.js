@@ -107,6 +107,10 @@ export function niveau(w) {
 
 // Repère de la table pour ce vin : { ans, fiab, min, max } ou null. Ne concerne ni les liquoreux ni le champagne (règles propres).
 const COUL = { Rouge: 'R', Blanc: 'B', 'Rosé': 'S', 'Pétillant': 'P' };
+// Appellations dont la durée révisée en 1.29.2 (décision de l'utilisateur, connaissance de dégustation) prime sur la table de référence : la table
+// (deux sources concordantes, mais des fourchettes d'appellation larges) classait un Médoc plus durable qu'un Haut-Médoc, Margaux et Saint-Julien au-dessus
+// de Pauillac, et l'Hermitage à 11 ans seulement.
+const PAR_PRIORITAIRE = new Set(['bordeaux', 'bordeaux superieur', 'medoc', 'saint julien', 'margaux', 'hermitage']);
 export function refTable(w) {
   const app = w && w.region ? reconnaitre(String(w.region)) : null;
   const c = w && COUL[w.color];
@@ -208,7 +212,7 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
     r = enAns(Math.round(bp * (sgn ? 3.5 : 2)), sgn ? 'sélection de grains nobles (Alsace)' : 'vendanges tardives (Alsace)'); rang = true;
   }
   else if (LIQUOREUX.test(texte)) r = REGLES.liquoreux;
-  else if (ref && (ref.fiab === 'A' || ref.fiab === 'B') && !champagne) r = enAns(ref.ans, 'table de référence');
+  else if (ref && (ref.fiab === 'A' || ref.fiab === 'B') && !champagne && !(app && PAR_PRIORITAIRE.has(sansNiveau(app[0])))) r = enAns(ref.ans, 'table de référence');
   else if (w.color === 'Pétillant' && champagne) {
     if (prestigeChampagne(w.name, w.dom)) { r = enAns(Math.round(REGLES.champagne.ans * 1.8), 'cuvée de prestige (champagne)'); rang = true; }
     else r = /blanc de blancs/.test(texte) ? enAns(Math.round(REGLES.champagne.ans * 1.2), 'champagne blanc de blancs millésimé') : REGLES.champagne;
@@ -274,6 +278,15 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
     // Blancs de la Côte de Beaune 1996-2014 : oxydation prématurée possible, fin d'apogée raccourcie de 20 %, fin de garde de 15 %.
     if (premox) { to = Math.max(pic, millesime + Math.round((to - millesime) * 0.8)); gTo = millesime + Math.round((gTo - millesime) * 0.85); }
     from = Math.min(from, pic); to = Math.max(to, pic); gFrom = Math.min(gFrom, from); gTo = Math.max(gTo, to);
+    // Blancs : l'apogée est placée à 55 % de la garde, vers son milieu, et non à sa fin. Les critiques ouvrent la garde d'un blanc à 3 ans et la ferment à 1,25 fois la durée
+    // au pic : le pic ne peut donc pas suivre cette durée telle quelle quand elle est longue. Chassagne-Montrachet 1er cru 2024 donnait un pic à +11 dans une garde de +3 à +14
+    // (Coates : premier cru blanc 5-13 ans, pic vers 9). Un village (Meursault +6 dans 3-8) est inchangé. La garde elle-même ne change pas.
+    if (blanc) {
+      const borne = (v, a, b) => Math.min(Math.max(v, a), b);
+      const demi = Math.max(1, Math.round(0.2 * ansEff));
+      pic = borne(gFrom + Math.round(0.55 * (gTo - gFrom)), gFrom, gTo);
+      from = borne(pic - demi, gFrom, pic); to = borne(pic + demi, pic, gTo);
+    }
     L = { cat: 'bourgogne', avant: from - gFrom, apres: gTo - to };
   } else if (forme === 'longue') {
     // Fenêtre propre : début fixe (élevage et stabilisation), fin allongée ou raccourcie par la note du millésime.
@@ -300,6 +313,7 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
     gTo = millesime + ansFin + L.h + Math.max(0, L.apres + delta);
     gFrom = Math.min(gFrom, from); gTo = Math.max(gTo, to);
   }
+  const ansPic = pic - millesime; // années entre le millésime et le pic de la règle (avant recadrage dans une fenêtre enregistrée)
   // Cohérence : l'apogée ne sort jamais de la fenêtre de garde enregistrée (saisie, bible ou IA).
   // Si la règle tombe en dehors, le pic est ramené dans la fenêtre et la période d'apogée est recoupée avec elle.
   let ajuste = false;
@@ -315,7 +329,7 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
     }
   }
   const statut = annee < from ? 'À garder' : annee > to ? 'Urgence' : 'Prêt à boire';
-  return { pic, from, to, statut, regle: r.label, ans: ansEff, ansRegle: r.ans, sansMillesime: false, ajuste, cat: L.cat, avant: L.avant, apres: L.apres, rang, forme, gFrom, gTo, domaine: domaine ? domaine.nom : null, connue: !!(app || grande || PRESTIGE.test(texte) || (rouge && GRANDS_ROUGES_ETRANGERS.test(texte))) };
+  return { pic, from, to, statut, regle: r.label, ans: ansEff, ansPic, ansRegle: r.ans, sansMillesime: false, ajuste, cat: L.cat, avant: L.avant, apres: L.apres, rang, forme, gFrom, gTo, domaine: domaine ? domaine.nom : null, connue: !!(app || grande || PRESTIGE.test(texte) || (rouge && GRANDS_ROUGES_ETRANGERS.test(texte))) };
 }
 
 // Largeur de la période d'apogée autour du pic, et marge de la fenêtre de dégustation avant et après (années).
@@ -368,7 +382,7 @@ const ETAT = { 'À garder': 'à venir', 'Prêt à boire': 'en cours', 'Urgence':
 export function apogeeTexte(a) {
   if (a.sansMillesime) return 'Sans millésime : prêt à boire.';
   const plage = a.from === a.to ? '' : ` (entre ${a.from} et ${a.to})`;
-  return `Apogée estimée ${a.pic}${plage} : ${ETAT[a.statut]}. Règle : ${a.regle}, +${a.ans} ans après le millésime.${a.ajuste ? ' Ramenée dans la fenêtre de garde enregistrée.' : ''}`;
+  return `Apogée estimée ${a.pic}${plage} : ${ETAT[a.statut]}. Règle : ${a.regle}, +${a.ansPic ?? a.ans} ans après le millésime.${a.ajuste ? ' Ramenée dans la fenêtre de garde enregistrée.' : ''}`;
 }
 
 // Rappel court affiché dans la fiche dépliée du vin.
