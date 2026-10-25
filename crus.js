@@ -166,7 +166,7 @@ export function cuveeCelebre(name, dom, region) {
 // Vérifié sur les noms voisins : Olivier Leflaive, Maison Leroy, Domaine de Chevalier (Bordeaux) ne sont pas confondus.
 const DOMAINES = [
   // Bourgogne
-  [1.50, 'Romanée-Conti', /\bromanee conti\b|\bdrc\b/], [1.50, 'Leroy / d’Auvenay', /\bdomaine leroy\b|\bd auvenay\b|\bdomaine d auvenay\b/],
+  [1.50, 'Romanée-Conti', /\bdomaine de la romanee conti\b|\bdrc\b/], [1.50, 'Leroy / d’Auvenay', /\bdomaine leroy\b|\bd auvenay\b|\bdomaine d auvenay\b/],
   [1.45, 'Coche-Dury', /\bcoche dury\b/], [1.40, 'Armand Rousseau', /\barmand rousseau\b/], [1.40, 'Georges Roumier', /\bgeorges roumier\b|\broumier\b/],
   [1.40, 'François Raveneau', /\braveneau\b/], [1.35, 'Leflaive', /(?<!olivier )\bleflaive\b(?! et associes)/], [1.20, 'Leflaive & Associés', /\bleflaive (et|&) associes\b/],
   [1.35, 'Comtes Lafon', /\blafon\b/], [1.35, 'Dujac', /\bdujac\b/], [1.35, 'Vincent Dauvissat', /\bdauvissat\b/], [1.35, 'Guy Roulot', /\broulot\b/],

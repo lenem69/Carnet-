@@ -30,6 +30,8 @@ const LIQUOREUX = /\bsauternes|barsac|monbazillac|layon|aubance|quarts? de chaum
 const DOUX_NOMS = /\b(saussignac|loupiac|sainte croix du mont|cerons|premieres cotes de bordeaux|graves superieures|muscat de (rivesaltes|beaumes de venise|frontignan|lunel|mireval)|muscat du cap corse|rivesaltes|maury(?! sec)|banyuls)\b|\bcadillac\b(?! cotes)/;
 const PREMIER_CRU = /premier cru|1er cru/;
 const PRESTIGE = /grand cru|grands crus|barolo|barbaresco|brunello|gran reserva|chateau (margaux|latour|lafite|mouton|haut brion|petrus|cheval blanc|ausone|angelus)|mouton rothschild|montrachet|romanee|chambertin|musigny|echezeaux|richebourg/;
+// Grands rouges étrangers de garde (Cabernet de Napa ou de Barossa…) : sans ligne de la bible, ils prenaient la durée d'un rouge courant.
+const GRANDS_ROUGES_ETRANGERS = /napa|sonoma|barossa|coonawarra|margaret river|maipo|colchagua|mendoza|ribera del duero|priorat|bolgheri|supertoscan/;
 const VIN_LEGER = /\bigp\b|indication geographique|pays d.oc|vin de france|\bvdf\b|vin de pays|vin de table/;
 
 const ANNEE_MIN = 1900; const ANNEE_MAX = 2035;
@@ -232,8 +234,11 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
   else if (w.color === 'Rosé') r = REGLES.rose;
   else if (base && (w.color === 'Rouge' || w.color === 'Blanc') && base[w.color === 'Rouge' ? 0 : 1] != null) {
     r = enAns(base[w.color === 'Rouge' ? 0 : 1], nomApp);
+    // Vouvray et Montlouis demi-secs : le sucre résiduel allonge la garde (× 1,4).
+    if (blanc && /vouvray|montlouis/.test(texte) && /demi sec/.test(texte.replace(/-/g, ' '))) r = enAns(Math.round(r.ans * 1.4), `${nomApp} demi-sec`);
   }
   else if (VIN_LEGER.test(texte)) r = REGLES.leger;
+  else if (rouge && GRANDS_ROUGES_ETRANGERS.test(texte)) r = enAns(12, 'grand rouge étranger (Napa, Barossa…)');
   else if (w.color === 'Rouge') {
     if (grande === 'Beaujolais' || grande === 'Vallée de la Loire') r = REGLES.rougeLeger;
     else if (grande === 'Bordeaux' || grande === 'Vallée du Rhône' || grande === 'Bourgogne') r = REGLES.rougeStructure;
@@ -310,7 +315,7 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
     }
   }
   const statut = annee < from ? 'À garder' : annee > to ? 'Urgence' : 'Prêt à boire';
-  return { pic, from, to, statut, regle: r.label, ans: ansEff, ansRegle: r.ans, sansMillesime: false, ajuste, cat: L.cat, avant: L.avant, apres: L.apres, rang, forme, gFrom, gTo, domaine: domaine ? domaine.nom : null };
+  return { pic, from, to, statut, regle: r.label, ans: ansEff, ansRegle: r.ans, sansMillesime: false, ajuste, cat: L.cat, avant: L.avant, apres: L.apres, rang, forme, gFrom, gTo, domaine: domaine ? domaine.nom : null, connue: !!(app || grande || PRESTIGE.test(texte) || (rouge && GRANDS_ROUGES_ETRANGERS.test(texte))) };
 }
 
 // Largeur de la période d'apogée autour du pic, et marge de la fenêtre de dégustation avant et après (années).
@@ -348,9 +353,12 @@ export function fenetreGarde(w, qualite) {
 
 // Fenêtre de garde d'un vin dont le rang (premier ou grand cru de Bourgogne, classement de Bordeaux, cuvée célèbre, prestige, grand cru d'Alsace) dépasse
 // celui de sa ligne dans la bible ; null pour les autres, que la ligne de la bible décrit déjà. Sert à la fiche (origine « calc »).
-export function fenetreRang(w, qualite) {
+export function fenetreRang(w, qualite, horsBible = false) {
   const a = apogee({ ...w, from: null, to: null }, undefined, qualite);
-  return a.rang && !a.sansMillesime ? fenetreGarde(w, qualite) : null;
+  if (a.sansMillesime) return null;
+  // Sans ligne dans la bible : fenêtre calculée pour un rouge ou un blanc d'appellation ou de région reconnue (jamais pour une région inconnue).
+  const sansLigne = horsBible && a.connue && (w.color === 'Rouge' || w.color === 'Blanc');
+  return a.rang || sansLigne ? fenetreGarde(w, qualite) : null;
 }
 
 // Où en est l'apogée elle-même (et non le statut du vin, qui dépend de la fenêtre de garde) : évite de contredire la pastille de la carte.

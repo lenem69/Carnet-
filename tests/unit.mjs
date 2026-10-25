@@ -647,6 +647,30 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
     T('Bandol raccourci : base de 8 ans (critiques : Tempier 2016 à +14)', A.apogee({ name: 'Cuvée', region: 'Bandol', color: 'Rouge', year: 2016 }, 2026, 4).ans <= 8);
     const vb = fen({ name: 'Premier Cru "Les Vides Bourse"', region: 'Chassagne-Montrachet 1er Cru', color: 'Blanc', year: 2024 }, 4);
     T('Vides Bourse 2024 (la fiche de Jeff) : garde de 2027 à 2038, plus « 2031-2039 »', vb.from === 2027 && vb.to >= 2036 && vb.to <= 2040, JSON.stringify(vb));
+    // 1.31.0 : domaines de référence (effet à demi-force), vins sans ligne dans la bible.
+    const pic = o => A.apogee({ dom: 'D', qty: 1, ...o }, 2026, 4).ans;
+    const rully = { name: 'Rully 1er Cru', region: 'Rully Premier Cru', color: 'Blanc', year: 2017 };
+    T('domaine : Leflaive allonge un Rully 1er cru, Leflaive & Associés un peu moins, Olivier Leflaive (autre maison) pas du tout', pic({ ...rully, dom: 'Domaine Leflaive' }) > pic({ ...rully, dom: 'Domaine X' }) && pic({ ...rully, dom: 'Leflaive & Associés' }) >= pic({ ...rully, dom: 'Domaine X' }) && pic({ ...rully, dom: 'Leflaive & Associés' }) <= pic({ ...rully, dom: 'Domaine Leflaive' }) && pic({ ...rully, dom: 'Olivier Leflaive' }) === pic({ ...rully, dom: 'Domaine X' }));
+    const cor = { name: 'Cornas', region: 'Cornas', color: 'Rouge', year: 2018 };
+    const dClape = A.apogee({ ...cor, dom: 'Auguste Clape', qty: 1 }, 2026, 4), dX = A.apogee({ ...cor, dom: 'Domaine X', qty: 1 }, 2026, 4);
+    T('domaine : Clape (1,35) allonge de moins de 25 % la durée au pic (effet à demi-force)', dClape.ans > dX.ans && dClape.ans <= Math.round(dX.ans * 1.25) && dClape.domaine === 'Auguste Clape', JSON.stringify([dClape.ans, dX.ans]));
+    const bxM = A.apogee({ name: 'Château Margaux', dom: 'Château Margaux', region: 'Margaux', color: 'Rouge', year: 2015, qty: 1 }, 2026, 4);
+    T('domaine : jamais pour Bordeaux (le classement dit déjà le rang)', !bxM.domaine);
+    const cr = A.apogee({ name: 'Le Bourg', dom: 'Clos Rougeard', region: 'Saumur-Champigny', color: 'Rouge', year: 2015, qty: 1 }, 2026, 4);
+    T('domaine : pas de cumul avec une cuvée célèbre déjà retenue (Clos Rougeard)', !cr.domaine && cr.ans === 14, JSON.stringify([cr.domaine, cr.ans]));
+    T('domaine : champagne exclu', !A.apogee({ name: 'Brut', dom: 'Jacques Selosse', region: 'Champagne', color: 'Pétillant', year: 2012, qty: 1 }, 2026, 4).domaine);
+    const rl = L.normalizeWine({ ...rully, dom: 'Leflaive & Associés', qty: 1 }); L.prefillFromBible(rl, bib, A.fenetreRang);
+    T('domaine : la fiche prend la fenêtre calculée (origine « calc »)', rl.src.from === 'calc' && rl.to >= 2026, JSON.stringify([rl.from, rl.to, rl.src]));
+    const nm = L.normalizeWine({ ...rully, dom: 'Leflaive & Associés', qty: 1, from: 2022, to: 2031, src: { from: 'user', to: 'user' } }); L.prefillFromBible(nm, bib, A.fenetreRang);
+    T('domaine : une fenêtre saisie par l’utilisateur n’est jamais remplacée', nm.from === 2022 && nm.to === 2031);
+    const sb = (o) => { const w = L.normalizeWine({ qty: 1, dom: 'D', ...o }); L.prefillFromBible(w, bib, A.fenetreRang); return w; };
+    const ri = sb({ name: 'Riesling', region: 'Alsace', color: 'Blanc', year: 2020 }), vo = sb({ name: 'Vouvray sec', region: 'Vouvray', color: 'Blanc', year: 2018 }), ba = sb({ name: 'Barolo', region: 'Barolo', color: 'Rouge', year: 2016 });
+    T('sans ligne dans la bible (Alsace simple, Vouvray, Barolo) : fenêtre calculée, origine « calc »', [ri, vo, ba].every(w => w.from && w.to && w.src.from === 'calc' && w.to > w.from), JSON.stringify([ri, vo, ba].map(w => [w.from, w.to])));
+    T('sans ligne dans la bible : jamais de fenêtre inventée pour une région inconnue', !sb({ name: 'Y', region: 'Région inconnue', color: 'Rouge', year: 2016 }).from);
+    const vd = A.apogee({ name: 'Vouvray demi-sec', dom: 'D', region: 'Vouvray', color: 'Blanc', year: 2015, qty: 1 }, 2026, 4), vs = A.apogee({ name: 'Vouvray sec', dom: 'D', region: 'Vouvray', color: 'Blanc', year: 2015, qty: 1 }, 2026, 4);
+    T('Vouvray demi-sec : garde plus longue que le sec (× 1,4)', vd.ans > vs.ans && vd.ans <= Math.round(vs.ans * 1.4), JSON.stringify([vd.ans, vs.ans]));
+    const na = sb({ name: 'Cabernet Sauvignon', region: 'Napa Valley', color: 'Rouge', year: 2016 });
+    T('Napa Cabernet 2016 : garde jusqu’en 2038 ou plus (critiques : 2022-2040), plus la durée d’un rouge courant', na.to >= 2038 && na.from <= 2024, JSON.stringify([na.from, na.to]));
   }
   // Écritures de l'appellation dans la bible
   T('bible : écritures courantes d’une appellation (1er cru, contrôlée, tirets)', JSON.stringify(L.nomsBible('Chassagne-Montrachet 1er Cru Contrôlée')) === JSON.stringify(['chassagne montrachet 1er cru controlee', 'chassagne montrachet premier cru']) && L.nomsBible('Bourgogne Saint-Aubin').includes('saint aubin') && L.nomsBible('Corton Grand Cru').includes('corton'), JSON.stringify(L.nomsBible('Chassagne-Montrachet 1er Cru Contrôlée')));

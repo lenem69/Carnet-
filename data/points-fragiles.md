@@ -74,3 +74,9 @@ Chaque automne : nouveau millésime (2026 à l'automne 2027), revérification de
 - Lignes à « potentiel » et non qualité : Château-Chalon 2020 (5) : le guide note le potentiel, non la qualité du vin.
 - Sources annoncées mais non vérifiables de notre côté : millesimes.fr, vin-de-cahors.fr, irqualim.fr, vin-malin.fr, reussir.fr, terredevins.com. Elles sont inscrites comme lues par l'autre IA, pas par nous.
 - Plusieurs notes reposent sur une seule source (guide Figaro, ligne régionale) : fiabilité B, à consolider.
+
+## Domaines de référence et vins hors bible (1.31.0)
+- Les 73 coefficients de domaine viennent du rapport de Jeff, sans source publiée : effet réduit de moitié, à revoir si un critique les contredit.
+- Rully 1er cru 2017 (Leflaive & Associés) : garde jusqu'en 2026 ; Jeff attend plus long, les critiques disent 2 à 8 ans.
+- Hermitage hors La Chapelle, Côte-Rôtie, Saint-Joseph : lignes de la bible non confrontées aux critiques (Hermitage 2015 : garde 2021-2035).
+- Fenêtres « calc » des vins hors bible : Barolo, Brunello, Rioja, Napa, Alsace simple, Vouvray, Banyuls non confrontés aux critiques.

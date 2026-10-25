@@ -265,14 +265,15 @@ export function bibleQuality(w, bible) {
 }
 // Bible d'abord, à l'entrée d'un vin : la garde vient de la bible, sauf une garde saisie par l'utilisateur (origine « user »).
 // Un vin dont le rang dépasse celui de sa ligne de la bible (château classé, premier ou grand cru, cuvée célèbre) prend la fenêtre calculée
-// par l'appli (origine « calc »), pour que la garde et l'apogée affichées restent d'accord. calcul(fiche, note du millésime) → { from, to } | null.
+// par l'appli (origine « calc »), pour que la garde et l'apogée affichées restent d'accord. Un vin sans ligne dans la bible (Alsace simple, Vouvray, vins étrangers…)
+// prend aussi la fenêtre calculée. calcul(fiche, note du millésime, sans ligne dans la bible) → { from, to } | null.
 // Retourne true si la fiche a changé.
 export function prefillFromBible(w, bible, calcul) {
   const e = bibleEntry(w, bible);
   let g = e, origine = 'bible';
   if (typeof calcul === 'function' && w && w.year) {
     let c = null;
-    try { c = calcul(w, e ? e.q : undefined); } catch (err) { c = null; }
+    try { c = calcul(w, e ? e.q : undefined, !e); } catch (err) { c = null; }
     if (c && c.from && c.to) { g = c; origine = 'calc'; }
   }
   if (!g) return false;

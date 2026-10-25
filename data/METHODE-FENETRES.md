@@ -1,4 +1,4 @@
-# Méthode : apogée et fenêtre de dégustation (version 1.30.1)
+# Méthode : apogée et fenêtre de dégustation (version 1.31.0)
 
 Une seule source de vérité : `apogee.js` (avec `crus.js` pour lire le rang d'un vin). La bible (`bible/bible.json`) ne contient que des fenêtres calculées par ce code, jamais éditées à la main.
 
@@ -39,6 +39,19 @@ Le calcul est confronté à 47 fenêtres de dégustation publiées (45 dans la f
 - **Écarts connus (bornés dans les tests)** : Dom Pérignon 2008 en magnum (Decanter : fin à +22 ans, les autres cuvées de prestige +18 à +38 ; le calcul donne +35) et Chablis 1er cru Vaillons 2018 (Jancis Robinson : début à +8 ; la Côte de Léchet donne +2 à +4 ; le calcul donne +3).
 - **Écarts relevés mais non corrigés (une seule source ou désaccord entre critiques)** : Savennières 2019 (Vinous : +3 à +10 ; calcul +7 à +29), Coteaux du Layon Chaume 1er cru 2017 (L&S et Jancis : +3 à +8 ; calcul +7 à +31), Monbazillac Les Pins 2018 (Jancis : +2 à +5 ; calcul +7 à +33). Les fenêtres courtes de Jancis Robinson sur des liquoreux ne sont pas retenues seules. Mouton 2017 : critiques à +8, calcul à +10. Rully 1er cru 2017 et Meursault village 2015 sont « Passé » en 2026 (Coates : village blanc 3-8 ans).
 - Les rouges de Bourgogne et les blancs de Bourgogne gardent des fins conservatrices (Coates) par rapport à Burghound et Vinous (Vosne village 2019 : calcul +14, critiques +10 à +26 ; Chassagne 1er cru 2018 : calcul +14, critiques +12 à +24).
+
+## Domaines de référence (1.31.0)
+- `crus.js` : `domaineReference(nom, domaine)` reconnaît 73 domaines (Bourgogne, Rhône, Loire, Alsace, Jura, Sud) avec le coefficient du rapport de Jeff (1,20 à 1,50).
+- Effet réduit de moitié : durée au pic × (1 + (coefficient − 1) × 0,5). Aucune source publiée ne les confirme, d'où cette prudence.
+- Jamais pour Bordeaux (le classement dit le rang), le champagne, les fenêtres fixes (vin jaune, grands liquoreux de la Loire), ni en plus d'une cuvée célèbre déjà retenue (Clos Rougeard, Trévallon, Peyre Rose, Grange des Pères, Rayas).
+- Noms voisins non confondus : Olivier Leflaive, Leflaive & Associés (coefficient 1,20 au lieu de 1,35), Domaine de Chevalier (Bordeaux).
+- Un vin de domaine reconnu compte comme « rang » : sa fenêtre est calculée (origine « calc »), jamais celle de l'appellation de la bible. Les saisies de l'utilisateur ne sont jamais remplacées.
+- Rully 1er cru 2017 de Leflaive & Associés : garde 2020-2026 (2020-2025 sans le domaine). Les critiques donnent 2 à 8 ans : l'écart avec l'attente de Jeff reste, corrigeable à la main.
+
+## Vins sans ligne dans la bible (1.31.0)
+- Un rouge ou un blanc d'appellation ou de région reconnue, sans ligne dans la bible (Alsace simple, Vouvray, Barolo, Rioja, Napa…), reçoit la fenêtre calculée (origine « calc »). Région inconnue : rien n'est inventé.
+- Vouvray et Montlouis demi-secs : durée × 1,4. Grands rouges étrangers (Napa, Sonoma, Barossa, Coonawarra, Maipo, Ribera del Duero, Priorat, Bolgheri…) : 12 ans au pic (ils prenaient 5 à 6 ans).
+- Non repris du second rapport de Jeff : ses formules (début d'apogée = récolte + durée, millésime ×1,35 empilé) donnent Barolo 2016 à partir de 2034 et Hermitage 2015 jusqu'en 2047, au-delà de ce que publient les critiques. Hermitage hors La Chapelle, Côte-Rôtie, Saint-Joseph restent à confronter aux critiques.
 
 ## Reconstruire la bible
 Depuis la racine du dépôt : `sh data/construire-bible.sh` (assemblage et contrôle, recalcul des fenêtres, génération du JSON, extension des regroupements, ajout des niveaux). Puis `cd tests && npm test`.
