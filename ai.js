@@ -437,7 +437,7 @@ export async function scanLabel(file, opts) {
 async function ficheAvecRecherche(w, opts = {}) {
   const year = new Date().getFullYear();
   // Recherche web seulement chez Gemini ; chez un autre fournisseur, la fiche reste une estimation.
-  const ask = s => { const web = s.provider === 'gemini'; return `${EXPERT} ${web ? 'Utilise la recherche web et croise plusieurs sources fiables : site du domaine, guides et revues (RVF, Bettane+Desseauve, Parker, Decanter), forums spécialisés (La Passion du Vin, CellarTracker…), sites de vente en ligne avec fiches produit (Vinatis, V and B, Millésima, Idealwine…), cavistes et notes de dégustation. Compare les fenêtres de garde données par ces sources puis complète la fiche' : 'Complète la fiche de ce vin avec tes connaissances (estime si la cuvée t’est inconnue, sans inventer de faits précis)'} : ${JSON.stringify({ name: w.name, dom: w.dom, year: w.year, color: w.color, region: w.region })}. Nous sommes en ${year}. Ne donne jamais une date de garde précise sans base : en cas de doute, élargis la fourchette et mets conf à « estimée » ; ne retiens « vérifiée » que si au moins deux sources concordent ou si la source est le domaine lui-même. Réponds uniquement par un objet JSON de ce format : ${SCHEMA_FICHE}.`; };
+  const ask = s => { const web = s.provider === 'gemini'; return `${EXPERT} ${web ? 'Utilise la recherche web et croise plusieurs sources fiables : site du domaine, guides et revues (RVF, Bettane+Desseauve, Parker, Decanter), forums spécialisés (La Passion du Vin, CellarTracker…), sites de vente en ligne avec fiches produit (Vinatis, V and B, Millésima, Idealwine…), cavistes et notes de dégustation. Compare les fenêtres de garde données par ces sources puis complète la fiche' : 'Complète la fiche de ce vin avec tes connaissances (estime si la cuvée t’est inconnue, sans inventer de faits précis)'} : ${JSON.stringify({ name: w.name, dom: w.dom, year: w.year, color: w.color, region: w.region, a: w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? w.from : undefined, b: w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? w.to : undefined })}.${w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? ' a et b sont la fenêtre de garde actuelle de l’appli : si elle te paraît juste à un an près, renvoie les mêmes années dans from et to, sinon donne ta propre fenêtre.' : ''} Nous sommes en ${year}. Ne donne jamais une date de garde précise sans base : en cas de doute, élargis la fourchette et mets conf à « estimée » ; ne retiens « vérifiée » que si au moins deux sources concordent ou si la source est le domaine lui-même. Réponds uniquement par un objet JSON de ce format : ${SCHEMA_FICHE}.`; };
   const out = { wantSearch: true };
   let d = await callJson(ask, { ...opts, out });
   if (!d || typeof d !== 'object' || Array.isArray(d)) throw { code: 'invalid_json' };
@@ -505,7 +505,7 @@ function ficheFrom(d) {
 export async function makeFiches(list, opts) {
   list = capGratuit(list); opts = { ...(opts || {}), unites: list.length };
   const year = new Date().getFullYear();
-  const d = await callJson(`${EXPERT} Pour chaque vin de la liste, complète ou corrige si besoin : g=cépages, s=histoire de la cuvée et du millésime en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ${year}), p=4 accords mets courts, u=liste des champs que tu ne connais pas sûrement parmi "cépage", "histoire", "garde", "accords" (liste vide si tu es sûr), v=[min,max] fourchette indicative du prix en euros d’une bouteille de 75 cl (sans recherche), c="estimée". Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region })))}. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"u":[],"v":[20,40],"c":"estimée"}]} avec une entrée par vin.`, opts);
+  const d = await callJson(`${EXPERT} Pour chaque vin de la liste, complète ou corrige si besoin : g=cépages, s=histoire de la cuvée et du millésime en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ${year}), p=4 accords mets courts, u=liste des champs que tu ne connais pas sûrement parmi "cépage", "histoire", "garde", "accords" (liste vide si tu es sûr), v=[min,max] fourchette indicative du prix en euros d’une bouteille de 75 cl (sans recherche), c="estimée". a et b, quand ils existent, sont la fenêtre de garde actuelle de l’appli : si elle te paraît juste à un an près, renvoie les mêmes années dans f et t, sinon donne ta propre fenêtre. Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region, a: w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? w.from : undefined, b: w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? w.to : undefined })))}. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"u":[],"v":[20,40],"c":"estimée"}]} avec une entrée par vin.`, opts);
   const items = Array.isArray(d) ? d : d && Array.isArray(d.items) ? d.items : null;
   if (!items) throw { code: 'invalid_json' };
   const out = new Map();
@@ -518,7 +518,7 @@ export async function makeFichesWeb(list, opts = {}) {
   list = capGratuit(list); opts = { ...opts, unites: list.length };
   const year = new Date().getFullYear();
   const out = { wantSearch: true };
-  const d = await callJson(`${EXPERT} Utilise la recherche web et croise des sources fiables (site du domaine, guides et revues, cavistes). Pour chaque vin de la liste, complète : g=cépages, s=histoire de la cuvée en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ${year}), p=4 accords mets courts, c="vérifiée" seulement si les pages consultées confirment cette cuvée et ce millésime, sinon "estimée". Ne donne jamais une fenêtre de garde sans base ; en cas de doute, élargis-la. Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region })))}. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"c":"estimée"}]} avec une entrée par vin.`, { ...opts, out });
+  const d = await callJson(`${EXPERT} Utilise la recherche web et croise des sources fiables (site du domaine, guides et revues, cavistes). Pour chaque vin de la liste, complète : g=cépages, s=histoire de la cuvée en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ${year}), p=4 accords mets courts, c="vérifiée" seulement si les pages consultées confirment cette cuvée et ce millésime, sinon "estimée". Ne donne jamais une fenêtre de garde sans base ; en cas de doute, élargis-la. a et b, quand ils existent, sont la fenêtre de garde actuelle de l’appli : si elle te paraît juste à un an près, renvoie les mêmes années dans f et t, sinon donne ta propre fenêtre. Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region, a: w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? w.from : undefined, b: w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? w.to : undefined })))}. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"c":"estimée"}]} avec une entrée par vin.`, { ...opts, out });
   const items = Array.isArray(d) ? d : d && Array.isArray(d.items) ? d.items : null;
   if (!items) throw { code: 'invalid_json' };
   const sources = out.searched ? (out.sources || []) : [];
@@ -584,6 +584,22 @@ Ce sont des impressions fondées sur des chiffres, pas des faits vérifiés.`, {
   const out = { court: symPct(d.court.trim()).slice(0, 400), complet: typeof d.complet === 'string' ? symPct(d.complet.trim()).slice(0, 6000) : '' };
   const cles = liste(d.cles, 3, 70), solide = liste(d.solide, 4, 460), manque = liste(d.manque, 4, 460), priorite = liste(d.priorite, 3, 420);
   if (solide.length || manque.length || priorite.length) Object.assign(out, { cles, solide, manque, priorite });
+  return out;
+}
+
+// Contrôle de la fenêtre de garde seule, pour les vins déjà passés : lots de 10, sans recherche. Renvoie { from, to } par vin ;
+// c'est l'appli (logic.js › verifierGarde) qui décide de confirmer ou de corriger.
+export async function verifGarde(list, opts = {}) {
+  list = capGratuit(list); opts = { ...opts, unites: list.length };
+  const year = new Date().getFullYear();
+  const d = await callJson(`${EXPERT} Contrôle de la fenêtre de garde (nous sommes en ${year}). Pour chaque vin de la liste, a et b sont la fenêtre de garde actuelle de l’appli : si elle te paraît juste à un an près, renvoie les mêmes années dans f et t, sinon donne ta propre fenêtre (f=année de début de garde, t=année de fin de garde). Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region, a: w.from, b: w.to })))}. Réponds uniquement par {"items":[{"id":"…","f":2026,"t":2030}]} avec une entrée par vin.`, opts);
+  const items = Array.isArray(d) ? d : d && Array.isArray(d.items) ? d.items : null;
+  if (!items) throw { code: 'invalid_json' };
+  const out = new Map();
+  for (const x of items) {
+    const from = parseInt(x && (x.f ?? x.from), 10), to = parseInt(x && (x.t ?? x.to), 10);
+    if (x && x.id != null && from > 1800 && to >= from) out.set(String(x.id), { from, to });
+  }
   return out;
 }
 

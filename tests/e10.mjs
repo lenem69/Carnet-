@@ -11,9 +11,9 @@ await page.evaluate(async()=>{const s=await import('./store.js');
 await page.reload();await H.sl(1500);
 const bib=await page.evaluate(async()=>{const s=await import('./store.js');return (await s.getMeta('bible'))||null;});
 T('bible copiée sur le téléphone au premier démarrage',!!bib&&JSON.parse(bib).v===1,String(bib).slice(0,80));
-const t=await page.$eval('#vCave',e=>e.textContent);
-T('fiche remplie par la bible : étiquette « garde d’après la bible »',t.includes('garde d’après la bible'),t.slice(0,300));
-T('saisie manuelle : pas d’étiquette bible',(t.split('garde d’après la bible').length-1)===1,t.slice(0,300));
+const t=await page.$eval('#vCave',e=>e.innerHTML);
+T('fiche remplie par la bible : mot « bible » en italique',t.includes('<i>bible</i>'),t.slice(0,300));
+T('saisie manuelle : pas d’étiquette bible',(t.split('<i>bible</i>').length-1)===1,t.slice(0,300));
 // Après une nouvelle version, l'ancienne copie de la bible est remplacée tout de suite (sans attendre 24 h) ; dans la même version, la limite d'une fois par jour reste.
 const ancienne=JSON.stringify({v:1,date:'2000-01-01',rows:[{a:'Margaux',c:'R',y:{'2016':[3,2030,2040,'A']}}]});
 await page.evaluate(async a=>{const s=await import('./store.js');await s.setMeta('bible',a);await s.setMeta('bibleAt',Date.now());await s.setMeta('bibleV','1.0.0');},ancienne);

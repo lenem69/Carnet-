@@ -747,3 +747,72 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   }
   console.log(out.slice(o0).join('\n'));
 }
+// Contrôle de la fenêtre de garde par l'IA (1.33.0) : « confirmé » ou corrigé si écart net (≥ 2 ans) ; jamais une saisie ; copie du service worker identique
+{
+  const o0 = out.length;
+  const vm = await import('vm');
+  const code = fs.readFileSync(new URL('../fond.js', import.meta.url), 'utf8');
+  const ctx = { self: {}, indexedDB: {}, fetch: null, console };
+  vm.runInNewContext(code, ctx);
+  const base = (extra = {}) => L.normalizeWine({ name: 'V', dom: 'D', year: 2018, color: 'Rouge', region: 'Pauillac', from: 2026, to: 2040, src: { from: 'bible', to: 'bible' }, ...extra });
+  const now = 1700000000000;
+  const pick = w => JSON.stringify({ from: w.from, to: w.to, src: w.src, gv: w.gv });
+  const cas = {
+    'IA d’accord à 1 an près : garde gardée, confirmée': [base(), { from: 2027, to: 2039 }],
+    'IA en désaccord net : garde corrigée, origine ia': [base(), { from: 2030, to: 2048 }],
+    'écart net d’un seul côté : corrigée': [base(), { from: 2026, to: 2043 }],
+    'garde saisie à la main : jamais touchée': [base({ src: { from: 'user', to: 'user' } }), { from: 2035, to: 2060 }],
+    'une seule borne saisie : jamais touchée': [base({ src: { from: 'user', to: 'bible' } }), { from: 2035, to: 2060 }],
+    'sans fenêtre : l’IA la crée, sans verdict': [base({ from: '', to: '', src: {} }), { from: 2027, to: 2038 }],
+    'réponse de l’IA sans année : rien ne bouge': [base(), { story: 'x' }],
+    'réponse inversée : ignorée': [base(), { from: 2045, to: 2030 }],
+  };
+  const R = {};
+  for (const [nom, [w, d]] of Object.entries(cas)) {
+    const a = L.applyAi(JSON.parse(JSON.stringify(w)), d, now);
+    const b = ctx.self.FondIA.appliquer(JSON.parse(JSON.stringify(w)), d, now);
+    R[nom] = a;
+    T('garde IA : copie du service worker identique — ' + nom, JSON.stringify(a) === JSON.stringify(b), JSON.stringify([a, b]));
+  }
+  let r = R['IA d’accord à 1 an près : garde gardée, confirmée'];
+  T('garde IA : écart < 2 ans → garde inchangée et « confirmé »', r.from === 2026 && r.to === 2040 && r.gv && r.gv.k === 'c' && L.gardeConfirmee(r), pick(r));
+  r = R['IA en désaccord net : garde corrigée, origine ia'];
+  T('garde IA : écart net → garde de l’IA, « confirmé » (corrigée en silence)', r.from === 2030 && r.to === 2048 && r.gv.k === 'x' && r.src.from === 'ai' && L.gardeConfirmee(r), pick(r));
+  r = R['écart net d’un seul côté : corrigée'];
+  T('garde IA : un seul bord en écart net suffit', r.to === 2043 && r.gv.k === 'x', pick(r));
+  r = R['garde saisie à la main : jamais touchée'];
+  T('garde IA : saisie de l’utilisateur intacte, pas de « confirmé »', r.from === 2026 && r.to === 2040 && !r.gv && !L.gardeConfirmee(r), pick(r));
+  r = R['une seule borne saisie : jamais touchée'];
+  T('garde IA : une borne saisie suffit pour ne rien contrôler', r.from === 2026 && r.to === 2040 && !r.gv, pick(r));
+  r = R['sans fenêtre : l’IA la crée, sans verdict'];
+  T('garde IA : sans fenêtre, la réponse de l’IA la crée (origine ai), sans « confirmé »', r.from === 2027 && r.to === 2038 && r.src.from === 'ai' && !r.gv, pick(r));
+  r = R['réponse de l’IA sans année : rien ne bouge'];
+  T('garde IA : réponse sans années → garde et origine inchangées', r.from === 2026 && r.to === 2040 && r.src.from === 'bible' && !r.gv, pick(r));
+  r = R['réponse inversée : ignorée'];
+  T('garde IA : fenêtre inversée ignorée', r.from === 2026 && r.to === 2040 && !r.gv, pick(r));
+  // « confirmé » seulement tant que la garde affichée est celle qui a été contrôlée
+  const c1 = L.applyAi(base(), { from: 2027, to: 2039 }, now);
+  const modif = JSON.parse(JSON.stringify(c1)); modif.to = 2050;
+  T('confirmé : disparaît si la garde change (nouvelle bible, retouche)', !L.gardeConfirmee(modif));
+  const edit = L.editSrc(c1, { ...c1, to: 2050 });
+  T('confirmé : une retouche à la main rend la garde « user » (jamais « confirmé »)', edit.to === 'user' && !L.gardeConfirmee({ ...c1, to: 2050, src: edit }));
+  // La correction de l'IA n'est pas écrasée par la bible ; une simple confirmation suit la bible si elle change
+  const B = { v: 1, rows: [{ a: 'Chablis', c: 'B', y: { '2015': [4, 2018, 2030, 'A'] } }] };
+  const mk = () => L.normalizeWine({ name: 'C', dom: 'D', year: 2015, region: 'Chablis', color: 'Blanc', from: 2018, to: 2030, src: { from: 'bible', to: 'bible' } });
+  const cx = L.applyAi(mk(), { from: 2022, to: 2040 }, now);
+  const cx2 = JSON.parse(JSON.stringify(cx));
+  T('garde corrigée par l’IA : la bible ne la remplace pas (page)', L.prefillFromBible(cx, B) === false && cx.from === 2022 && cx.to === 2040);
+  T('garde corrigée par l’IA : la bible ne la remplace pas (service worker)', ctx.self.FondIA.bibleGarde(cx2, B) === false && cx2.from === 2022);
+  const cc = L.applyAi(mk(), { from: 2018, to: 2031 }, now);
+  cc.from = 2019; cc.src.from = 'bible'; // la bible a bougé : la confirmation ne vaut plus
+  T('garde confirmée puis changée par la bible : plus « confirmé »', !L.gardeConfirmee(cc));
+  // Normalisation et sauvegardes
+  const n1 = L.normalizeWine(JSON.parse(JSON.stringify(c1)));
+  T('verdict : survit à la normalisation', JSON.stringify(n1.gv) === JSON.stringify(c1.gv));
+  T('verdict : ancienne fiche sans champ → aucun verdict', L.normalizeWine({ name: 'Old', dom: 'D', year: 2010, from: 2015, to: 2025 }).gv === null);
+  T('verdict : valeur invalide ignorée', L.normalizeWine({ name: 'Bad', dom: 'D', gv: { from: 'x', to: 3, k: 'z' } }).gv === null);
+  const bk = L.parseBackup ? L.parseBackup(JSON.stringify({ app: 'cave-a-vin', schema: 11, wines: [{ name: 'Old', dom: 'D', year: 2010, from: 2015, to: 2025 }] })) : null;
+  T('sauvegarde de schéma 11 : encore lisible, sans verdict', !bk || (bk.wines && bk.wines.length === 1 && bk.wines[0].gv === null), JSON.stringify(bk).slice(0, 200));
+  T('schéma de fiche : 12', L.SCHEMA_VERSION === 12);
+  console.log(out.slice(o0).join('\n'));
+}

@@ -9,7 +9,7 @@ await page.goto(H.URL0);await H.sl(1500);
 T('migration : ancienne fiche normalisée',(await H.txt(page,'#list')).includes('Ancien')&&(await H.txt(page,'#sB'))==='2'&&(await H.txt(page,'#list')).includes('Rouge'));
 T('migration : fiche sans nom écartée sans plantage',(await page.$$('#list .w')).length===1);
 const meta=await page.evaluate(()=>new Promise(res=>{const r=indexedDB.open('cave-a-vin',1);r.onsuccess=()=>{const g=r.result.transaction('meta').objectStore('meta').get('schema');g.onsuccess=()=>res(g.result)}}));
-T('migration : version de schéma enregistrée',meta===11,String(meta));
+T('migration : version de schéma enregistrée',meta===12,String(meta));
 // Fenêtre de garde inversée (début après fin) : remise dans l'ordre au chargement, sans qu'un vin soit à la fois « À garder » et « Passé »
 await page.evaluate(()=>new Promise((res,rej)=>{const r=indexedDB.open('cave-a-vin',1);r.onsuccess=()=>{const t=r.result.transaction(['wines','meta'],'readwrite');t.objectStore('wines').put({id:'inv',name:'Inversé',dom:'D',year:2015,color:'Rouge',region:'Zzz',qty:1,from:2031,to:2024,src:{from:'ai',to:'bible'},created:1,updated:1});t.objectStore('meta').put(10,'schema');t.oncomplete=()=>res();t.onerror=()=>rej(t.error)}}));
 await page.reload();await H.sl(1500);

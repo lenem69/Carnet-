@@ -251,8 +251,9 @@ function card(w, mode, why) {
   const tags2 = [
     w.conf === 'estimée' ? '<span class="tag wa">fiche estimée</span>' : '',
     w.conf === 'vérifiée' ? '<span class="tag ok">fiche vérifiée</span>' : '',
-    w.src && w.src.from === 'bible' ? '<span class="tag">garde d’après la bible</span>' : '',
-    w.src && w.src.from === 'calc' ? '<span class="tag">garde calculée selon le rang du vin</span>' : '',
+    L.gardeConfirmee(w) ? '<i>confirmé</i>' : '',
+    !L.gardeConfirmee(w) && w.src && w.src.from === 'bible' ? '<i>bible</i>' : '',
+    !L.gardeConfirmee(w) && w.src && w.src.from === 'calc' ? '<span class="tag">garde calculée selon le rang du vin</span>' : '',
   ].filter(Boolean).join(' · ');
   const hasFiche = w.story || w.pairings.length || w.note || w.sources.length;
   // Apogée estimée par la règle de l'appli (sans IA) : affichée dans la fiche du vin.
@@ -1571,7 +1572,7 @@ async function autoStep() {
   const todo = autoTodo();
   const premier = todo.find(x => x.id === autoPrio) || todo[0];
   autoPrio = null;
-  if (!premier) return;
+  if (!premier) return gardeStep(now);
   // Un lot de même nature : fiche sans recherche (10 vins, avec la valeur), recherche web (5 vins) ou valeur seule (10 vins).
   const genre = w => (!w.aiPass ? 'fiche' : (!w.aiSearch && L.doutesEffectifs(w).length) ? 'web' : 'valeur');
   const g = genre(premier);
@@ -1607,6 +1608,35 @@ async function autoStep() {
       auto.pauseUntil = now + 864e5; auto.pauseWhy = 'clé ou modèle d’IA à vérifier';
       errToastReglages('Fiches automatiques en pause : ' + AI.errText(e));
     } else { auto.pauseUntil = now + 30 * 6e4; auto.pauseWhy = 'connexion ou serveur indisponible'; }
+  } finally { autoBusy = false; autoSave(); store.setMeta('passeVerrou', 0).catch(() => {}); }
+}
+
+// Vins déjà traités dont la fenêtre de garde (bible, calcul, ancienne réponse de l'IA) n'a pas encore été contrôlée par l'IA : un lot de 10 par passage,
+// seulement quand il n'y a plus de fiche à compléter. Une garde saisie à la main n'est jamais contrôlée.
+const gardeTodo = () => S.wines.filter(w => w.qty > 0 && w.aiPass && w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) && !L.gardeConfirmee(w) && (auto.tries['g' + w.id] || 0) < AUTO_TRIES);
+async function gardeStep(now) {
+  const lot = gardeTodo().slice(0, AUTO_LOT);
+  if (!lot.length) return;
+  autoBusy = true; auto.calls++;
+  store.setMeta('passeVerrou', Date.now()).catch(() => {});
+  try {
+    const res = await AI.verifGarde(lot, { noRetry: true, only: 'gemini', noRelais: true });
+    const changed = [];
+    for (const w of lot) {
+      const d = res.get(String(w.id)), cp = JSON.parse(JSON.stringify(w));
+      if (d && L.verifierGarde(cp, d.from, d.to)) changed.push([w, cp]); else auto.tries['g' + w.id] = (auto.tries['g' + w.id] || 0) + 1;
+    }
+    if (changed.length) {
+      if (await persist(() => store.putWines(changed.map(x => x[1])))) { changed.forEach(([w, c]) => remplace(w, c)); render(); }
+      else changed.forEach(([w]) => { auto.tries['g' + w.id] = (auto.tries['g' + w.id] || 0) + 1; });
+    }
+    auto.pauseUntil = 0;
+  } catch (e) {
+    const code = e && e.code;
+    if (code === 'rate_limited' || code === 'limite_gratuite') { auto.pauseUntil = nextQuotaReset(); auto.pauseWhy = 'limite de l’IA atteinte'; }
+    else if (code === 'service_gratuit') { auto.pauseUntil = now + 30 * 6e4; auto.pauseWhy = 'service gratuit indisponible'; }
+    else if (['bad_key', 'bad_model', 'bad_base', 'no_key'].includes(code)) { auto.pauseUntil = now + 864e5; auto.pauseWhy = 'clé ou modèle d’IA à vérifier'; errToastReglages('Fiches automatiques en pause : ' + AI.errText(e)); }
+    else { auto.pauseUntil = now + 30 * 6e4; auto.pauseWhy = 'connexion ou serveur indisponible'; }
   } finally { autoBusy = false; autoSave(); store.setMeta('passeVerrou', 0).catch(() => {}); }
 }
 

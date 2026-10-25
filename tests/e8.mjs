@@ -31,7 +31,7 @@ T('aucun message ni fenêtre pendant le travail',!(await H.shown(page,'#sDlg'))&
 await H.sl(3500);
 T('limite de 20 recherches par jour respectée',calls.length<=20,String(calls.length));
 await H.sl(1500);
-T('25 vins : traités par lots (sans recherche), toutes les fiches écrites en peu d’appels',(await done(page))>=25&&calls.length<=12,calls.length+' appels, '+await done(page));
+T('25 vins : traités par lots (sans recherche), toutes les fiches écrites en peu d’appels',(await done(page))>=25&&calls.filter(c=>!JSON.stringify(c.body).includes('Contrôle de la fenêtre')).length<=12,calls.length+' appels, '+await done(page));
 T('aucune erreur (remplissage)',errs.length===0,errs.join('|'));
 await page.close();
 
@@ -51,6 +51,7 @@ await page.close();mode='ok';
 // 3. désactivation, sans IA, vin sans réponse
 ({page,errs,calls}=await mk(3));
 await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('autoFill',{on:false})});
+await H.sl(3000);await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('autoFill',{on:false})});
 await H.sl(800);calls.length=0;await page.reload();await H.sl(2500);
 T('désactivé : aucun appel',calls.length===0);
 await page.close();
@@ -66,9 +67,9 @@ await page.close();mode='ok';
 ({page,errs}=await mk(0));await H.sl(1500);
 await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('seenVersion','1.16.0')});
 await page.reload();await H.sl(1500);
-T('mise à jour : fenêtre des nouveautés affichée',(await H.shown(page,'#sDlg'))&&/Mise à jour 1.32.2/.test(await H.txt(page,'#dlgT')),await H.txt(page,'#dlgT'));
+T('mise à jour : fenêtre des nouveautés affichée',(await H.shown(page,'#sDlg'))&&/Mise à jour 1.33.0/.test(await H.txt(page,'#dlgT')),await H.txt(page,'#dlgT'));
 const nx=await H.txt(page,'#dlgX');
-T('résumé : points des versions manquées, pas ceux déjà vus',/l’apogée tombe maintenant vers le milieu/.test(nx)&&/Domaines de référence/.test(nx)&&!/Onglet « Magic »/.test(nx)&&!/Publier ma requête/.test(nx)&&!/Choix automatique de l’IA/.test(nx),nx);
+T('résumé : points des versions manquées, pas ceux déjà vus',/l’IA contrôle maintenant la fenêtre de garde/.test(nx)&&/Envoi plus fiable/.test(nx)&&!/Onglet « Magic »/.test(nx)&&!/Publier ma requête/.test(nx)&&!/Choix automatique de l’IA/.test(nx),nx);
 await H.tapText(page,'#dlgB button','Compris');await H.sl(300);
 await page.reload();await H.sl(1500);
 T('nouveautés : affichées une seule fois',!(await H.shown(page,'#sDlg')));

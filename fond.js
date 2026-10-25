@@ -46,6 +46,20 @@
   // Champs à chercher : ceux signalés, ou calculés pour une fiche d'avant cette version.
   const doutesOf = w => (Array.isArray(w.aiDoute) ? w.aiDoute : calcDoutes(w, {}));
 
+  // Même règle que logic.js › verifierGarde : la fenêtre déjà présente est confirmée (écart < 2 ans) ou corrigée ; jamais une garde saisie.
+  function verifierGarde(w, f, t) {
+    f = num(f); t = num(t);
+    const src = { ...(w.src || {}) };
+    if (src.from === 'user' || src.to === 'user') return false;
+    if (!(w.from && w.to && f && t && f <= t)) return false;
+    if (Math.abs(f - w.from) < 2 && Math.abs(t - w.to) < 2) { w.gv = { from: w.from, to: w.to, k: 'c' }; return true; }
+    w.from = f; w.to = t; src.from = 'ai'; src.to = 'ai'; w.src = src;
+    w.gv = { from: f, to: t, k: 'x' };
+    return true;
+  }
+  const refGarde = (w, k) => (w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? w[k] : undefined);
+  const gardeFigee = w => !!(w && w.gv && w.gv.k === 'x' && w.gv.from === w.from && w.gv.to === w.to);
+
   function appliquer(w, d, now) {
     const src = { ...(w.src || {}) };
     const p = {
@@ -53,9 +67,12 @@
       pairings: Array.isArray(d.pairings) ? d.pairings.map(str).filter(Boolean) : [],
       from: num(d.from), to: num(d.to),
     };
+    const controle = verifierGarde(w, p.from, p.to);
+    if (controle) Object.assign(src, w.src);
     for (const k of CHAMPS) {
       const v = p[k];
       if (vide(v) || src[k] === 'user') continue;
+      if ((k === 'from' || k === 'to') && (controle || (w.from && w.to))) continue;
       w[k] = v; src[k] = 'ai';
     }
     w.src = src;
@@ -109,6 +126,7 @@
     return null;
   }
   function bibleGarde(w, bible) {
+    if (gardeFigee(w)) return false;
     const e = bibleEntry(w, bible);
     if (!e) return false;
     const avant = { from: w.from, to: w.to, src: JSON.stringify(w.src || {}) };
@@ -244,8 +262,8 @@
   // Appel sans recherche : un lot de vins, une seule requête (la connaissance du modèle suffit pour la plupart des champs).
   async function lotGemini(c, lot) {
     const annee = new Date().getFullYear();
-    const texte = 'Tu es sommelier expert. Pour chaque vin de la liste, sans recherche web, complète : g=cépages, s=histoire de la cuvée en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ' + annee + '), p=4 accords mets courts, u=liste des champs que tu ne connais pas sûrement parmi "cépage", "histoire", "garde", "accords" (liste vide si tu es sûr). Vins : ' +
-      JSON.stringify(lot.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region }))) +
+    const texte = 'Tu es sommelier expert. Pour chaque vin de la liste, sans recherche web, complète : g=cépages, s=histoire de la cuvée en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ' + annee + '), p=4 accords mets courts, u=liste des champs que tu ne connais pas sûrement parmi "cépage", "histoire", "garde", "accords" (liste vide si tu es sûr). a et b, quand ils existent, sont la fenêtre de garde actuelle de l’appli : si elle te paraît juste à un an près, renvoie les mêmes années dans f et t, sinon donne ta propre fenêtre. Vins : ' +
+      JSON.stringify(lot.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region, a: refGarde(w, 'from'), b: refGarde(w, 'to') }))) +
       '. Réponds uniquement par {"items":[{"id":"…","g":"","s":"","f":0,"t":0,"p":[],"u":[]}]} avec une entrée par vin.';
     const j = await http(urlGemini(c), {
       method: 'POST', headers: entetesGemini(c, lot.length),
@@ -297,8 +315,8 @@
   // Recherche web par lot (une requête pour quelques vins ; sources partagées par le lot).
   async function rechercheLot(c, lot) {
     const annee = new Date().getFullYear();
-    const texte = 'Tu es sommelier. Utilise la recherche web et croise des sources fiables (site du domaine, guides, cavistes). Nous sommes en ' + annee + '. Pour chaque vin de la liste, complète : g=cépages, s=histoire de la cuvée en une phrase, f=année de début de garde, t=année de fin de garde, p=4 accords mets-vins. c="vérifiée" seulement si les pages consultées confirment cette cuvée et ce millésime, sinon "estimée". Vins : ' +
-      JSON.stringify(lot.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region }))) +
+    const texte = 'Tu es sommelier. Utilise la recherche web et croise des sources fiables (site du domaine, guides, cavistes). Nous sommes en ' + annee + '. Pour chaque vin de la liste, complète : g=cépages, s=histoire de la cuvée en une phrase, f=année de début de garde, t=année de fin de garde, p=4 accords mets-vins. c="vérifiée" seulement si les pages consultées confirment cette cuvée et ce millésime, sinon "estimée". a et b, quand ils existent, sont la fenêtre de garde actuelle de l’appli : si elle te paraît juste à un an près, renvoie les mêmes années dans f et t, sinon donne ta propre fenêtre. Vins : ' +
+      JSON.stringify(lot.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region, a: refGarde(w, 'from'), b: refGarde(w, 'to') }))) +
       '. Réponds uniquement par {"items":[{"id":"…","g":"","s":"","f":0,"t":0,"p":[],"c":""}]} avec une entrée par vin.';
     const j = await http(urlGemini(c), {
       method: 'POST', headers: entetesGemini(c, lot.length),

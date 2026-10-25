@@ -2,7 +2,7 @@
 import { norm, num, price, uid } from './util.js';
 
 export const COLORS = ['Rouge', 'Blanc', 'Rosé', 'Pétillant', 'Autre'];
-export const SCHEMA_VERSION = 11;
+export const SCHEMA_VERSION = 12;
 
 export function normColor(v) {
   const s = norm(v);
@@ -70,6 +70,8 @@ export function normalizeWine(raw) {
     // v3 : « connue » (auto-déclaré par le modèle, non vérifié) devient « estimée » ; « vérifiée » exige des sources web.
     // v4 : d'où vient la période de garde (user | ai | bible) ; sert à laisser l'IA corriger la bible.
     src: origins(raw.src),
+    // v12 : contrôle de la fenêtre de garde par l'IA { from, to, k: 'c' (confirmée) | 'x' (corrigée) } ; valable tant que la garde affichée est celle qui a été contrôlée.
+    gv: toGv(raw.gv),
     conf: raw.conf === 'vérifiée' ? 'vérifiée' : raw.conf === 'connue' || raw.conf === 'estimée' ? 'estimée' : '',
     sources: toSources(raw.sources),
     tastings: toTastings(raw.tastings),
@@ -85,6 +87,32 @@ export function normalizeWine(raw) {
   };
   reparerFenetre(fiche);
   return fiche;
+}
+
+function toGv(v) {
+  const from = num(v && v.from), to = num(v && v.to);
+  return v && from && to && (v.k === 'c' || v.k === 'x') ? { from, to, k: v.k } : null;
+}
+// La fenêtre de garde affichée est celle que l'IA a contrôlée (confirmée ou corrigée) et rien de saisi à la main ne la contredit.
+export function gardeConfirmee(w) {
+  const g = w && w.gv, s = (w && w.src) || {};
+  return !!(g && w.from === g.from && w.to === g.to && s.from !== 'user' && s.to !== 'user');
+}
+// Une correction de l'IA (k = 'x') reste en place : ni la bible ni le calcul ne la remplacent tant que la garde n'a pas changé.
+const gardeFigee = w => !!(w && w.gv && w.gv.k === 'x' && w.gv.from === w.from && w.gv.to === w.to);
+// Écart net : l'IA ne corrige que si l'un des bords de la fenêtre diffère d'au moins 2 ans.
+export const ECART_GARDE = 2;
+// L'IA contrôle la fenêtre de garde déjà présente (bible, calcul de l'appli ou ancienne réponse de l'IA) : confirmée si l'écart est inférieur à 2 ans,
+// corrigée sinon. Jamais de garde saisie par l'utilisateur. Sans fenêtre, ou sans réponse exploitable : voir applyAi. Retourne true si un contrôle a eu lieu.
+export function verifierGarde(w, f, t) {
+  f = num(f); t = num(t);
+  const src = { ...(w.src || {}) };
+  if (src.from === 'user' || src.to === 'user') return false;
+  if (!(w.from && w.to && f && t && f <= t)) return false;
+  if (Math.abs(f - w.from) < ECART_GARDE && Math.abs(t - w.to) < ECART_GARDE) { w.gv = { from: w.from, to: w.to, k: 'c' }; return true; }
+  w.from = f; w.to = t; src.from = 'ai'; src.to = 'ai'; w.src = src;
+  w.gv = { from: f, to: t, k: 'x' };
+  return true;
 }
 
 // Fenêtre de garde inversée (début après fin) : elle faisait afficher « À garder » et « Passé » sur le même vin.
@@ -186,9 +214,13 @@ export function applyAi(w, d, now = Date.now()) {
     pairings: Array.isArray(d.pairings) ? d.pairings.map(str).filter(Boolean) : [],
     from: num(d.from), to: num(d.to),
   };
+  // Une fenêtre de garde déjà présente est contrôlée (confirmée ou corrigée si l'écart est net) ; sans fenêtre, la réponse de l'IA la crée.
+  const controle = verifierGarde(w, propose.from, propose.to);
+  if (controle) Object.assign(src, w.src);
   for (const k of AI_FIELDS) {
     const v = propose[k];
     if (vide(v) || !peutEcrire(w, src, k)) continue;
+    if ((k === 'from' || k === 'to') && (controle || (w.from && w.to))) continue;
     w[k] = v; src[k] = 'ai';
   }
   w.src = src;
@@ -269,6 +301,7 @@ export function bibleQuality(w, bible) {
 // prend aussi la fenêtre calculée. calcul(fiche, note du millésime, sans ligne dans la bible) → { from, to } | null.
 // Retourne true si la fiche a changé.
 export function prefillFromBible(w, bible, calcul) {
+  if (gardeFigee(w)) return false;
   const e = bibleEntry(w, bible);
   let g = e, origine = 'bible';
   if (typeof calcul === 'function' && w && w.year) {
