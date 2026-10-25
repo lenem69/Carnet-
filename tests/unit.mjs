@@ -413,10 +413,10 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
       const [q, from, to] = cell; n++;
       const a = A.apogee({ name: r.a, dom: '', region: r.a, color: CC[r.c], year: Number(y), from, to }, 2026, q);
       if (a.ajuste || a.from < from || a.to > to) hors.push(r.a + ' ' + y);
-      if (to - from > 32) longues.push(r.a + ' ' + y + ' ' + (to - from));
+      if (to - from > (/Château-Chalon|Quarts de Chaume|Bonnezeaux/.test(r.a) ? 60 : 32)) longues.push(r.a + ' ' + y + ' ' + (to - from));
     }
     T('cohérence : apogée (avec la note du millésime) toujours dans la fenêtre de dégustation, ' + n + ' millésimes', hors.length === 0, hors.slice(0, 8).join(', '));
-    T('cohérence : aucune fenêtre de dégustation de plus de 32 ans (vins jaunes et grands liquoreux compris)', longues.length === 0, longues.slice(0, 8).join(', '));
+    T('cohérence : aucune fenêtre de dégustation de plus de 32 ans (60 pour le vin jaune et les grands liquoreux de la Loire)', longues.length === 0, longues.slice(0, 8).join(', '));
     // Les appellations regroupées dans la bible ont chacune leur ligne : l'appli cherche une appellation par son nom exact.
     const trouve = (region, color, year) => L.bibleEntry({ name: 'X', dom: 'D', region, color, year, src: {} }, bib);
     const manquants = [['Haut-Médoc', 'Rouge'], ['Médoc', 'Rouge'], ['Listrac-Médoc', 'Rouge'], ['Sauternes', 'Blanc'], ['Barsac', 'Blanc'], ['Nuits-Saint-Georges', 'Rouge']].filter(([r, c]) => !trouve(r, c, 2015));
@@ -525,6 +525,27 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   cas('Alsace : un vin d’Alsace simple suit la durée de son cépage (il n’est plus pris pour un grand cru)', [
     ['Alsace', 'Riesling', 'Blanc', 'Alsace', 6], ['Alsace', 'Pinot Gris', 'Blanc', 'Alsace', 5], ['Alsace', 'Sylvaner', 'Blanc', 'Alsace', 3],
   ]);
+  // Éléments du rapport de Jeff : vin jaune, grands liquoreux de la Loire, Vendanges Tardives et SGN d'Alsace, Blanc de Blancs
+  {
+    const g = (region, name, color, year, q) => { const w = { name, dom: 'D', region, color, year }; return { a: A.apogee(w, 2026, q), f: A.fenetreGarde(w, q) }; };
+    const jaune = [1, 2, 3, 4, 5].map(q => g('Château-Chalon', 'Château-Chalon', 'Blanc', 2015, q));
+    T('vin jaune : début d’apogée fixe à millésime + 10 ans, quelle que soit la note', jaune.every(x => x.a.from === 2025 && x.a.regle === 'vin jaune'), JSON.stringify(jaune.map(x => x.a.from)));
+    T('vin jaune : fin d’apogée à +40 ans et garde jusqu’à +50 ans pour un bon millésime', jaune[3].a.to === 2055 && jaune[3].f.to === 2065 && jaune[3].f.from === 2023, JSON.stringify([jaune[3].a.to, jaune[3].f]));
+    T('vin jaune : l’apogée reste dans la fenêtre de garde à toutes les notes', jaune.every(x => x.f.from <= x.a.from && x.a.from <= x.a.pic && x.a.pic <= x.a.to && x.a.to <= x.f.to));
+    const arbois = g('Arbois', 'Vin Jaune', 'Blanc', 2015, 4);
+    T('vin jaune : un « Vin Jaune » d’Arbois suit la même règle (plus un liquoreux de 20 ans)', arbois.a.regle === 'vin jaune' && arbois.a.from === 2025, JSON.stringify(arbois.a));
+    const qdc = [1, 3, 4, 5].map(q => g('Quarts de Chaume', 'Quarts de Chaume', 'Blanc', 2015, q));
+    T('Loire : Quarts-de-Chaume et Bonnezeaux, garde de 15 à 60 ans et apogée de 20 à 45 ans pour un bon millésime', qdc[2].f.from === 2030 && qdc[2].f.to === 2075 && qdc[2].a.from === 2035 && qdc[2].a.to === 2060 && g('Bonnezeaux', 'Cuvée', 'Blanc', 2015, 4).a.regle === 'grand liquoreux de Loire', JSON.stringify([qdc[2].f, qdc[2].a.from, qdc[2].a.to]));
+    T('Loire : l’apogée reste dans la fenêtre de garde à toutes les notes', qdc.every(x => x.f.from <= x.a.from && x.a.to <= x.f.to));
+    const layon = g('Coteaux du Layon', 'Cuvée', 'Blanc', 2015, 4);
+    T('Loire : les autres liquoreux (Coteaux du Layon) gardent la règle des liquoreux (garde 12-30 ans)', layon.a.regle === 'vin liquoreux' && layon.f.from === 2027 && layon.f.to === 2045, JSON.stringify(layon.f));
+    const simple = g('Alsace', 'Riesling', 'Blanc', 2015, 4), vt = g('Alsace', 'Riesling Vendanges Tardives', 'Blanc', 2015, 4), sgn = g('Alsace', 'Riesling Sélection de Grains Nobles', 'Blanc', 2015, 4);
+    T('Alsace : Vendanges Tardives ×2 et SGN ×3,5 sur la durée du cépage (Riesling 6 ans : 6, 12, 21)', simple.a.ans === 6 && vt.a.ans === 12 && sgn.a.ans === 21 && simple.f.to < vt.f.to && vt.f.to < sgn.f.to, JSON.stringify([simple.a.ans, vt.a.ans, sgn.a.ans]));
+    T('Alsace : VT de Gewurztraminer 10 ans, abréviation « VT » comprise', g('Alsace', 'Gewurztraminer VT', 'Blanc', 2015, 4).a.ans === 10);
+    const ch = g('Champagne', 'Brut Millésimé', 'Pétillant', 2012, 4), bdb = g('Champagne', 'Blanc de Blancs Millésimé', 'Pétillant', 2012, 4), salon = g('Champagne', 'Salon Blanc de Blancs', 'Pétillant', 2012, 4);
+    T('Champagne : Blanc de Blancs millésimé +20 % (12 ans au lieu de 10), cuvée de prestige inchangée (18)', ch.a.ans === 10 && bdb.a.ans === 12 && salon.a.ans === 18, JSON.stringify([ch.a.ans, bdb.a.ans, salon.a.ans]));
+    T('Champagne : un champagne sans millésime n’a pas de date d’apogée (prêt à boire)', A.apogee({ name: 'Brut Réserve', dom: 'D', region: 'Champagne', color: 'Pétillant', year: '' }, 2026).sansMillesime === true);
+  }
   // Écritures de l'appellation dans la bible
   T('bible : écritures courantes d’une appellation (1er cru, contrôlée, tirets)', JSON.stringify(L.nomsBible('Chassagne-Montrachet 1er Cru Contrôlée')) === JSON.stringify(['chassagne montrachet 1er cru controlee', 'chassagne montrachet premier cru']) && L.nomsBible('Bourgogne Saint-Aubin').includes('saint aubin') && L.nomsBible('Corton Grand Cru').includes('corton'), JSON.stringify(L.nomsBible('Chassagne-Montrachet 1er Cru Contrôlée')));
   const trouve = (region, color, year = 2018) => L.bibleEntry({ name: 'X', dom: 'D', region, color, year, src: {} }, bib);

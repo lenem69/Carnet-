@@ -119,6 +119,17 @@ export function refTable(w) {
 const DECALAGE_PIC = { 1: -0.4, 2: -0.25, 3: -0.1, 4: 0, 5: 0.25 };
 export const decalageQualite = (ans, q) => Math.round(ans * (DECALAGE_PIC[Number(q)] ?? 0));
 
+// Vins de très longue garde dont la fenêtre ne se déduit pas d'un pic entouré d'une marge (années après la récolte, bon millésime).
+// Vin jaune : début fixe à 10 ans (élevage de 6 ans et 3 mois sous voile, puis stabilisation), fin de 30 à 50 ans et plus.
+// Grands liquoreux de la Loire (Quarts-de-Chaume, Bonnezeaux) : garde de 20 à 60 ans et plus.
+const VIN_JAUNE = /vin jaune|chateau chalon/;
+const GRAND_LIQUOREUX_LOIRE = /quarts? de chaume|bonnezeaux/;
+const VT_SGN = /grains nobles|\bsgn\b|vendanges? tardives?|\bvt\b/;
+const FORMES_LONGUES = {
+  jaune: { pic: 25, debut: 10, fin: 40, gdebut: 8, gfin: 50, libelle: 'vin jaune' },
+  liqLoire: { pic: 30, debut: 20, fin: 45, gdebut: 15, gfin: 60, libelle: 'grand liquoreux de Loire' },
+};
+
 // Cépage d'un vin d'Alsace (clé de PAR_APPELLATION), pour fixer la durée de base d'un grand cru ou d'un lieu-dit. Inconnu : riesling.
 const CEPAGES_ALSACE = [[/gewurztraminer/, 'alsace gewurztraminer'], [/pinot gris|tokay/, 'alsace pinot gris'], [/muscat/, 'alsace muscat'], [/sylvaner/, 'alsace sylvaner'], [/pinot noir/, 'alsace pinot noir'], [/pinot blanc|auxerrois/, 'alsace pinot blanc'], [/riesling/, 'alsace riesling']];
 const cepageAlsace = texte => (CEPAGES_ALSACE.find(([re]) => re.test(texte)) || [0, 'alsace riesling'])[1];
@@ -155,7 +166,7 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
   const grande = app ? app[2] : (w.region && !estEtranger(String(w.region)) ? reperage(String(w.region)) : null);
   const champagne = grande === 'Champagne' || /champagne/.test(texte);
 
-  let r; let forme = 'standard'; let rang = false; let premox = false;
+  let r; let forme = 'standard'; let rang = false; let premox = false; let fixe = null;
   const rouge = w.color === 'Rouge', blanc = w.color === 'Blanc';
   const base = app ? (PAR_APPELLATION[cleTexte(app[0])] ?? PAR_APPELLATION[sansNiveau(app[0])]) : null;
   const nomApp = app ? app[0].replace(/ (Premier|Grand) Cru$/, '') : '';
@@ -172,17 +183,29 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
     forme = 'bourgogne'; rang = n.niveau !== 'village';
     premox = blanc && !!n.hote && COTE_DE_BEAUNE.has(n.hote) && millesime >= 1996 && millesime <= 2014;
   }
+  else if (blanc && (VIN_JAUNE.test(texte) || GRAND_LIQUOREUX_LOIRE.test(texte))) {
+    // Vins de très longue garde à fenêtre propre : vin jaune du Jura, grands liquoreux de la Loire.
+    fixe = VIN_JAUNE.test(texte) ? FORMES_LONGUES.jaune : FORMES_LONGUES.liqLoire;
+    r = enAns(fixe.pic, fixe.libelle); forme = 'longue'; rang = true;
+  }
   else if (bordeaux) {
     // Classement du château : coefficient sur la durée de l'appellation (liquoreux : sur la durée des liquoreux).
     const idx = rouge ? 0 : 1;
     const pBase = LIQUOREUX.test(texte) ? REGLES.liquoreux.ans : (base && base[idx] != null ? base[idx] : (rouge ? REGLES.rougeStructure.ans : REGLES.blancSec.ans));
     r = enAns(Math.max(bordeaux.min, Math.round(pBase * bordeaux.f)), bordeaux.libelle); rang = true;
   }
+  else if (grande === 'Alsace' && (rouge || blanc) && VT_SGN.test(texte)) {
+    // Vendanges tardives ×2 et sélection de grains nobles ×3,5 sur la durée du cépage.
+    const sgn = /grains nobles|\bsgn\b/.test(texte);
+    const b = PAR_APPELLATION[cepageAlsace(texte)];
+    const bp = (b && (b[rouge ? 0 : 1] ?? b[rouge ? 1 : 0])) ?? 6;
+    r = enAns(Math.round(bp * (sgn ? 3.5 : 2)), sgn ? 'sélection de grains nobles (Alsace)' : 'vendanges tardives (Alsace)'); rang = true;
+  }
   else if (LIQUOREUX.test(texte)) r = REGLES.liquoreux;
   else if (ref && (ref.fiab === 'A' || ref.fiab === 'B') && !champagne) r = enAns(ref.ans, 'table de référence');
   else if (w.color === 'Pétillant' && champagne) {
     if (prestigeChampagne(w.name, w.dom)) { r = enAns(Math.round(REGLES.champagne.ans * 1.8), 'cuvée de prestige (champagne)'); rang = true; }
-    else r = REGLES.champagne;
+    else r = /blanc de blancs/.test(texte) ? enAns(Math.round(REGLES.champagne.ans * 1.2), 'champagne blanc de blancs millésimé') : REGLES.champagne;
   }
   else if (nivAlsace) {
     const b = PAR_APPELLATION[cepageAlsace(texte)];
@@ -216,7 +239,7 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
   }
   else r = REGLES.autre;
   // Cuvée parcellaire ou domaine de référence : plus de garde que l'appellation, jamais moins.
-  if (forme !== 'bourgogne' && (rouge || blanc)) {
+  if (forme === 'standard' && (rouge || blanc)) {
     const cv = cuveeCelebre(w.name, w.dom, w.region);
     if (cv && cv.ans > r.ans) { r = enAns(cv.ans, cv.libelle); rang = true; }
   }
@@ -233,6 +256,12 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
     if (premox) { to = Math.max(pic, millesime + Math.round((to - millesime) * 0.8)); gTo = millesime + Math.round((gTo - millesime) * 0.85); }
     from = Math.min(from, pic); to = Math.max(to, pic); gFrom = Math.min(gFrom, from); gTo = Math.max(gTo, to);
     L = { cat: 'bourgogne', avant: from - gFrom, apres: gTo - to };
+  } else if (forme === 'longue') {
+    // Fenêtre propre : début fixe (élevage et stabilisation), fin allongée ou raccourcie par la note du millésime.
+    const d = Math.min(1.1, 1 + (DECALAGE_PIC[Number(qualite)] ?? 0)); // un grand millésime prolonge peu une fenêtre déjà très longue
+    from = Math.min(millesime + fixe.debut, pic); to = Math.max(millesime + Math.round(fixe.fin * d), pic);
+    gFrom = Math.min(millesime + fixe.gdebut, from); gTo = Math.max(millesime + Math.round(fixe.gfin * d), to);
+    L = { cat: 'longue-fixe', avant: from - gFrom, apres: gTo - to };
   } else {
     L = largeur(r);
     from = pic - L.h; to = pic + L.h;
@@ -277,7 +306,7 @@ const FACTEUR_APRES = { 1: -0.55, 2: -0.45, 3: -0.2, 4: 0, 5: 0.15 };
 export function fenetreGarde(w, qualite) {
   const a = apogee({ ...w, from: null, to: null }, undefined, qualite);
   if (a.sansMillesime) return null;
-  if (a.forme === 'bourgogne') return { from: a.gFrom, to: a.gTo };
+  if (a.forme === 'bourgogne' || a.forme === 'longue') return { from: a.gFrom, to: a.gTo };
   const debut = Math.max(Number(w.year) + 1, a.from - a.avant);
   const delta = Math.round(a.ansRegle * (FACTEUR_APRES[Number(qualite)] ?? 0));
   const apres = Math.max(0, a.apres + delta);
