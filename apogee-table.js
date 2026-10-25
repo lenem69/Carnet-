@@ -470,7 +470,6 @@ export const TABLE_APOGEE = {
   "pecharmant|v|R": [6,"C",6,6],
   "pernand vergelesses|v|B": [5,"C",5,5],
   "pernand vergelesses|v|R": [7,"C",7,7],
-  "pessac leognan|v|B": [3,"A",3,3],
   "pessac leognan|v|R": [13,"C",13,13],
   "petit chablis|v|B": [2,"A",1,3],
   "pezenas|v|R": [6,"D",6,6],

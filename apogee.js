@@ -26,6 +26,8 @@ export const REGLES = {
 
 // Mots-clés sur le nom, le domaine, le cépage et la région (texte normalisé : minuscules, sans accents).
 const LIQUOREUX = /\bsauternes|barsac|monbazillac|layon|aubance|quarts? de chaume|bonnezeaux|tokaj|liquoreux|moelleux|vin de paille|pedro ximenez|\bporto\b(?! vecchio)|\bport\b|madere|vin jaune|jurancon(?! sec)|vendanges tardives|grains nobles|beerenauslese|eiswein|ice wine/;
+// Appellations de vins doux que LIQUOREUX ne reconnaît pas (leur durée vient de PAR_APPELLATION) : le début de leur garde suit la règle des vins doux.
+const DOUX_NOMS = /\b(saussignac|loupiac|sainte croix du mont|cerons|premieres cotes de bordeaux|graves superieures|muscat de (rivesaltes|beaumes de venise|frontignan|lunel|mireval)|muscat du cap corse|rivesaltes|maury(?! sec)|banyuls)\b|\bcadillac\b(?! cotes)/;
 const PREMIER_CRU = /premier cru|1er cru/;
 const PRESTIGE = /grand cru|grands crus|barolo|barbaresco|brunello|gran reserva|chateau (margaux|latour|lafite|mouton|haut brion|petrus|cheval blanc|ausone|angelus)|mouton rothschild|montrachet|romanee|chambertin|musigny|echezeaux|richebourg/;
 const VIN_LEGER = /\bigp\b|indication geographique|pays d.oc|vin de france|\bvdf\b|vin de pays|vin de table/;
@@ -82,8 +84,10 @@ const PAR_APPELLATION = {
   'fitou': [6, null], 'terrasses du larzac': [8, null], 'pic saint loup': [7, null], 'montpeyroux': [7, null], 'la clape': [7, 5], 'pezenas': [6, null],
   'languedoc': [4, 3], 'picpoul de pinet': [null, 2], 'limoux': [null, 5], 'collioure': [8, 4], 'cotes du roussillon': [5, 3], 'cotes du roussillon villages': [6, null],
   'tautavel': [7, null], 'maury': [12, 12], 'maury sec': [8, null], 'banyuls': [15, 15], 'banyuls grand cru': [20, 20], 'rivesaltes': [10, 10],
+  // Vins doux (durée du vin doux de l'appellation)
+  'saussignac': [null, 12], 'premieres cotes de bordeaux': [null, 10], 'graves superieures': [null, 8], 'muscat du cap corse': [null, 6], 'muscat de rivesaltes': [null, 4], 'muscat de beaumes de venise': [null, 4],
   // Provence et Corse
-  'bandol': [10, 4], 'palette': [8, 6], 'cassis': [null, 3], 'bellet': [5, 4], 'coteaux d aix en provence': [4, 3], 'les baux de provence': [5, null],
+  'bandol': [8, 4], 'palette': [8, 6], 'cassis': [null, 3], 'bellet': [5, 4], 'coteaux d aix en provence': [4, 3], 'les baux de provence': [5, null],
   'cotes de provence': [3, 3], 'coteaux varois en provence': [3, 3], 'patrimonio': [6, 4], 'ajaccio': [5, 3], 'vin de corse': [4, 3],
 };
 // Nom d'appellation sans le niveau (« Chassagne-Montrachet Premier Cru » → « chassagne montrachet »).
@@ -166,7 +170,7 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
   const grande = app ? app[2] : (w.region && !estEtranger(String(w.region)) ? reperage(String(w.region)) : null);
   const champagne = grande === 'Champagne' || /champagne/.test(texte);
 
-  let r; let forme = 'standard'; let rang = false; let premox = false; let fixe = null;
+  let r; let forme = 'standard'; let rang = false; let premox = false; let fixe = null; let nivB = null;
   const rouge = w.color === 'Rouge', blanc = w.color === 'Blanc';
   const base = app ? (PAR_APPELLATION[cleTexte(app[0])] ?? PAR_APPELLATION[sansNiveau(app[0])]) : null;
   const nomApp = app ? app[0].replace(/ (Premier|Grand) Cru$/, '') : '';
@@ -180,7 +184,7 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
     const f = facteurBourgogne(n);
     r = enAns(Math.max(1, Math.round(baseBourgogne(w, app, n) * f)), n.niveau === 'village' ? nomApp
       : `${n.niveau === 'grand' ? 'grand cru' : 'premier cru'}${n.sup ? ' d’exception' : ''}${n.hote ? ` (${COMMUNES[n.hote]})` : ''}`);
-    forme = 'bourgogne'; rang = n.niveau !== 'village';
+    forme = 'bourgogne'; rang = n.niveau !== 'village'; nivB = n;
     premox = blanc && !!n.hote && COTE_DE_BEAUNE.has(n.hote) && millesime >= 1996 && millesime <= 2014;
   }
   else if (blanc && (VIN_JAUNE.test(texte) || GRAND_LIQUOREUX_LOIRE.test(texte))) {
@@ -248,10 +252,13 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
   const pic0 = millesime + ansEff;
   let pic = pic0; let from; let to; let gFrom = null; let gTo = null; let L;
   if (forme === 'bourgogne') {
-    // Forme propre à la Bourgogne : garde de 0,6 à 1,4 fois la durée au pic, apogée de 0,8 à 1,2 fois (exemples de Clive Coates).
+    // Forme propre à la Bourgogne : apogée de 0,8 à 1,2 fois la durée au pic ; garde (fenêtre de dégustation) calée sur les repères de Clive Coates.
+    // Rouges : de 0,5 à 1,4 fois le pic. Blancs : un vin de village ou de premier cru se boit dès 3 ans (début à 0,3 fois le pic, 0,45 pour un grand cru),
+    // et la fin tombe à 1,25 fois le pic (Coates : village blanc 3-8 ans, premier cru 5-13, grand cru 8-18).
     const k = x => Math.round(ansEff * x);
     from = millesime + k(0.8); to = millesime + k(1.2);
-    gFrom = millesime + Math.max(1, k(0.6)); gTo = millesime + k(1.4);
+    const debut = blanc ? (nivB.niveau === 'grand' ? 0.45 : 0.3) : 0.5;
+    gFrom = millesime + Math.max(blanc && nivB.niveau !== 'grand' ? (nivB.hote ? 3 : 2) : 1, k(debut)); gTo = millesime + k(blanc ? 1.25 : 1.4);
     // Blancs de la Côte de Beaune 1996-2014 : oxydation prématurée possible, fin d'apogée raccourcie de 20 %, fin de garde de 15 %.
     if (premox) { to = Math.max(pic, millesime + Math.round((to - millesime) * 0.8)); gTo = millesime + Math.round((gTo - millesime) * 0.85); }
     from = Math.min(from, pic); to = Math.max(to, pic); gFrom = Math.min(gFrom, from); gTo = Math.max(gTo, to);
@@ -263,8 +270,23 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
     gFrom = Math.min(millesime + fixe.gdebut, from); gTo = Math.max(millesime + Math.round(fixe.gfin * d), to);
     L = { cat: 'longue-fixe', avant: from - gFrom, apres: gTo - to };
   } else {
-    L = largeur(r);
+    const doux = LIQUOREUX.test(texte) || DOUX_NOMS.test(texte);
+    const court = rouge && REGIONS_COURTES.includes(grande);
+    L = largeur(r, { blanc: blanc && !doux, doux, court });
     from = pic - L.h; to = pic + L.h;
+    // Fenêtre de dégustation (garde). Début : une part de la durée au pic (la moitié pour les rouges, 0,4 pour les blancs secs, un tiers pour les vins doux, 0,55 pour les
+    // champagnes), jamais plus tard que la marge avant l'apogée ; un grand millésime ne retarde pas le début ; un rouge hors Bourgogne n'est jamais attendu plus de
+    // 10 ans (les critiques ouvrent la fenêtre des premiers crus classés 7 à 10 ans après la récolte). Repères : fenêtres publiées par Vinous, Decanter,
+    // Wine Advocate, Jancis Robinson et Burghound (voir tests/unit.mjs). Fin : apogée + marge après ; un grand millésime n'allonge la fin que de 10 % de la durée au pic.
+    const ks = doux ? 0.33 : w.color === 'Pétillant' ? 0.55 : blanc ? 0.4 : 0.5;
+    const ansDebut = Math.min(ansEff, r.ans);
+    const debut = Math.round(ks * ansDebut);
+    gFrom = millesime + Math.max(1, Math.min(ansEff - L.h - L.avant, rouge && !doux ? Math.min(DEBUT_MAX_ROUGE, debut) : debut));
+    const ecart = ansEff - r.ans;
+    const ansFin = ecart > 0 ? r.ans + Math.min(ecart, Math.round(0.1 * r.ans)) : ansEff;
+    const delta = ecart < 0 ? Math.round(r.ans * (FACTEUR_APRES[Number(qualite)] ?? 0)) : 0;
+    gTo = millesime + ansFin + L.h + Math.max(0, L.apres + delta);
+    gFrom = Math.min(gFrom, from); gTo = Math.max(gTo, to);
   }
   // Cohérence : l'apogée ne sort jamais de la fenêtre de garde enregistrée (saisie, bible ou IA).
   // Si la règle tombe en dehors, le pic est ramené dans la fenêtre et la période d'apogée est recoupée avec elle.
@@ -287,31 +309,34 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
 // Largeur de la période d'apogée autour du pic, et marge de la fenêtre de dégustation avant et après (années).
 // Plus un vin tient longtemps, plus la période d'apogée est large, mais jamais au point de couvrir une décennie entière.
 // La fenêtre de dégustation (garde) contient toujours la période d'apogée, avec une marge avant et une marge après.
-export function largeur(r) {
+// Rouges du Rhône, de Provence et du Sud-Ouest : les critiques ferment la fenêtre environ un tiers plus près du pic qu'à Bordeaux
+// (Cornas 2018 : 14-17 ans, Châteauneuf 2012 : 15-17, Gigondas 2018 : 12-15, Bandol 2016 : 14, Hermitage La Chapelle 2015 : 20-25, Cahors 2014 : 14).
+const REGIONS_COURTES = ['Vallée du Rhône', 'Provence et Corse', 'Sud-Ouest, Jura, Savoie'];
+const COEF_COURT = 0.65;
+const DEBUT_MAX_ROUGE = 10;
+export function largeur(r, { blanc = false, doux = false, court = false } = {}) {
   const ans = r.ans;
+  const cf = court ? COEF_COURT : 1;
   // La marge après l'apogée est proportionnelle à la durée de vie du vin : un grand vin de garde reste agréable bien après son pic.
-  if (ans >= 22) return { cat: 'longue', h: 4, avant: 4, apres: Math.min(14, Math.round(ans * 0.55)) }; // premiers crus classés, grands liquoreux
-  if (ans >= 20) return { cat: 'longue', h: 4, avant: 4, apres: 6 };
-  if (ans >= 12) return { cat: 'prestige', h: 3, avant: 3, apres: Math.min(12, Math.round(ans * 0.8)) };
-  if (ans >= 8) return { cat: 'structure', h: 2, avant: 2, apres: Math.round(ans * 0.9) };
+  // Vins doux de longue garde : marge de 0,35 fois la durée au pic (Sauternes : fenêtres de 25 à 45 ans chez les critiques). Blancs secs de prestige : 0,5 fois (rouges : 0,8).
+  if (doux && ans >= 20) return { cat: 'longue', h: 4, avant: 4, apres: Math.min(12, Math.round(ans * 0.35)) };
+  if (ans >= 22) return { cat: 'longue', h: 4, avant: 4, apres: Math.round(cf * Math.min(14, Math.round(ans * 0.55))) }; // premiers crus classés, grands liquoreux
+  if (ans >= 20) return { cat: 'longue', h: 4, avant: 4, apres: Math.round(cf * 6) };
+  if (ans >= 12) return { cat: 'prestige', h: 3, avant: 3, apres: Math.round(cf * Math.min(12, Math.round(ans * (blanc ? 0.5 : 0.8)))) };
+  if (ans >= 8) return { cat: 'structure', h: 2, avant: 2, apres: Math.round(cf * ans * 0.9) };
   if (ans <= 3) return { cat: 'leger', h: 1, avant: 1, apres: 2 };
   return { cat: 'courant', h: 2, avant: 2, apres: ans >= 6 ? 4 : 3 };
 }
 
 // Fenêtre de dégustation proposée (garde) pour un vin : contient la période d'apogée. Sans millésime : null.
-// La qualité du millésime (note 1 à 5 de la bible) décale le pic (voir apogee) et allonge ou raccourcit la fin de la fenêtre :
-// 1 ou 2 : vin qui s'essouffle plus vite ; 4 ou 5 : vin qui tient plus longtemps. L'apogée elle-même n'est jamais coupée.
+// La qualité du millésime (note 1 à 5 de la bible) décale le pic (voir apogee) et raccourcit la fin de la fenêtre pour les notes 1 à 3 (vin qui s'essouffle plus vite).
+// Un grand millésime (note 5) retarde le pic mais n'allonge la fin que de 10 % de la durée au pic et ne retarde pas le début. L'apogée elle-même n'est jamais coupée.
 // L'effet est proportionnel à la durée de vie du vin (un grand vin de garde gagne ou perd plus d'années qu'un vin courant).
-const FACTEUR_APRES = { 1: -0.55, 2: -0.45, 3: -0.2, 4: 0, 5: 0.15 };
+const FACTEUR_APRES = { 1: -0.55, 2: -0.45, 3: -0.2, 4: 0, 5: 0 };
 export function fenetreGarde(w, qualite) {
   const a = apogee({ ...w, from: null, to: null }, undefined, qualite);
   if (a.sansMillesime) return null;
-  if (a.forme === 'bourgogne' || a.forme === 'longue') return { from: a.gFrom, to: a.gTo };
-  const debut = Math.max(Number(w.year) + 1, a.from - a.avant);
-  const delta = Math.round(a.ansRegle * (FACTEUR_APRES[Number(qualite)] ?? 0));
-  const apres = Math.max(0, a.apres + delta);
-  const fin = a.to + apres;
-  return { from: Math.min(debut, a.from), to: Math.max(fin, a.to) };
+  return { from: a.gFrom, to: a.gTo };
 }
 
 // Fenêtre de garde d'un vin dont le rang (premier ou grand cru de Bourgogne, classement de Bordeaux, cuvée célèbre, prestige, grand cru d'Alsace) dépasse

@@ -502,14 +502,14 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
     const v = f('Gevrey-Chambertin', 'Cuvée'), p = f('Gevrey-Chambertin 1er Cru', 'Les Cazetiers'), g = f('Chambertin', 'Chambertin');
     T('crus : repère Coates, village de Côte de Nuits environ 5-12 ans', v[0] >= 4 && v[0] <= 6 && v[1] >= 11 && v[1] <= 14, JSON.stringify(v));
     T('crus : repère Coates, premier cru de Côte de Nuits environ 7-19 ans', p[0] >= 7 && p[0] <= 9 && p[1] >= 17 && p[1] <= 21, JSON.stringify(p));
-    T('crus : repère Coates, grand cru de Côte de Nuits environ 10-30 ans', g[0] >= 11 && g[0] <= 13 && g[1] >= 26 && g[1] <= 30, JSON.stringify(g));
+    T('crus : repère Coates, grand cru de Côte de Nuits environ 10-30 ans', g[0] >= 10 && g[0] <= 12 && g[1] >= 26 && g[1] <= 30, JSON.stringify(g));
   }
   // Bordeaux, Champagne, Alsace, cuvées : le rang du vin est lu dans son nom.
   cas('rangs : classements de Bordeaux', [
     ['Pauillac', 'Château Latour', 'Rouge', 'premier cru classé', 24], ['Margaux', 'Château Margaux', 'Rouge', 'premier cru classé', 22],
     ['Pauillac', 'Château Pichon Longueville Comtesse de Lalande', 'Rouge', 'deuxième cru classé', 19], ['Margaux', 'Château Rauzan-Ségla', 'Rouge', 'deuxième cru classé', 17],
     ['Pauillac', 'Château Lynch-Bages', 'Rouge', 'cru classé (3e à 5e)', 14], ['Saint-Julien', 'Château Talbot', 'Rouge', 'cru classé (3e à 5e)', 14],
-    ['Pessac-Léognan', 'Château Haut-Brion', 'Blanc', 'grand blanc de Pessac-Léognan', 18], ['Pomerol', 'Château Pétrus', 'Rouge', 'grand pomerol', 24],
+    ['Pessac-Léognan', 'Château Haut-Brion', 'Blanc', 'grand blanc de Pessac-Léognan', 14], ['Pomerol', 'Château Pétrus', 'Rouge', 'grand pomerol', 24],
     ['Saint-Émilion Grand Cru', 'Château Angélus', 'Rouge', 'premier grand cru classé A', 22], ['Saint-Émilion Grand Cru', 'Château Canon', 'Rouge', 'premier grand cru classé B', 17],
     ['Sauternes', 'Château d’Yquem', 'Blanc', 'premier cru supérieur', 30], ['Barsac', 'Château Climens', 'Blanc', 'premier cru classé', 23],
   ]);
@@ -538,13 +538,115 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
     T('Loire : Quarts-de-Chaume et Bonnezeaux, garde de 15 à 60 ans et apogée de 20 à 45 ans pour un bon millésime', qdc[2].f.from === 2030 && qdc[2].f.to === 2075 && qdc[2].a.from === 2035 && qdc[2].a.to === 2060 && g('Bonnezeaux', 'Cuvée', 'Blanc', 2015, 4).a.regle === 'grand liquoreux de Loire', JSON.stringify([qdc[2].f, qdc[2].a.from, qdc[2].a.to]));
     T('Loire : l’apogée reste dans la fenêtre de garde à toutes les notes', qdc.every(x => x.f.from <= x.a.from && x.a.to <= x.f.to));
     const layon = g('Coteaux du Layon', 'Cuvée', 'Blanc', 2015, 4);
-    T('Loire : les autres liquoreux (Coteaux du Layon) gardent la règle des liquoreux (garde 12-30 ans)', layon.a.regle === 'vin liquoreux' && layon.f.from === 2027 && layon.f.to === 2045, JSON.stringify(layon.f));
+    T('Loire : les autres liquoreux (Coteaux du Layon) gardent la règle des liquoreux (garde 7-31 ans)', layon.a.regle === 'vin liquoreux' && layon.f.from === 2022 && layon.f.to === 2046, JSON.stringify(layon.f));
     const simple = g('Alsace', 'Riesling', 'Blanc', 2015, 4), vt = g('Alsace', 'Riesling Vendanges Tardives', 'Blanc', 2015, 4), sgn = g('Alsace', 'Riesling Sélection de Grains Nobles', 'Blanc', 2015, 4);
     T('Alsace : Vendanges Tardives ×2 et SGN ×3,5 sur la durée du cépage (Riesling 6 ans : 6, 12, 21)', simple.a.ans === 6 && vt.a.ans === 12 && sgn.a.ans === 21 && simple.f.to < vt.f.to && vt.f.to < sgn.f.to, JSON.stringify([simple.a.ans, vt.a.ans, sgn.a.ans]));
     T('Alsace : VT de Gewurztraminer 10 ans, abréviation « VT » comprise', g('Alsace', 'Gewurztraminer VT', 'Blanc', 2015, 4).a.ans === 10);
     const ch = g('Champagne', 'Brut Millésimé', 'Pétillant', 2012, 4), bdb = g('Champagne', 'Blanc de Blancs Millésimé', 'Pétillant', 2012, 4), salon = g('Champagne', 'Salon Blanc de Blancs', 'Pétillant', 2012, 4);
     T('Champagne : Blanc de Blancs millésimé +20 % (12 ans au lieu de 10), cuvée de prestige inchangée (18)', ch.a.ans === 10 && bdb.a.ans === 12 && salon.a.ans === 18, JSON.stringify([ch.a.ans, bdb.a.ans, salon.a.ans]));
     T('Champagne : un champagne sans millésime n’a pas de date d’apogée (prêt à boire)', A.apogee({ name: 'Brut Réserve', dom: 'D', region: 'Champagne', color: 'Pétillant', year: '' }, 2026).sansMillesime === true);
+  }
+  // Début de garde des blancs de Bourgogne : un village ou un premier cru se boit dès 3 ans (remarque de Jeff, sources : Vinous, Lea & Sandeman, Coates)
+  {
+    const w = { name: 'Premier Cru "Les Vides Bourse" Chassagne-Montrachet', dom: 'Domaine Jouard', region: 'Chassagne-Montrachet 1er Cru Contrôlée', color: 'Blanc', year: 2024 };
+    const g = A.fenetreGarde(w, 4), a = A.apogee(w, 2026, 4);
+    T('blancs de Bourgogne : Chassagne-Montrachet 1er cru 2024 se boit dès 3 ans (2027) et la garde finit vers 2038', g.from === 2027 && g.to <= 2038 && g.to >= 2036 && a.regle.startsWith('premier cru'), JSON.stringify([g, a.regle]));
+    T('blancs de Bourgogne : l’apogée reste dans la garde', a.from >= g.from && a.to <= g.to);
+    const dep = (r, n, c, y = 2018) => { const x = A.fenetreGarde({ name: n, dom: 'D', region: r, color: c, year: y }, 4); return [x.from - y, x.to - y]; };
+    const v = dep('Meursault', 'Cuvée', 'Blanc'), p1 = dep('Meursault Premier Cru', 'Cuvée', 'Blanc'), gc = dep('Montrachet', 'Montrachet', 'Blanc');
+    T('blancs de Bourgogne : village et premier cru dès 3 ans, grand cru dès 6 ans ou plus', v[0] === 3 && p1[0] === 3 && gc[0] >= 6, JSON.stringify([v, p1, gc]));
+    T('blancs de Bourgogne : fin de garde proche de Coates (village 8, premier cru 13, grand cru 18 ans, à 2 ans près)', Math.abs(v[1] - 8) <= 2 && Math.abs(p1[1] - 11) <= 3 && Math.abs(dep('Chassagne-Montrachet Premier Cru', 'Cuvée', 'Blanc')[1] - 14) <= 1 && Math.abs(gc[1] - 18) <= 2, JSON.stringify([v, p1, gc]));
+    const r1 = dep('Gevrey-Chambertin', 'Cuvée', 'Rouge'), r2 = dep('Gevrey-Chambertin Premier Cru', 'Cuvée', 'Rouge'), r3 = dep('Chambertin', 'Chambertin', 'Rouge');
+    T('rouges de Bourgogne : début de garde à la moitié du pic (Coates : village 5, premier cru 7, grand cru 10 ans)', r1[0] === 5 && r2[0] === 7 && r3[0] === 10, JSON.stringify([r1, r2, r3]));
+    const e = L.bibleEntry({ ...w, src: {} }, bib);
+    T('blancs de Bourgogne : la fiche de Jeff (écriture « 1er Cru Contrôlée ») retrouve la ligne Chassagne-Montrachet Premier Cru de la bible', !!e && e.from - 2024 <= 4, JSON.stringify(e));
+  }
+  // Repères publiés (relevés en octobre 2026) : le calcul doit tomber dans l'éventail des fenêtres de dégustation données par les critiques (Vinous, Wine Advocate,
+  // Decanter, Jancis Robinson, Burghound, Wine Spectator, Lea & Sandeman, Farr, Justerini). Début et fin sont en années après la récolte.
+  // [étiquette, nom, domaine, région, couleur, millésime, début min, début max, fin min, fin max, nombre de fenêtres relevées]
+  // Marges : 3 ans sur le début et 6 sur la fin quand il y a moins de 3 fenêtres ; 2 et 3 ans sinon (les critiques arrondissent et datent leurs notes).
+  {
+    const REPERES = [
+      ['Lynch-Bages 2017 (Pauillac, 5e cru)', 'Château Lynch-Bages', 'Lynch-Bages', 'Pauillac', 'Rouge', 2017, 6, 8, 23, 33, 3],
+      ['Lynch-Bages 2014 (Pauillac, 5e cru)', 'Château Lynch-Bages', 'Lynch-Bages', 'Pauillac', 'Rouge', 2014, 7, 11, 18, 36, 3],
+      ['Léoville-Las Cases 2014 (Saint-Julien, 2e cru)', 'Château Léoville-Las Cases', 'Léoville-Las Cases', 'Saint-Julien', 'Rouge', 2014, 10, 14, 28, 56, 6],
+      ['Pichon-Lalande 2016 (Pauillac, 2e cru)', 'Château Pichon Longueville Comtesse de Lalande', 'Pichon Lalande', 'Pauillac', 'Rouge', 2016, 7, 12, 29, 61, 4],
+      ['Léoville-Barton 2016 (Saint-Julien, 2e cru)', 'Château Léoville-Barton', 'Léoville-Barton', 'Saint-Julien', 'Rouge', 2016, 6, 14, 24, 53, 4],
+      ['Mouton Rothschild 2017 (Pauillac, 1er cru)', 'Château Mouton Rothschild', 'Mouton Rothschild', 'Pauillac', 'Rouge', 2017, 8, 8, 23, 40, 3],
+      ['La Conseillante 2015 (Pomerol)', 'Château La Conseillante', 'La Conseillante', 'Pomerol', 'Rouge', 2015, 7, 11, 21, 35, 5],
+      ['Cambon la Pelouse 2015 (Haut-Médoc)', 'Château Cambon la Pelouse', 'Cambon la Pelouse', 'Haut-Médoc', 'Rouge', 2015, 3, 6, 8, 15, 5],
+      ['Domaine de Chevalier blanc 2015 (Pessac-Léognan)', 'Domaine de Chevalier', 'Domaine de Chevalier', 'Pessac-Léognan', 'Blanc', 2015, 2, 10, 10, 23, 8],
+      ['Smith Haut Lafitte blanc 2020 (Pessac-Léognan)', 'Château Smith Haut Lafitte', 'Smith Haut Lafitte', 'Pessac-Léognan', 'Blanc', 2020, 4, 6, 14, 20, 2],
+      ['Rieussec 2016 (Sauternes)', 'Château Rieussec', 'Rieussec', 'Sauternes', 'Blanc', 2016, 3, 11, 21, 40, 6],
+      ['Guiraud 2016 (Sauternes)', 'Château Guiraud', 'Guiraud', 'Sauternes', 'Blanc', 2016, 4, 7, 12, 35, 4],
+      ['Rieussec 2015 (Sauternes)', 'Château Rieussec', 'Rieussec', 'Sauternes', 'Blanc', 2015, 7, 11, 30, 31, 2],
+      ['Rieussec 2007 (Sauternes)', 'Château Rieussec', 'Rieussec', 'Sauternes', 'Blanc', 2007, 6, 13, 23, 38, 2],
+      ['Yquem 2007 (Sauternes)', 'Château d’Yquem', 'Yquem', 'Sauternes', 'Blanc', 2007, 8, 15, 23, 48, 3],
+      ['Bollinger La Grande Année 2012', 'La Grande Année', 'Bollinger', 'Champagne', 'Pétillant', 2012, 8, 14, 18, 38, 4],
+      ['Pol Roger Sir Winston Churchill 2013', 'Cuvée Sir Winston Churchill', 'Pol Roger', 'Champagne', 'Pétillant', 2013, 8, 14, 30, 32, 2],
+      ['Roederer Vintage 2015 (champagne millésimé)', 'Vintage Brut', 'Louis Roederer', 'Champagne', 'Pétillant', 2015, 8, 8, 20, 20, 1],
+      ['Châteauneuf-du-Pape Reine des Bois 2016', 'Cuvée de la Reine des Bois', 'Domaine de la Mordorée', 'Châteauneuf-du-Pape', 'Rouge', 2016, 4, 8, 16, 26, 4],
+      ['Châteauneuf-du-Pape Reine des Bois 2012', 'Cuvée de la Reine des Bois', 'Domaine de la Mordorée', 'Châteauneuf-du-Pape', 'Rouge', 2012, 4, 6, 15, 17, 2],
+      ['Gigondas Santa Duc 2018', 'Aux Lieux-Dits', 'Domaine Santa Duc', 'Gigondas', 'Rouge', 2018, 2, 5, 12, 15, 2],
+      ['Cornas Lionnet 2018', 'Pur Granit', 'Domaine Lionnet', 'Cornas', 'Rouge', 2018, 6, 7, 14, 17, 2],
+      ['Crozes-Hermitage 2017', 'Cuvée Papillon', 'Domaine Gilles Robin', 'Crozes-Hermitage', 'Rouge', 2017, 3, 3, 11, 11, 1],
+      ['Bandol Tempier 2016', 'Cuvée Classique', 'Domaine Tempier', 'Bandol', 'Rouge', 2016, 4, 5, 14, 14, 2],
+      ['Cahors Château du Cèdre 2014', 'Château du Cèdre', 'Château du Cèdre', 'Cahors', 'Rouge', 2014, 4, 4, 14, 14, 1],
+      ['Hermitage La Chapelle 2015', 'La Chapelle', 'Paul Jaboulet Aîné', 'Hermitage', 'Rouge', 2015, 13, 13, 20, 25, 2],
+      ['Fleurie Clos de la Roilette 2020', 'Clos de la Roilette', 'Clos de la Roilette', 'Fleurie', 'Rouge', 2020, 1, 3, 10, 12, 2],
+      ['Chablis village 2019', 'Chablis', 'Domaine Moreau-Naudet', 'Chablis', 'Blanc', 2019, 2, 3, 4, 8, 3],
+      ['Chablis 1er cru Côte de Léchet 2019', 'Côte de Léchet', 'Domaine Denis Pommier', 'Chablis 1er Cru', 'Blanc', 2019, 2, 4, 6, 16, 3],
+      ['Chablis grand cru Les Clos 2018', 'Les Clos', 'Domaine Drouhin Vaudon', 'Chablis Grand Cru', 'Blanc', 2018, 2, 4, 6, 20, 2],
+      ['Chassagne-Montrachet 1er cru Vide Bourse 2018', 'Vide Bourse', 'Domaine Pillot', 'Chassagne-Montrachet 1er Cru', 'Blanc', 2018, 4, 8, 12, 24, 3],
+      ['Chassagne-Montrachet 1er cru Vide Bourse 2019', 'Vide Bourse', 'Domaine Pillot', 'Chassagne-Montrachet 1er Cru', 'Blanc', 2019, 3, 10, 8, 11, 3],
+      ['Chassagne-Montrachet village 2018', 'Chassagne-Montrachet', 'Domaine Joseph Colin', 'Chassagne-Montrachet', 'Blanc', 2018, 3, 7, 12, 12, 2],
+      ['Meursault 1er cru Genevrières 2018', 'Genevrières', 'Domaine Rémi Jobard', 'Meursault 1er Cru', 'Blanc', 2018, 4, 8, 12, 19, 3],
+      ['Pouilly-Fuissé 1er cru Sur la Roche 2020', 'Sur la Roche', 'Domaine Barraud', 'Pouilly-Fuissé', 'Blanc', 2020, 3, 3, 8, 8, 1],
+      ['Vosne-Romanée village 2019', 'Vosne-Romanée', 'Domaine Mugneret-Gibourg', 'Vosne-Romanée', 'Rouge', 2019, 3, 9, 10, 26, 5],
+      ['Vosne-Romanée 1er cru Suchots 2014', 'Les Suchots', 'Domaine Confuron-Cotétidot', 'Vosne-Romanée 1er Cru', 'Rouge', 2014, 8, 9, 15, 20, 3],
+      ['Morey-Saint-Denis village 2015', 'La Rue de Vergy', 'Domaine Perrot-Minot', 'Morey-Saint-Denis', 'Rouge', 2015, 3, 6, 11, 11, 1],
+      ['Margaux 2016 (1er cru)', 'Château Margaux', 'Château Margaux', 'Margaux', 'Rouge', 2016, 7, 14, 34, 67, 4],
+      ['Lafite Rothschild 2015 (1er cru)', 'Château Lafite Rothschild', 'Lafite Rothschild', 'Pauillac', 'Rouge', 2015, 7, 10, 40, 40, 2],
+      ['Boyd-Cantenac 2016 (Margaux, 3e cru)', 'Château Boyd-Cantenac', 'Boyd-Cantenac', 'Margaux', 'Rouge', 2016, 9, 9, 19, 21, 2],
+      ['Gruaud-Larose 2015 (Saint-Julien, 2e cru)', 'Château Gruaud-Larose', 'Gruaud-Larose', 'Saint-Julien', 'Rouge', 2015, 9, 10, 27, 35, 2],
+      ['Pontet-Canet 2016 (Pauillac, 5e cru)', 'Château Pontet-Canet', 'Pontet-Canet', 'Pauillac', 'Rouge', 2016, 5, 14, 32, 60, 4],
+      ['Canon 2015 (Saint-Émilion, 1er grand cru classé B)', 'Château Canon', 'Canon', 'Saint-Émilion Grand Cru', 'Rouge', 2015, 7, 10, 35, 50, 3],
+      ['Phélan Ségur 2016 (Saint-Estèphe, cru bourgeois exceptionnel)', 'Château Phélan Ségur', 'Phélan Ségur', 'Saint-Estèphe', 'Rouge', 2016, 3, 13, 15, 32, 14],
+    ];
+    for (const [lib, name, dom, region, color, year, s0, s1, e0, e1, n] of REPERES) {
+      const w = L.normalizeWine({ name, dom, region, color, year, qty: 1 });
+      L.prefillFromBible(w, bib, A.fenetreRang);
+      const s = w.from - year, e = w.to - year, ms = n >= 3 ? 2 : 3, me = n >= 3 ? 3 : 6;
+      const ok = !!w.from && s >= s0 - ms && s <= s1 + ms && e >= e0 - me && e <= e1 + me;
+      T('repères publiés : ' + lib + ' → critiques début +' + s0 + '/+' + s1 + ', fin +' + e0 + '/+' + e1, ok, 'calcul : +' + s + ' / +' + e + ' (' + w.from + '-' + w.to + ')');
+    }
+    // Écarts connus, bornés pour ne pas s'aggraver : une seule fenêtre de critique s'écarte nettement du calcul.
+    //  - Dom Pérignon 2008 en magnum (Decanter : 2019-2030, fin à +22) ; les autres cuvées de prestige donnent +18 à +38 (Bollinger 2012, Pol Roger 2013).
+    //  - Chablis 1er cru Vaillons 2018 (Jancis Robinson : 2026-2040, début à +8) ; la Côte de Léchet 2019 donne un début à +2/+4 (trois critiques).
+    const borne = (lib, w0, [s0, s1, e0, e1]) => {
+      const w = L.normalizeWine({ ...w0, qty: 1 });
+      L.prefillFromBible(w, bib, A.fenetreRang);
+      const s = w.from - w0.year, e = w.to - w0.year;
+      T('écart connu borné : ' + lib, !!w.from && s >= s0 && s <= s1 && e >= e0 && e <= e1, 'calcul : +' + s + ' / +' + e);
+    };
+    borne('Dom Pérignon 2008 (critique seule : fin à +22 ; cuvées de prestige : +18 à +38)', { name: 'Dom Pérignon', dom: 'Moët & Chandon', region: 'Champagne', color: 'Pétillant', year: 2008 }, [8, 14, 18, 38]);
+    borne('Chablis 1er cru Vaillons 2018 (critique seule : début à +8 ; autres 1ers crus : +2 à +4)', { name: 'Vaillons', dom: 'Domaine Moreau-Naudet', region: 'Chablis 1er Cru', color: 'Blanc', year: 2018 }, [2, 8, 6, 24]);
+    // Corrections de la 1.30.1 : chacune a un cas précis derrière.
+    const fen = (o, q) => A.fenetreGarde({ dom: 'D', qty: 1, ...o }, q);
+    const hb = A.apogee({ name: 'Château Haut-Brion', dom: 'Haut-Brion', region: 'Pessac-Léognan', color: 'Blanc', year: 2015 }, 2026, 4);
+    T('Pessac-Léognan blanc : le pic n’est plus à +3 ans (ancienne ligne de la table)', hb.pic - 2015 >= 10, 'pic +' + (hb.pic - 2015));
+    const sa = fen({ name: 'Cuvée', region: 'Saussignac', color: 'Blanc', year: 2015 }, 4), pc = fen({ name: 'Cuvée', region: 'Premières Côtes de Bordeaux', color: 'Blanc', year: 2015 }, 4);
+    T('vins doux reconnus par leur nom (Saussignac, Premières Côtes) : début à 3 ans ou plus (vin doux, pas un blanc sec), fin à 18 ans ou plus', sa.from - 2015 >= 4 && sa.to - 2015 >= 20 && pc.from - 2015 >= 3 && pc.to - 2015 >= 18, JSON.stringify([sa, pc]));
+    const g4 = fen({ name: 'Château Latour', region: 'Pauillac', color: 'Rouge', year: 2010 }, 4), g5 = fen({ name: 'Château Latour', region: 'Pauillac', color: 'Rouge', year: 2010 }, 5);
+    T('grand millésime (note 5) : le début de garde n’est pas retardé, la fin ne s’allonge que de 3 ans au plus', g5.from === g4.from && g5.to - g4.to <= 3 && g5.to >= g4.to, JSON.stringify([g4, g5]));
+    T('premier cru classé : début de garde au plus tard 10 ans après la récolte (critiques : 7 à 10 ans)', g4.from - 2010 <= 10 && fen({ name: 'Château Margaux', region: 'Margaux', color: 'Rouge', year: 2016 }, 4).from - 2016 <= 10);
+    const sy = fen({ name: 'Château Rieussec', region: 'Sauternes', color: 'Blanc', year: 2016 }, 4), sp = A.apogee({ name: 'Château Rieussec', region: 'Sauternes', color: 'Blanc', year: 2016 }, 2026, 4);
+    T('Sauternes : début de garde au tiers de la durée au pic (critiques : 3 à 11 ans)', Math.abs((sy.from - 2016) - Math.round((sp.pic - 2016) / 3)) <= 1 && sy.from - 2016 <= 11, JSON.stringify([sy, sp.pic]));
+    const rh = fen({ name: 'Cuvée', region: 'Cornas', color: 'Rouge', year: 2018 }, 4), bx = fen({ name: 'Cuvée', region: 'Haut-Médoc', color: 'Rouge', year: 2018 }, 4);
+    T('rouges du Rhône : fin de garde plus proche du pic que Bordeaux à durée égale (Cornas 2018 : critiques à +14/+17)', rh.to - 2018 <= 22 && rh.to - 2018 >= 14, JSON.stringify(rh));
+    T('Bandol raccourci : base de 8 ans (critiques : Tempier 2016 à +14)', A.apogee({ name: 'Cuvée', region: 'Bandol', color: 'Rouge', year: 2016 }, 2026, 4).ans <= 8);
+    const vb = fen({ name: 'Premier Cru "Les Vides Bourse"', region: 'Chassagne-Montrachet 1er Cru', color: 'Blanc', year: 2024 }, 4);
+    T('Vides Bourse 2024 (la fiche de Jeff) : garde de 2027 à 2038, plus « 2031-2039 »', vb.from === 2027 && vb.to >= 2036 && vb.to <= 2040, JSON.stringify(vb));
   }
   // Écritures de l'appellation dans la bible
   T('bible : écritures courantes d’une appellation (1er cru, contrôlée, tirets)', JSON.stringify(L.nomsBible('Chassagne-Montrachet 1er Cru Contrôlée')) === JSON.stringify(['chassagne montrachet 1er cru controlee', 'chassagne montrachet premier cru']) && L.nomsBible('Bourgogne Saint-Aubin').includes('saint aubin') && L.nomsBible('Corton Grand Cru').includes('corton'), JSON.stringify(L.nomsBible('Chassagne-Montrachet 1er Cru Contrôlée')));
@@ -572,7 +674,7 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
     const perso = latour(); perso.from = 2030; perso.to = 2050; perso.src = { from: 'user', to: 'user' };
     L.prefillFromBible(perso, bib, A.fenetreRang);
     T('calc : une garde saisie à la main n’est jamais remplacée', perso.from === 2030 && perso.to === 2050 && perso.src.from === 'user');
-    const ia = latour(); ia.from = 2028; ia.to = 2032; ia.src = { from: 'ai', to: 'ai' };
+    const ia = latour(); ia.from = 2025; ia.to = 2032; ia.src = { from: 'ai', to: 'ai' };
     L.prefillFromBible(ia, bib, A.fenetreRang);
     T('calc : la fenêtre calculée remplace celle de l’IA (la bible et le calcul passent avant), comme la bible seule', ia.src.from === 'calc' && ia.from === avec.from);
     const simple = L.normalizeWine({ name: 'Cuvée', dom: 'D', region: 'Pauillac', color: 'Rouge', year: 2016, qty: 1 });

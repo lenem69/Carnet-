@@ -43,6 +43,13 @@
 - **Corrigé en 1.30.0** : un Alsace simple (région « Alsace ») était rangé sous « Alsace Grand Cru » par la taxonomie et recevait la règle du grand cru (+12 ans) ; il suit désormais la durée de son cépage.
 - Trois lignes de la table de référence (fiabilité A) pour des grands crus de Bourgogne (Bonnes-Mares 15 ans, Chambertin-Clos de Bèze 15, Corton-Charlemagne 19) sont écartées au profit du calcul par niveau (18, 20 et 15 ans) ; la source de ces trois lignes est une estimation, non une mesure.
 
+## Contrôle contre les critiques (version 1.30.1, 25 octobre 2026)
+- 47 fenêtres de dégustation publiées confrontées au calcul (45 dans la fourchette, 2 écarts connus) (détail dans `data/METHODE-FENETRES.md`). Corrigé : début des premiers crus classés (plafond 10 ans), début des vins doux, Pessac-Léognan blanc, vins doux reconnus par leur nom, Bandol, fin des rouges du Rhône/Provence/Sud-Ouest, effet d'un grand millésime.
+- **Encore fragile** : les coefficients restent des estimations calées sur ces 47 fenêtres, surtout issues d'un seul marchand (Lea & Sandeman) : peu de Loire, d'Alsace, de Languedoc, d'Italie, d'Espagne ; aucun vin du Jura, de Savoie, de Corse. Les critiques se contredisent souvent entre eux (Pontet-Canet 2016 : début +5 à +14, fin +32 à +60).
+- Les fins de garde des Bourgognes suivent Clive Coates et restent plus courtes que Burghound et Vinous pour les grands domaines.
+- Hermitage hors La Chapelle, Côte-Rôtie, Saint-Joseph : sans repère de critique relevé.
+- Mercurey et Côte chalonnaise rouges (village 2019 : garde 2 à 6 ans), Mâconnais : non confrontés aux critiques.
+
 ## 4. Mise à jour annuelle
 Chaque automne : nouveau millésime (2026 à l'automne 2027), revérification des deux précédents, relecture des lignes C.
 

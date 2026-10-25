@@ -107,7 +107,7 @@ const CLASSES = [
   [1.5, 'premier cru supérieur', /sauternes/, [/\byquem\b/]],
   [1.15, 'premier cru classé', /sauternes|barsac/, [/\bla tour blanche\b/, /\blafaurie peyraguey\b/, /\bclos haut peyraguey\b/, /\brayne vigneau\b/, /\bsuduiraut\b/, /\bcoutet\b/, /\bclimens\b/, /\bguiraud\b/, /\brieussec\b/, /\brabaud promis\b/, /\bsigalas rabaud\b/]],
 ];
-// Blancs de Pessac-Léognan : les très grands blancs vieillissent bien plus que le blanc courant de l'appellation.
+// Blancs de Pessac-Léognan : les très grands blancs vieillissent bien plus que le blanc courant de l'appellation (Domaine de Chevalier blanc 2015 : fenêtres de 2020 à 2035 chez les critiques).
 const GRANDS_BLANCS_GRAVES = [/(^| )haut brion\b/, /\blaville haut brion\b/, /\bdomaine de chevalier\b/, /\bla mission haut brion\b/];
 
 // Rang d'un vin de Bordeaux : { f, libelle, min } ou null. `min` : durée minimale au pic pour un cru classé de petite appellation.
@@ -116,7 +116,7 @@ export function rangBordeaux(name, dom, region, color) {
   if (SECONDS_VINS.test(tn)) return null;
   const tr = cle(region);
   if (!tr) return null;
-  if (color === 'Blanc' && /pessac|graves/.test(tr) && GRANDS_BLANCS_GRAVES.some(re => re.test(tn))) return { f: 2.5, libelle: 'grand blanc de Pessac-Léognan', min: 0 };
+  if (color === 'Blanc' && /pessac|graves/.test(tr) && GRANDS_BLANCS_GRAVES.some(re => re.test(tn))) return { f: 2, libelle: 'grand blanc de Pessac-Léognan', min: 0 };
   const hit = CLASSES.find(([, , app, noms]) => app.test(tr) && noms.some(re => re.test(tn)));
   if (!hit) return /saint emilion/.test(tr) && /grand cru classe/.test(cle(`${region} ${name}`)) ? { f: 1.2, libelle: 'grand cru classé', min: 0 } : null;
   return { f: hit[0], libelle: hit[1], min: hit[0] === R3 ? 13 : 0 };
