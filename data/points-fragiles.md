@@ -31,6 +31,17 @@
 - **Alias et graphies** (Morgon, morgon, « Gevrey Chambertin ») : dictionnaire à construire pour la correspondance région → appellation.
 - **Appellations oubliées** : relire la liste INAO complète (IGP majeures, VDN, vins doux naturels, crémants) une fois les 13 zones assemblées.
 
+## Niveaux de cru et rangs (version 1.30.0, 25 octobre 2026)
+- **Coefficients de rang non sourcés** : premier cru ×1,5, grand cru ×2,2 (×1,8 pour les plus souples), classements de Bordeaux ×1,1 à ×2,0, Alsace ×1,4 et ×2, champagne de prestige ×1,8. Ordres de grandeur recoupés avec Clive Coates (Bourgogne, après la récolte : village de Côte de Nuits 5-12 ans, premier cru 7-19, grand cru 10-25/30) et une grille fournie par l'utilisateur ; aucune mesure. À consolider avec des sources avant de les présenter comme établis.
+- **Coefficients par millésime des rapports reçus** (0,8 à 1,4) : non retenus, pas de source ; la note 1-5 de la bible joue ce rôle (-40 % à +25 %).
+- **Profil du millésime** (solaire, classique, concentré, fluide) : absent de la bible, qui ne porte qu'une note. Colonne à ajouter, avec sources, pour affiner les premiers et grands crus.
+- **Lignes dérivées** (12 « Premier Cru » de communes et 2 grands crus sans ligne propre) : notes de la commune, fiabilité plafonnée à B.
+- **Saint-Émilion** : la liste « premier grand cru classé A » reprend Ausone, Cheval Blanc, Angélus, Pavie, Figeac ; le classement de 2022 a changé la composition (à relire). **Pomerol** : pas de classement officiel, la liste des grands noms est un choix éditorial.
+- **Alsace** : liste des 51 grands crus saisie de mémoire, à relire contre la liste officielle.
+- **Non traités** : premiers crus de Pouilly-Fuissé (depuis 2020) et de Côte de Nuits-Villages ; cuvées de prestige de champagne limitées à une liste de grandes marques ; profils de vin jaune (Jura) traités comme liquoreux de 20 ans.
+- **Corrigé en 1.30.0** : un Alsace simple (région « Alsace ») était rangé sous « Alsace Grand Cru » par la taxonomie et recevait la règle du grand cru (+12 ans) ; il suit désormais la durée de son cépage.
+- Trois lignes de la table de référence (fiabilité A) pour des grands crus de Bourgogne (Bonnes-Mares 15 ans, Chambertin-Clos de Bèze 15, Corton-Charlemagne 19) sont écartées au profit du calcul par niveau (18, 20 et 15 ans) ; la source de ces trois lignes est une estimation, non une mesure.
+
 ## 4. Mise à jour annuelle
 Chaque automne : nouveau millésime (2026 à l'automne 2027), revérification des deux précédents, relecture des lignes C.
 

@@ -8,7 +8,7 @@ import { saveFile, readText } from './files.js';
 import * as Stats from './stats.js';
 import * as Notes from './notes.js';
 import { demoWines, isDemo } from './demo.js';
-import { apogee, apogeeTexte, serviceTexte } from './apogee.js';
+import { apogee, apogeeTexte, serviceTexte, fenetreRang } from './apogee.js';
 import { profil } from './profils.js';
 import { chiffres, statutOf } from './chiffres.js';
 const STATUT_LIBELLE = { pret: 'Prêt à boire', garder: 'À garder', urgence: 'Urgence' };
@@ -248,6 +248,7 @@ function card(w, mode, why) {
     w.conf === 'estimée' ? '<span class="tag wa">fiche estimée</span>' : '',
     w.conf === 'vérifiée' ? '<span class="tag ok">fiche vérifiée</span>' : '',
     w.src && w.src.from === 'bible' ? '<span class="tag">garde d’après la bible</span>' : '',
+    w.src && w.src.from === 'calc' ? '<span class="tag">garde calculée selon le rang du vin</span>' : '',
   ].filter(Boolean).join(' · ');
   const hasFiche = w.story || w.pairings.length || w.note || w.sources.length;
   // Apogée estimée par la règle de l'appli (sans IA) : affichée dans la fiche du vin.
@@ -563,7 +564,7 @@ async function saveForm() {
     if (!old) { errToast('Ce vin n’existe plus.'); closeSheet('sForm'); return; }
     const src = L.editSrc(old, f);
     const nw = L.normalizeWine({ ...old, ...f, src, check: false, conf: S.formExtra.conf || old.conf, sources: S.formExtra.sources, updated: now });
-    L.prefillFromBible(nw, S.bible);
+    L.prefillFromBible(nw, S.bible, fenetreRang);
     Object.assign(old, nw);
     const ok = await persist(() => store.putWines([old]));
     finishSave(old, ok, '« ' + old.name + ' » modifié.');
@@ -573,7 +574,7 @@ async function saveForm() {
   const nw = L.normalizeWine({ ...f, src, id: uid(), conf: S.formExtra.conf, sources: S.formExtra.sources, check: false, created: now, updated: now });
   // Tampon : la bible remplit la période de garde tant que l'IA n'a pas de crédit ; l'IA pourra la corriger.
   // La bible d'abord : la garde vient de la bible, sauf une garde saisie par l'utilisateur.
-  L.prefillFromBible(nw, S.bible);
+  L.prefillFromBible(nw, S.bible, fenetreRang);
   const dup = S.wines.find(w => L.keyOf(w) === L.keyOf(nw));
   if (dup) {
     const c = await ask('Déjà dans votre cave', `« ${dup.name}${dup.year ? ' ' + dup.year : ''} » existe déjà (${dup.qty} bouteille(s)).`, [
@@ -1517,7 +1518,7 @@ async function initAuto() {
   initFond();
   // La bible d'abord, sur toute la cave : aucun jeton.
   const bibleMaj = [];
-  for (const w of S.wines) { const c = JSON.parse(JSON.stringify(w)); if (L.prefillFromBible(c, S.bible)) bibleMaj.push(c); }
+  for (const w of S.wines) { const c = JSON.parse(JSON.stringify(w)); if (L.prefillFromBible(c, S.bible, fenetreRang)) bibleMaj.push(c); }
   if (bibleMaj.length) { if (await persist(() => store.putWines(bibleMaj))) bibleMaj.forEach(c => remplace(S.wines.find(x => x.id === c.id), c)); render(); }
   try { const m = await store.getMeta('autoFill'); if (m && typeof m === 'object') auto = { ...auto, ...m, tries: { ...(m.tries || {}) } }; } catch (e) { /* valeurs par défaut */ }
   // Sur iPhone, pas de tâche de fond : un rappel discret, au plus une fois par jour, s’il reste beaucoup de fiches à vérifier.

@@ -6,3 +6,4 @@ node data/recalculer-fenetres.mjs
 python3 data/assembler.py
 python3 data/build-bible.py
 node data/etendre-regroupements.mjs
+node data/etendre-niveaux.mjs
