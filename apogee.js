@@ -4,7 +4,7 @@ import { norm } from './util.js';
 import { reconnaitre, reperage, estEtranger } from './chiffres.js';
 import { profil } from './profils.js';
 import { TABLE_APOGEE } from './apogee-table.js';
-import { cle, niveauBourgogne, facteurBourgogne, COMMUNES, COTE_DE_BEAUNE, rangBordeaux, niveauAlsace, prestigeChampagne, cuveeCelebre } from './crus.js';
+import { cle, niveauBourgogne, facteurBourgogne, COMMUNES, COTE_DE_BEAUNE, rangBordeaux, niveauAlsace, prestigeChampagne, cuveeCelebre, domaineReference, GROUPES_DOMAINE } from './crus.js';
 
 // Nombre d'années après le millésime, avant le pic. La fenêtre d'apogée est pic ± 2 ans.
 export const REGLES = {
@@ -170,7 +170,7 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
   const grande = app ? app[2] : (w.region && !estEtranger(String(w.region)) ? reperage(String(w.region)) : null);
   const champagne = grande === 'Champagne' || /champagne/.test(texte);
 
-  let r; let forme = 'standard'; let rang = false; let premox = false; let fixe = null; let nivB = null;
+  let r; let forme = 'standard'; let rang = false; let cuveeRetenue = false; let premox = false; let fixe = null; let nivB = null;
   const rouge = w.color === 'Rouge', blanc = w.color === 'Blanc';
   const base = app ? (PAR_APPELLATION[cleTexte(app[0])] ?? PAR_APPELLATION[sansNiveau(app[0])]) : null;
   const nomApp = app ? app[0].replace(/ (Premier|Grand) Cru$/, '') : '';
@@ -245,7 +245,14 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
   // Cuvée parcellaire ou domaine de référence : plus de garde que l'appellation, jamais moins.
   if (forme === 'standard' && (rouge || blanc)) {
     const cv = cuveeCelebre(w.name, w.dom, w.region);
-    if (cv && cv.ans > r.ans) { r = enAns(cv.ans, cv.libelle); rang = true; }
+    if (cv && cv.ans > r.ans) { r = enAns(cv.ans, cv.libelle); rang = true; cuveeRetenue = true; }
+  }
+  // Domaine de référence (Bourgogne, Loire, Rhône, Alsace, Jura, Sud) : durée au pic × (1 + moitié de l'écart du coefficient). Pas de cumul avec une cuvée célèbre déjà retenue,
+  // ni pour Bordeaux et le champagne (le classement ou la cuvée disent déjà le rang), ni pour les fenêtres fixes (vin jaune, grands liquoreux de la Loire).
+  let domaine = null;
+  if ((rouge || blanc) && !fixe && !champagne && !bordeaux && !cuveeRetenue && GROUPES_DOMAINE.includes(grande)) {
+    domaine = domaineReference(w.name, w.dom);
+    if (domaine) { r = enAns(Math.max(r.ans, Math.round(r.ans * domaine.f)), `${r.label}, domaine ${domaine.nom}`); rang = true; }
   }
 
   const ansEff = Math.max(1, r.ans + decalageQualite(r.ans, qualite));
@@ -303,7 +310,7 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
     }
   }
   const statut = annee < from ? 'À garder' : annee > to ? 'Urgence' : 'Prêt à boire';
-  return { pic, from, to, statut, regle: r.label, ans: ansEff, ansRegle: r.ans, sansMillesime: false, ajuste, cat: L.cat, avant: L.avant, apres: L.apres, rang, forme, gFrom, gTo };
+  return { pic, from, to, statut, regle: r.label, ans: ansEff, ansRegle: r.ans, sansMillesime: false, ajuste, cat: L.cat, avant: L.avant, apres: L.apres, rang, forme, gFrom, gTo, domaine: domaine ? domaine.nom : null };
 }
 
 // Largeur de la période d'apogée autour du pic, et marge de la fenêtre de dégustation avant et après (années).

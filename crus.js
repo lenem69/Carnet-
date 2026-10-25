@@ -158,3 +158,45 @@ export function cuveeCelebre(name, dom, region) {
   const hit = CUVEES.find(([, , app, noms]) => (!app || app.test(tr)) && noms.some(re => re.test(tn)));
   return hit ? { ans: hit[0], libelle: hit[1] } : null;
 }
+
+/* ───────────────────────── Domaines de référence ───────────────────────── */
+
+// [coefficient du domaine (rapport de Jeff), libellé, motif sur « domaine nom » nettoyé par cle()]
+// Effet réduit de moitié : durée × (1 + (coefficient − 1) × 0,5). Jamais pour Bordeaux (le classement dit déjà le rang) ni pour le champagne.
+// Vérifié sur les noms voisins : Olivier Leflaive, Maison Leroy, Domaine de Chevalier (Bordeaux) ne sont pas confondus.
+const DOMAINES = [
+  // Bourgogne
+  [1.50, 'Romanée-Conti', /\bromanee conti\b|\bdrc\b/], [1.50, 'Leroy / d’Auvenay', /\bdomaine leroy\b|\bd auvenay\b|\bdomaine d auvenay\b/],
+  [1.45, 'Coche-Dury', /\bcoche dury\b/], [1.40, 'Armand Rousseau', /\barmand rousseau\b/], [1.40, 'Georges Roumier', /\bgeorges roumier\b|\broumier\b/],
+  [1.40, 'François Raveneau', /\braveneau\b/], [1.35, 'Leflaive', /(?<!olivier )\bleflaive\b(?! et associes)/], [1.20, 'Leflaive & Associés', /\bleflaive (et|&) associes\b/],
+  [1.35, 'Comtes Lafon', /\blafon\b/], [1.35, 'Dujac', /\bdujac\b/], [1.35, 'Vincent Dauvissat', /\bdauvissat\b/], [1.35, 'Guy Roulot', /\broulot\b/],
+  [1.35, 'Dugat-Py', /\bdugat py\b/], [1.35, 'Mugnier', /\bmugnier\b/], [1.35, 'Sylvain Cathiard', /\bcathiard\b/], [1.35, 'Prieuré Roch', /\bprieure roch\b/],
+  [1.30, 'Denis Mortet', /\bdenis mortet\b/], [1.30, 'Marquis d’Angerville', /\bangerville\b/], [1.30, 'Henri Gouges', /\bgouges\b/], [1.30, 'Méo-Camuzet', /\bmeo camuzet\b/],
+  [1.30, 'Hubert Lignier', /\bhubert lignier\b/], [1.30, 'Claude Dugat', /\bclaude dugat\b/], [1.25, 'Étienne Sauzet', /\bsauzet\b/],
+  [1.25, 'William Fèvre', /\bwilliam fevre\b/], [1.25, 'Jules Desjourneys', /\bdesjourneys\b/], [1.20, 'Joblot', /\bjoblot\b/],
+  // Rhône
+  [1.45, 'Rayas', /\bchateau de rayas\b|\brayas\b/], [1.45, 'Jean-Louis Chave', /\bj(ean)? ?l(ouis)? chave\b|\bdomaine chave\b/], [1.45, 'Henri Bonneau', /\bhenri bonneau\b/],
+  [1.40, 'Guigal (cuvées La-La)', /\bguigal\b.*\b(la mouline|la landonne|la turque)\b|\b(la mouline|la landonne|la turque)\b.*\bguigal\b/], [1.40, 'Thierry Allemand', /\ballemand\b/],
+  [1.35, 'Auguste Clape', /\bclape\b/], [1.35, 'Jamet', /\bjamet\b/], [1.30, 'Beaucastel', /\bbeaucastel\b/], [1.30, 'René Rostaing', /\brostaing\b/],
+  [1.30, 'Pierre Gonon', /\bgonon\b/], [1.30, 'Clos des Papes', /\bclos des papes\b/], [1.25, 'Yves Cuilleron', /\bcuilleron\b/], [1.25, 'Stéphane Ogier', /\bstephane ogier\b/],
+  [1.25, 'Vieux Télégraphe', /\bvieux telegraphe\b/], [1.20, 'Alain Graillot', /\bgraillot\b/], [1.20, 'Santa Duc', /\bsanta duc\b/],
+  // Loire
+  [1.45, 'Clos Rougeard', /\bclos rougeard\b/], [1.35, 'Coulée de Serrant (Joly)', /\bnicolas joly\b|\bcoulee de serrant\b/], [1.35, 'Huet', /\bhuet\b/],
+  [1.35, 'Dagueneau', /\bdagueneau\b/], [1.35, 'Belargus', /\bbelargus\b/], [1.30, 'François Cotat', /\bfrancois cotat\b/], [1.30, 'Paul Cotat', /\bpaul cotat\b/],
+  [1.25, 'Charles Joguet', /\bjoguet\b/], [1.25, 'Bernard Baudry', /\bbaudry\b/], [1.25, 'Alphonse Mellot', /\bmellot\b/], [1.20, 'Saint-Loup', /\bchateau de saint loup\b/],
+  // Alsace, Jura
+  [1.45, 'Overnoy-Houillon', /\bovernoy\b|\bhouillon\b/], [1.40, 'Trimbach', /\btrimbach\b/], [1.40, 'Ganevat', /\bganevat\b/], [1.40, 'Macle', /\bmacle\b/],
+  [1.35, 'Labet', /\blabet\b/], [1.30, 'Marcel Deiss', /\bdeiss\b/], [1.30, 'Stéphane Tissot', /\btissot\b/], [1.25, 'Weinbach', /\bweinbach\b/],
+  [1.25, 'Zind-Humbrecht', /\bzind humbrecht\b/], [1.25, 'Ostertag', /\bostertag\b/],
+  // Sud
+  [1.40, 'Grange des Pères', /\bgrange des peres\b/], [1.35, 'Tempier', /\btempier\b/], [1.35, 'Trévallon', /\btrevallon\b/], [1.35, 'Peyre Rose', /\bpeyre rose\b/],
+  [1.30, 'Montus', /\bchateau montus\b/], [1.30, 'Gauby', /\bgauby\b/], [1.25, 'Daumas Gassac', /\bdaumas gassac\b/], [1.25, 'Clos Canarelli', /\bcanarelli\b/],
+  [1.25, 'Abbatucci', /\babbatucci\b/],
+];
+export const GROUPES_DOMAINE = ['Bourgogne', 'Vallée du Rhône', 'Vallée de la Loire', 'Alsace', 'Sud-Ouest, Jura, Savoie', 'Provence et Corse', 'Languedoc-Roussillon'];
+// Domaine de référence reconnu dans le domaine ou le nom de la cuvée : { nom, coef, f } (f = multiplicateur de durée appliqué), ou null.
+export function domaineReference(name, dom) {
+  const t = cle(`${dom || ''} | ${name || ''}`);
+  const hit = DOMAINES.find(([, , re]) => re.test(t));
+  return hit ? { nom: hit[1], coef: hit[0], f: 1 + (hit[0] - 1) * 0.5 } : null;
+}
