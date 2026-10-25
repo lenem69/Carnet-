@@ -41,7 +41,7 @@ Le calcul est confronté à 47 fenêtres de dégustation publiées (45 dans la f
 - Les rouges de Bourgogne et les blancs de Bourgogne gardent des fins conservatrices (Coates) par rapport à Burghound et Vinous (Vosne village 2019 : calcul +14, critiques +10 à +26 ; Chassagne 1er cru 2018 : calcul +14, critiques +12 à +24).
 
 ## Domaines de référence (1.31.0)
-- `crus.js` : `domaineReference(nom, domaine)` reconnaît 73 domaines (Bourgogne, Rhône, Loire, Alsace, Jura, Sud) avec le coefficient du rapport de Jeff (1,20 à 1,50).
+- `crus.js` : `domaineReference(nom, domaine)` reconnaît 72 domaines (Bourgogne, Rhône, Loire, Alsace, Jura, Sud) avec le coefficient du rapport de Jeff (1,20 à 1,50).
 - Effet réduit de moitié : durée au pic × (1 + (coefficient − 1) × 0,5). Aucune source publiée ne les confirme, d'où cette prudence.
 - Jamais pour Bordeaux (le classement dit le rang), le champagne, les fenêtres fixes (vin jaune, grands liquoreux de la Loire), ni en plus d'une cuvée célèbre déjà retenue (Clos Rougeard, Trévallon, Peyre Rose, Grange des Pères, Rayas).
 - Noms voisins non confondus : Olivier Leflaive, Leflaive & Associés (coefficient 1,20 au lieu de 1,35), Domaine de Chevalier (Bordeaux).
