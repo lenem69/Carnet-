@@ -110,22 +110,44 @@ export async function preview(extra) {
 
 // Question « Appréciez-vous l'application ? » : une réponse oui/non, envoyée une seule fois, de façon anonyme (ni identifiant, ni donnée de cave).
 // Indépendante de l'accord aux statistiques : c'est le geste de répondre qui l'envoie, et la fenêtre le dit.
+// Envoi par un vrai formulaire dans un cadre invisible (la méthode que Google Forms accepte sans condition) ; la fin du chargement
+// du cadre sert de confirmation (la réponse de Google reste illisible depuis une autre origine).
 export const avisEtat = () => meta('satisfaction');
 export async function avisRepondre(rep) {
   if (rep !== 'oui' && rep !== 'non') return false;
-  await setm('satisfaction', { rep, date: Date.now(), sent: false });
+  await setm('satisfaction', { rep, date: Date.now(), sent: false, essais: 0 });
   return avisEnvoyer();
 }
-// Réessaie plus tard si le réseau manquait au moment de la réponse.
+function posterFormulaire(url, champ, valeur, delai = 15000) {
+  return new Promise(resolve => {
+    let fini = false;
+    const nom = 'cave-envoi-' + Date.now();
+    const cadre = document.createElement('iframe');
+    cadre.name = nom; cadre.hidden = true; cadre.setAttribute('aria-hidden', 'true'); cadre.tabIndex = -1;
+    const f = document.createElement('form');
+    f.method = 'POST'; f.action = url; f.target = nom; f.hidden = true; f.acceptCharset = 'UTF-8';
+    f.setAttribute('referrerpolicy', 'no-referrer');
+    const i = document.createElement('input'); i.type = 'hidden'; i.name = champ; i.value = valeur; f.appendChild(i);
+    const fin = ok => { if (fini) return; fini = true; clearTimeout(t); setTimeout(() => { cadre.remove(); f.remove(); }, 500); resolve(ok); };
+    const t = setTimeout(() => fin(false), delai);
+    let premier = true;
+    cadre.addEventListener('load', () => { if (premier) { premier = false; return; } fin(true); }); // le 1er « load » est celui du cadre vide
+    document.body.appendChild(cadre); document.body.appendChild(f);
+    try { f.submit(); } catch (e) { fin(false); }
+  });
+}
+// Réessaie plus tard si le réseau manquait ; renvoie une fois les réponses envoyées par l'ancienne méthode (non confirmée).
 export async function avisEnvoyer() {
   const s = await meta('satisfaction');
-  if (!s || s.sent || !s.rep || !configured() || navigator.onLine === false) return false;
+  if (!s || !s.rep || !configured() || navigator.onLine === false) return false;
+  if (s.sent && s.via === 'form') return false;
+  if ((s.essais || 0) >= 6) return false; // pas d'insistance sans fin
   try {
     const installAt = await meta('installAt');
     const ligne = ['sat', s.rep, cfg.version, installAt ? weekKey(new Date(installAt)) : weekKey()].join('|');
-    await fetch(cfg.post, { method: 'POST', mode: 'no-cors', credentials: 'omit', referrerPolicy: 'no-referrer', body: new URLSearchParams({ [cfg.entry]: ligne }) });
-    await setm('satisfaction', { ...s, sent: true });
-    return true;
+    const ok = await posterFormulaire(cfg.post, cfg.entry, ligne);
+    await setm('satisfaction', { ...s, sent: ok, via: ok ? 'form' : s.via, essais: (s.essais || 0) + 1, lastTry: Date.now() });
+    return ok;
   } catch (e) { return false; }
 }
 

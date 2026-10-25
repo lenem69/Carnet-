@@ -1127,6 +1127,7 @@ async function openSettings() {
   $('#ai-key').type = 'password'; $('#ai-show').textContent = 'Voir';
   $('#ai-guide').hidden = !!AI.getConfig('gemini').key;
   $('#st-ver').textContent = VERSION;
+  Stats.avisEtat().then(e => { $('#st-avis').textContent = !e || !e.rep ? '' : 'Question « Appréciez-vous l’application ? » : réponse « ' + e.rep + ' », ' + (e.sent && e.via === 'form' ? 'envoyée.' : 'pas encore confirmée (nouvel essai à la prochaine ouverture).'); }).catch(() => {});
   $('#st-auto').checked = auto.on; $('#st-auto-info').textContent = autoStatus();
   $('#st-maj').onclick = () => { closeSheet('sSet'); enrichAll(); };
   const notifInfo = () => {
@@ -1642,7 +1643,7 @@ async function askAvis() {
     if (navigator.webdriver && !window.__AVIS) return; // les tests automatisés ne voient pas cette fenêtre, sauf s'ils la demandent
     if (!Stats.configured()) return;
     const e = await Stats.avisEtat();
-    if (e && e.rep) { if (!e.sent) await Stats.avisEnvoyer(); return; }
+    if (e && e.rep) { if (!(e.sent && e.via === 'form')) await Stats.avisEnvoyer(); return; }
     // Comptage des ouvertures : un nouvel utilisateur reçoit la question à sa 2e ouverture ; celui qui avait déjà l'appli
     // (installée avant cette version) la reçoit tout de suite, à la mise à jour.
     let n = await store.getMeta('ouverturesAvis');
