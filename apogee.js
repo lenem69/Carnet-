@@ -376,19 +376,19 @@ export function fenetreRang(w, qualite, horsBible = false) {
 }
 
 // Où en est l'apogée elle-même (et non le statut du vin, qui dépend de la fenêtre de garde) : évite de contredire la pastille de la carte.
-const ETAT = { 'À garder': 'à venir', 'Prêt à boire': 'en cours', 'Urgence': 'dépassée' };
+const ETAT = { 'À garder': '', 'Prêt à boire': 'en cours', 'Urgence': 'dépassée' };
 
 // Phrase affichée dans la fiche du vin.
 export function apogeeTexte(a) {
   if (a.sansMillesime) return 'Sans millésime : prêt à boire.';
   const plage = a.from === a.to ? '' : ` (entre ${a.from} et ${a.to})`;
-  return `Apogée estimée ${a.pic}${plage} : ${ETAT[a.statut]}. Règle : ${a.regle}, +${a.ansPic ?? a.ans} ans après le millésime.${a.ajuste ? ' Ramenée dans la fenêtre de garde enregistrée.' : ''}`;
+  return `Apogée estimée ${a.pic}${plage}${ETAT[a.statut] ? ' : ' + ETAT[a.statut] : ''}. Règle : ${a.regle}, +${a.ansPic ?? a.ans} ans après le millésime.${a.ajuste ? ' Ramenée dans la fenêtre de garde enregistrée.' : ''}`;
 }
 
 // Rappel court affiché dans la fiche dépliée du vin.
 export function apogeeCourte(a) {
   if (a.sansMillesime) return 'Prêt à boire (sans millésime)';
-  return `Apogée ${a.pic} · ${ETAT[a.statut]}`;
+  return ETAT[a.statut] ? `Apogée ${a.pic} · ${ETAT[a.statut]}` : `Apogée ${a.pic}`;
 }
 
 // Température de service conseillée { min, max } en °C, ou null si la couleur est inconnue.

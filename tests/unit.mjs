@@ -284,7 +284,7 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
     }));
     T('audit : tous les « Premier Cru » = village × 1,5', pc.length === 0, pc.join(', '));
   }
-  T('apogée : rappel court sur la carte', A.apogeeCourte(t6)==='Apogée 2040 · à venir' && A.apogeeCourte(t1)==='Prêt à boire (sans millésime)', A.apogeeCourte(t6));
+  T('apogée : rappel court sur la carte', A.apogeeCourte(t6)==='Apogée 2040' && A.apogeeCourte(t1)==='Prêt à boire (sans millésime)', A.apogeeCourte(t6));
   T('apogée : phrase de la fiche contient le pic et la fenêtre', /Apogée estimée 2040 \(entre 2036 et 2044\)/.test(A.apogeeTexte(t6)), A.apogeeTexte(t6));
   // Cohérence apogée / fenêtre de garde : l'apogée ne sort jamais de la fenêtre enregistrée.
   {

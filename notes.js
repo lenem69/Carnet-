@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.33.1': ['Fiche du vin : le mot « à venir » est supprimé de la ligne d’apogée (il n’apportait rien). La mention « en cours » ou « dépassée » reste affichée quand elle s’applique.'],
   '1.33.0': ['Dates de garde : l’IA contrôle maintenant la fenêtre de garde de chaque vin. La fiche indique en italique « confirmé » (contrôlée) ou « bible » (pas encore contrôlée). Une garde que vous avez saisie n’est jamais touchée.'],
   '1.32.2': ['Envoi plus fiable : les statistiques anonymes (si vous les avez acceptées) et l’envoi direct d’« Aide et contact » passent maintenant par la même méthode que la question de satisfaction.'],
   '1.32.1': ['Question « Appréciez-vous l’application ? » : envoi de la réponse rendu plus fiable.'],

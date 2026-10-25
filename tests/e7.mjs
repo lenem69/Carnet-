@@ -8,7 +8,7 @@ src=src.replace(/const STATS_POST = '[^']*';/,"const STATS_POST = 'https://docs.
 fs.writeFileSync(ap,src);
 const srv=await start(8123);const b=await H.browser();
 const {T,out}=H.suite('Statistiques');
-const RE=/^v1\|[0-9a-f]{10}\|\d{4}-\d\d-\d\d\|1.33.0\|\d{4}-\d\d-\d\d\|(-?\d+\|){23}-?\d+$/;
+const RE=/^v1\|[0-9a-f]{10}\|\d{4}-\d\d-\d\d\|1.33.1\|\d{4}-\d\d-\d\d\|(-?\d+\|){23}-?\d+$/;
 async function mk(){const r=await H.newPage(b);
   await H.simulerFormulaires(r.page);
   return r}
