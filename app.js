@@ -108,7 +108,7 @@ function openSheet(id) {
 function hideSheet(id) {
   const i = stack.indexOf(id); if (i >= 0) stack.splice(i, 1);
   $('#' + id).classList.remove('show');
-  if (id === 'sDlg') settleDlg(null);
+  if (id === 'sDlg') { dlgForce = false; $('#sDlg').classList.remove('force'); settleDlg(null); }
 }
 // Fermeture voulue par l’utilisateur (croix, glisser, Retour) : demande confirmation si une saisie non enregistrée existe.
 const SAISIE_SHEETS = ['sForm', 'sTasting'];
@@ -116,6 +116,7 @@ async function requestClose(id) {
   const m = $('#' + id);
   if (!m || !m.classList.contains('show')) return;
   if (id === 'sLog' && logRunning) return;
+  if (id === 'sDlg' && dlgForce) return;
   if (SAISIE_SHEETS.includes(id) && m.dataset.dirty === '1') {
     const c = await ask('Abandonner la saisie ?', 'Ce que vous avez écrit ne sera pas enregistré.',
       [{ label: 'Continuer la saisie', value: 'non', kind: 'o' }, { label: 'Abandonner', value: 'oui' }]);
@@ -190,7 +191,7 @@ window.addEventListener('popstate', () => {
   if (ignorePop) { ignorePop--; return; }
   const id = stack[stack.length - 1];
   if (!id) return;
-  if (id === 'sLog' && logRunning) { try { history.pushState({ modal: 1 }, ''); } catch (e) { /* */ } return; }
+  if ((id === 'sLog' && logRunning) || (id === 'sDlg' && dlgForce)) { try { history.pushState({ modal: 1 }, ''); } catch (e) { /* */ } return; }
   if (SAISIE_SHEETS.includes(id) && $('#' + id).dataset.dirty === '1') {
     // Retour : on garde la fenêtre ouverte le temps de demander confirmation
     try { history.pushState({ modal: 1 }, ''); } catch (e) { /* */ }
@@ -213,11 +214,14 @@ window.addEventListener('resize', fitViewport);
 
 /* ============ Boîte de dialogue ============ */
 let dlgResolve = null;
+let dlgForce = false; // fenêtre dont on ne sort qu'en répondant (ni croix, ni toucher à côté, ni Retour)
 function settleDlg(v) { const r = dlgResolve; dlgResolve = null; if (r) r(v); }
-function ask(title, text, buttons) {
+function ask(title, text, buttons, opts) {
   return new Promise(resolve => {
     settleDlg(null);
     dlgResolve = resolve;
+    dlgForce = !!(opts && opts.force);
+    $('#sDlg').classList.toggle('force', dlgForce);
     $('#dlgT').textContent = title;
     $('#dlgX').textContent = text || '';
     const box = $('#dlgB'); box.innerHTML = '';
@@ -225,7 +229,7 @@ function ask(title, text, buttons) {
       const el = document.createElement('button');
       el.className = 'btn' + (b.kind ? ' ' + b.kind : '');
       el.textContent = b.label;
-      el.onclick = () => { const r = dlgResolve; dlgResolve = null; closeSheet('sDlg'); if (r) r(b.value); };
+      el.onclick = () => { const r = dlgResolve; dlgResolve = null; dlgForce = false; closeSheet('sDlg'); if (r) r(b.value); };
       box.appendChild(el);
     }
     openSheet('sDlg');
@@ -1290,6 +1294,7 @@ function bind() {
   $$('.modal').forEach(m => m.addEventListener('click', e => {
     if (e.target !== m) return;
     if (m.id === 'sLog' && logRunning) return;
+    if (m.id === 'sDlg' && dlgForce) return;
     if (m.id === 'sForm') return; // évite de perdre une saisie par un toucher à côté
     closeSheet(m.id);
   }));
@@ -1631,6 +1636,31 @@ async function askStatsConsent() {
   await Stats.setConsent(c === 'oui');
   toast(c === 'oui' ? 'Merci ! Vous pouvez arrêter à tout moment dans ⚙ Réglages.' : 'Rien ne sera envoyé.');
 }
+// « Appréciez-vous l'application ? » : une fois, réponse obligatoire, envoyée anonymement (la fenêtre le dit). Réponse gardée et renvoyée plus tard si le réseau manquait.
+async function askAvis() {
+  try {
+    if (navigator.webdriver && !window.__AVIS) return; // les tests automatisés ne voient pas cette fenêtre, sauf s'ils la demandent
+    if (!Stats.configured()) return;
+    const e = await Stats.avisEtat();
+    if (e && e.rep) { if (!e.sent) await Stats.avisEnvoyer(); return; }
+    // Comptage des ouvertures : un nouvel utilisateur reçoit la question à sa 2e ouverture ; celui qui avait déjà l'appli
+    // (installée avant cette version) la reçoit tout de suite, à la mise à jour.
+    let n = await store.getMeta('ouverturesAvis');
+    if (!(n > 0)) {
+      const installAt = await store.getMeta('installAt');
+      n = installAt && Date.now() - installAt > 6e4 ? 2 : 1;
+    } else n++;
+    await store.setMeta('ouverturesAvis', n);
+    if (n < 2) return;
+    await whenFree();
+    const c = await ask('Appréciez-vous l’application ?',
+      'Votre réponse est envoyée anonymement à son auteur : un simple « oui » ou « non », rien d’autre (ni vos vins, ni votre nom).',
+      [{ label: 'Oui', value: 'oui' }, { label: 'Non', value: 'non', kind: 'o' }], { force: true });
+    if (c !== 'oui' && c !== 'non') return;
+    await Stats.avisRepondre(c);
+    toast('Merci pour votre réponse !');
+  } catch (e) { console.error('avis', e); }
+}
 async function showStatsPreview() {
   const t = await Stats.preview(statsExtra());
   await ask('Ce qui est envoyé', t ? `Voici la ligne de cette semaine (elle part la semaine prochaine). Ce sont uniquement des nombres : 1) version 2) identifiant aléatoire de cette installation 3) semaines 4) compteurs d’usage.\n\n${t}` : 'Rien : les statistiques sont désactivées.', [{ label: 'Fermer', value: null, kind: 'o' }]);
@@ -1729,6 +1759,6 @@ async function boot() {
   render();
   store.protect();
   initSW();
-  (async () => { await AI.initGratuit(); avisSiChange(); await loadBible(); await showBienvenue(); await showNews(); await initStats(); initAuto(); })();
+  (async () => { await AI.initGratuit(); avisSiChange(); await loadBible(); await showBienvenue(); await showNews(); await initStats(); await askAvis(); initAuto(); })();
 }
 boot();

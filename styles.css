@@ -350,3 +350,6 @@ details.adv[open] summary { margin-bottom: 6px; }
 .toast { animation: toastIn .22s ease-out; }
 .tab, .chip { transition: background-color .22s ease, color .22s ease, border-color .22s ease, box-shadow .22s ease, transform .08s ease; }
 @media (prefers-reduced-motion: reduce) { .vin, .modal.show, .modal.show > .sheet, .toast { animation: none; } .tab, .chip { transition: none; } }
+
+/* Fenêtre à réponse obligatoire : pas de croix */
+.modal.force .sx{display:none}

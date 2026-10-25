@@ -108,6 +108,27 @@ export async function preview(extra) {
   return line(wk, st.weeks[wk] || { n: {}, d: [] }, await context(extra));
 }
 
+// Question « Appréciez-vous l'application ? » : une réponse oui/non, envoyée une seule fois, de façon anonyme (ni identifiant, ni donnée de cave).
+// Indépendante de l'accord aux statistiques : c'est le geste de répondre qui l'envoie, et la fenêtre le dit.
+export const avisEtat = () => meta('satisfaction');
+export async function avisRepondre(rep) {
+  if (rep !== 'oui' && rep !== 'non') return false;
+  await setm('satisfaction', { rep, date: Date.now(), sent: false });
+  return avisEnvoyer();
+}
+// Réessaie plus tard si le réseau manquait au moment de la réponse.
+export async function avisEnvoyer() {
+  const s = await meta('satisfaction');
+  if (!s || s.sent || !s.rep || !configured() || navigator.onLine === false) return false;
+  try {
+    const installAt = await meta('installAt');
+    const ligne = ['sat', s.rep, cfg.version, installAt ? weekKey(new Date(installAt)) : weekKey()].join('|');
+    await fetch(cfg.post, { method: 'POST', mode: 'no-cors', credentials: 'omit', referrerPolicy: 'no-referrer', body: new URLSearchParams({ [cfg.entry]: ligne }) });
+    await setm('satisfaction', { ...s, sent: true });
+    return true;
+  } catch (e) { return false; }
+}
+
 // Envoie les semaines terminées pas encore envoyées. Réponse opaque (no-cors) : seule l'absence de réseau est détectable,
 // dans ce cas on réessaie à la prochaine ouverture.
 export async function flush(extra) {
