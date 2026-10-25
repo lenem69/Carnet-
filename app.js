@@ -72,7 +72,10 @@ async function loadBible() {
   try { local = JSON.parse((await store.getMeta('bible')) || 'null'); } catch (e) { local = null; }
   if (L.bibleValid(local)) S.bible = local;
   const last = Number(await store.getMeta('bibleAt')) || 0;
-  if (S.bible && Date.now() - last < BIBLE_EVERY) return;
+  // Après une nouvelle version de l'appli, la bible est reprise tout de suite : sinon l'ancienne copie reste jusqu'à 24 h
+  // et les dates de garde des fiches ne suivent pas la nouvelle formule d'apogée.
+  const vue = await store.getMeta('bibleV');
+  if (S.bible && vue === VERSION && Date.now() - last < BIBLE_EVERY) return;
   try {
     const r = await fetch(BIBLE_URL, { cache: 'no-cache' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -81,6 +84,7 @@ async function loadBible() {
     if (!L.bibleValid(j)) throw new Error('format');
     if (!local || j.date !== local.date) { await store.setMeta('bible', txt); S.bible = j; }
     await store.setMeta('bibleAt', Date.now());
+    await store.setMeta('bibleV', VERSION);
   } catch (e) { console.warn('Bible non mise à jour :', e.message); }
 }
 
