@@ -8,12 +8,9 @@ src=src.replace(/const STATS_POST = '[^']*';/,"const STATS_POST = 'https://docs.
 fs.writeFileSync(ap,src);
 const srv=await start(8123);const b=await H.browser();
 const {T,out}=H.suite('Statistiques');
-const RE=/^v1\|[0-9a-f]{10}\|\d{4}-\d\d-\d\d\|1.32.1\|\d{4}-\d\d-\d\d\|(-?\d+\|){23}-?\d+$/;
+const RE=/^v1\|[0-9a-f]{10}\|\d{4}-\d\d-\d\d\|1.32.2\|\d{4}-\d\d-\d\d\|(-?\d+\|){23}-?\d+$/;
 async function mk(){const r=await H.newPage(b);
-  await r.page.evaluateOnNewDocument(()=>{window.__posts=[];window.__fail=false;const of=window.fetch;
-    window.fetch=async(i,init={})=>{const u=typeof i==='string'?i:i.url;
-      if(/forms\/d\/e\/TESTFORM\/formResponse/.test(u)){if(window.__fail)throw new TypeError('offline');window.__posts.push({u,m:init.method,body:String(init.body),mode:init.mode,cred:init.credentials});return new Response('',{status:200})}
-      return of(i,init)}});
+  await H.simulerFormulaires(r.page);
   return r}
 const meta=(page,k)=>page.evaluate(async k=>{const s=await import('./store.js');return s.getMeta(k)},k);
 const setmeta=(page,k,v)=>page.evaluate(async(k,v)=>{const s=await import('./store.js');await s.setMeta(k,v)},k,v);
@@ -62,7 +59,7 @@ await setmeta(page,'stats',past);
 await page.reload();await H.sl(1800);
 let posts=await page.evaluate(()=>window.__posts);
 T('semaine passée envoyée une fois',posts.length===1,JSON.stringify(posts));
-T('envoi : POST sans cookies ni retour',posts[0]&&posts[0].m==='POST'&&posts[0].mode==='no-cors'&&posts[0].cred==='omit');
+T('envoi : POST par formulaire (cadre invisible)',posts[0]&&posts[0].m==='POST'&&posts[0].mode==='form');
 const sent=posts[0]?decodeURIComponent(posts[0].body.replace(/\+/g,' ')).replace(/^entry\.42=/,''):'';
 T('envoi : champ et format',posts[0]&&posts[0].body.startsWith('entry.42=')&&RE.test(sent),sent);
 const f=sent.split('|');

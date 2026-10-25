@@ -42,3 +42,21 @@ export async function tapText(p,sel,text){const ok=await p.evaluate((sel,text)=>
 export async function click(p,sel){await p.waitForSelector(sel,{visible:true,timeout:4000});await p.tap(sel);await sl(120)}
 export async function pickFiles(p,trigger,files){const [fc]=await Promise.all([p.waitForFileChooser({timeout:5000}),trigger()]);await fc.accept(files)}
 export async function setAI(p,provider='gemini',key='AIzaTEST',extra={}){await p.evaluate((v)=>localStorage.setItem('cave-ai',JSON.stringify(v)),{provider,key,...extra})}
+
+// Simule l'envoi des formulaires Google (cadre invisible) : note chaque envoi dans window.__posts, ne fait rien si window.__fail est vrai (l'appli conclut alors à un échec).
+const SIM_FORM = () => {
+  window.__posts = window.__posts || []; window.__fail = window.__fail || false; window.__POST_DELAI = 400;
+  const orig = HTMLFormElement.prototype.submit;
+  HTMLFormElement.prototype.submit = function () {
+    if (!/^cave-envoi/.test(this.target || '')) return orig.call(this);
+    if (window.__fail) return;
+    const i = this.querySelector('input');
+    window.__posts.push({ u: this.action, m: (this.method || '').toUpperCase(), body: new URLSearchParams({ [i.name]: i.value }).toString(), mode: 'form' });
+    const fr = document.querySelector('iframe[name="' + this.target + '"]');
+    setTimeout(() => fr && fr.dispatchEvent(new Event('load')), 20);
+  };
+};
+export async function simulerFormulaires(page) {
+  await page.evaluateOnNewDocument(SIM_FORM);
+  try { await page.evaluate(SIM_FORM); } catch (e) { /* page pas encore chargée */ }
+}

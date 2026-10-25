@@ -1127,7 +1127,6 @@ async function openSettings() {
   $('#ai-key').type = 'password'; $('#ai-show').textContent = 'Voir';
   $('#ai-guide').hidden = !!AI.getConfig('gemini').key;
   $('#st-ver').textContent = VERSION;
-  Stats.avisEtat().then(e => { $('#st-avis').textContent = !e || !e.rep ? '' : 'Question « Appréciez-vous l’application ? » : réponse « ' + e.rep + ' », ' + (e.sent && e.via === 'form' ? 'envoyée.' : 'pas encore confirmée (nouvel essai à la prochaine ouverture).'); }).catch(() => {});
   $('#st-auto').checked = auto.on; $('#st-auto-info').textContent = autoStatus();
   $('#st-maj').onclick = () => { closeSheet('sSet'); enrichAll(); };
   const notifInfo = () => {
@@ -1410,7 +1409,8 @@ async function publishContact() {
   if (navigator.onLine === false) { errToast('Pas de connexion : votre message n’est pas parti. Il reste ici, réessayez avec du réseau.'); return; }
   const b = $('#ct-pub'); b.disabled = true; b.textContent = 'Envoi en cours…';
   try {
-    await fetch(FEEDBACK_POST, { method: 'POST', mode: 'no-cors', credentials: 'omit', referrerPolicy: 'no-referrer', body: new URLSearchParams({ [FEEDBACK_ENTRY]: contactText() }) });
+    const ok = await Stats.posterFormulaire(FEEDBACK_POST, FEEDBACK_ENTRY, contactText());
+    if (!ok) throw new Error('envoi non confirmé');
     toast('✅ Requête publiée. Merci !');
     $('#ct-msg').value = ''; closeSheet('sContact');
   } catch (e) {

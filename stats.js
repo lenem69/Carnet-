@@ -118,7 +118,7 @@ export async function avisRepondre(rep) {
   await setm('satisfaction', { rep, date: Date.now(), sent: false, essais: 0 });
   return avisEnvoyer();
 }
-function posterFormulaire(url, champ, valeur, delai = 15000) {
+export function posterFormulaire(url, champ, valeur, delai = (typeof window !== 'undefined' && window.__POST_DELAI) || 15000) {
   return new Promise(resolve => {
     let fini = false;
     const nom = 'cave-envoi-' + Date.now();
@@ -151,8 +151,8 @@ export async function avisEnvoyer() {
   } catch (e) { return false; }
 }
 
-// Envoie les semaines terminées pas encore envoyées. Réponse opaque (no-cors) : seule l'absence de réseau est détectable,
-// dans ce cas on réessaie à la prochaine ouverture.
+// Envoie les semaines terminées pas encore envoyées, par formulaire (voir posterFormulaire). La réponse de Google reste illisible :
+// sans confirmation de chargement, on réessaie à la prochaine ouverture.
 export async function flush(extra) {
   if (consent !== 'oui' || !st || !configured() || sending) return 0;
   if (navigator.onLine === false) return 0;
@@ -165,7 +165,7 @@ export async function flush(extra) {
     const c = await context(extra);
     for (const wk of due) {
       try {
-        await fetch(cfg.post, { method: 'POST', mode: 'no-cors', credentials: 'omit', referrerPolicy: 'no-referrer', body: new URLSearchParams({ [cfg.entry]: line(wk, st.weeks[wk], c) }) });
+        if (!(await posterFormulaire(cfg.post, cfg.entry, line(wk, st.weeks[wk], c)))) break;
         st.sent.push(wk); sent++;
       } catch (e) { break; }
     }

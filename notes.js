@@ -1,6 +1,7 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
-  '1.32.1': ['Question « Appréciez-vous l’application ? » : envoi de la réponse rendu plus fiable, et son état est visible dans ⚙ Réglages › Application.'],
+  '1.32.2': ['Envoi plus fiable : les statistiques anonymes (si vous les avez acceptées) et l’envoi direct d’« Aide et contact » passent maintenant par la même méthode que la question de satisfaction.'],
+  '1.32.1': ['Question « Appréciez-vous l’application ? » : envoi de la réponse rendu plus fiable.'],
   '1.32.0': ['Une question rapide : « Appréciez-vous l’application ? » (oui ou non). Elle apparaît une seule fois (à la 2e ouverture pour un nouvel utilisateur) et votre réponse est envoyée anonymement à l’auteur.'],
   '1.31.1': ['Blancs de Bourgogne : l’apogée tombe maintenant vers le milieu de la période de garde, plus à sa fin (Chassagne-Montrachet 1er cru 2024 : apogée 2033 au lieu de 2035). La garde ne change pas.', 'Médoc, Bordeaux, Margaux, Saint-Julien, Hermitage : vos durées de garde de la 1.29.2 s’appliquent de nouveau (un Médoc ne dépasse plus un Haut-Médoc, Margaux et Saint-Julien ne dépassent plus Pauillac, l’Hermitage tient plus longtemps).'],
   '1.31.0': ['Domaines de référence (Leflaive, Chave, Clape, Dauvissat, Tempier, Clos Rougeard…) : leurs vins de Bourgogne, Loire, Rhône, Alsace, Jura et du Sud gagnent un peu de garde. Effet volontairement réduit de moitié ; Bordeaux et champagne ne changent pas.', 'Les vins sans ligne dans la bible (Alsace simple, Vouvray, Barolo, Rioja, Napa…) reçoivent une fenêtre de garde estimée, modifiable à la main.'],
