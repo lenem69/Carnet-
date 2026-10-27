@@ -10,6 +10,7 @@ import { cle, niveauBourgogne, facteurBourgogne, COMMUNES, COTE_DE_BEAUNE, rangB
 export const REGLES = {
   champagne: { ans: 10, label: 'champagne millésimé' },
   liquoreux: { ans: 20, label: 'vin liquoreux' },
+  liquoreuxLeger: { ans: 8, label: 'vin liquoreux léger (Monbazillac, Layon, Aubance)' },
   prestige: { ans: 15, label: 'grand cru ou grand vin' },
   premierCru: { ans: 12, label: 'premier cru' },
   cremant: { ans: 4, label: 'crémant ou mousseux' },
@@ -26,6 +27,8 @@ export const REGLES = {
 
 // Mots-clés sur le nom, le domaine, le cépage et la région (texte normalisé : minuscules, sans accents).
 const LIQUOREUX = /\bsauternes|barsac|monbazillac|layon|aubance|quarts? de chaume|bonnezeaux|tokaj|liquoreux|moelleux|vin de paille|pedro ximenez|\bporto\b(?! vecchio)|\bport\b|madere|vin jaune|jurancon(?! sec)|vendanges tardives|grains nobles|beerenauslese|eiswein|ice wine/;
+// Liquoreux légers (1.35.0) : les critiques ouvrent un Coteaux du Layon Chaume 2017 à +3/+8 ans et un Monbazillac 2018 à +2/+5, contre +7/+31 et +7/+33 avec la règle des grands liquoreux (Sauternes : +21 à +48).
+const LIQUOREUX_LEGER = /monbazillac|layon|aubance/;
 // Appellations de vins doux que LIQUOREUX ne reconnaît pas (leur durée vient de PAR_APPELLATION) : le début de leur garde suit la règle des vins doux.
 const DOUX_NOMS = /\b(saussignac|loupiac|sainte croix du mont|cerons|premieres cotes de bordeaux|graves superieures|muscat de (rivesaltes|beaumes de venise|frontignan|lunel|mireval)|muscat du cap corse|rivesaltes|maury(?! sec)|banyuls)\b|\bcadillac\b(?! cotes)/;
 const PREMIER_CRU = /premier cru|1er cru/;
@@ -110,7 +113,8 @@ const COUL = { Rouge: 'R', Blanc: 'B', 'Rosé': 'S', 'Pétillant': 'P' };
 // Appellations dont la durée révisée en 1.29.2 (décision de l'utilisateur, connaissance de dégustation) prime sur la table de référence : la table
 // (deux sources concordantes, mais des fourchettes d'appellation larges) classait un Médoc plus durable qu'un Haut-Médoc, Margaux et Saint-Julien au-dessus
 // de Pauillac, et l'Hermitage à 11 ans seulement.
-const PAR_PRIORITAIRE = new Set(['bordeaux', 'bordeaux superieur', 'medoc', 'saint julien', 'margaux', 'hermitage']);
+// 1.35.0 : Savennières (table B : 17 ans ; durée révisée : 10 ; critiques : fenêtres de +3 à +10 pour un 2019).
+const PAR_PRIORITAIRE = new Set(['bordeaux', 'bordeaux superieur', 'medoc', 'saint julien', 'margaux', 'hermitage', 'savennieres', 'savennieres coulee de serrant', 'savennieres roche aux moines']);
 export function refTable(w) {
   const app = w && w.region ? reconnaitre(String(w.region)) : null;
   const c = w && COUL[w.color];
@@ -211,6 +215,7 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
     const bp = (b && (b[rouge ? 0 : 1] ?? b[rouge ? 1 : 0])) ?? 6;
     r = enAns(Math.round(bp * (sgn ? 3.5 : 2)), sgn ? 'sélection de grains nobles (Alsace)' : 'vendanges tardives (Alsace)'); rang = true;
   }
+  else if (LIQUOREUX_LEGER.test(texte) && !GRAND_LIQUOREUX_LOIRE.test(texte)) r = REGLES.liquoreuxLeger;
   else if (LIQUOREUX.test(texte)) r = REGLES.liquoreux;
   else if (ref && (ref.fiab === 'A' || ref.fiab === 'B') && !champagne && !(app && PAR_PRIORITAIRE.has(sansNiveau(app[0])))) r = enAns(ref.ans, 'table de référence');
   else if (w.color === 'Pétillant' && champagne) {
@@ -303,10 +308,12 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
     // champagnes), jamais plus tard que la marge avant l'apogée ; un grand millésime ne retarde pas le début ; un rouge hors Bourgogne n'est jamais attendu plus de
     // 10 ans (les critiques ouvrent la fenêtre des premiers crus classés 7 à 10 ans après la récolte). Repères : fenêtres publiées par Vinous, Decanter,
     // Wine Advocate, Jancis Robinson et Burghound (voir tests/unit.mjs). Fin : apogée + marge après ; un grand millésime n'allonge la fin que de 10 % de la durée au pic.
-    const ks = doux ? 0.33 : w.color === 'Pétillant' ? 0.55 : blanc ? 0.4 : 0.5;
+    // Champagne millésimé hors cuvée de prestige : les critiques ouvrent la fenêtre à +8 ans (Roederer 2015 : +8/+20 ; Bollinger et Pol Roger : +8/+14), soit dès le début de l'apogée.
+    const champMill = w.color === 'Pétillant' && champagne && !rang;
+    const ks = doux ? 0.33 : champMill ? 0.8 : w.color === 'Pétillant' ? 0.55 : blanc ? 0.4 : 0.5;
     const ansDebut = Math.min(ansEff, r.ans);
     const debut = Math.round(ks * ansDebut);
-    gFrom = millesime + Math.max(1, Math.min(ansEff - L.h - L.avant, rouge && !doux ? Math.min(DEBUT_MAX_ROUGE, debut) : debut));
+    gFrom = millesime + Math.max(1, Math.min(ansEff - L.h - (champMill ? 0 : L.avant), rouge && !doux ? Math.min(DEBUT_MAX_ROUGE, debut) : debut));
     const ecart = ansEff - r.ans;
     const ansFin = ecart > 0 ? r.ans + Math.min(ecart, Math.round(0.1 * r.ans)) : ansEff;
     const delta = ecart < 0 ? Math.round(r.ans * (FACTEUR_APRES[Number(qualite)] ?? 0)) : 0;

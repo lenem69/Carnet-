@@ -192,8 +192,12 @@ const DOMAINES = [
   [1.40, 'Grange des Pères', /\bgrange des peres\b/], [1.35, 'Tempier', /\btempier\b/], [1.35, 'Trévallon', /\btrevallon\b/], [1.35, 'Peyre Rose', /\bpeyre rose\b/],
   [1.30, 'Montus', /\bchateau montus\b/], [1.30, 'Gauby', /\bgauby\b/], [1.25, 'Daumas Gassac', /\bdaumas gassac\b/], [1.25, 'Clos Canarelli', /\bcanarelli\b/],
   [1.25, 'Abbatucci', /\babbatucci\b/],
+  // Beaujolais (1.35.0, à valider par Jeff : coefficients prudents, effet réduit de moitié comme les autres)
+  [1.25, 'Marcel Lapierre', /\blapierre\b/], [1.25, 'Jean Foillard', /\bfoillard\b/], [1.25, 'Jean-Paul Thévenet', /\bthevenet\b/], [1.25, 'Yvon Métras', /\bmetras\b/],
+  [1.20, 'Guy Breton', /\bguy breton\b/], [1.20, 'Georges Descombes', /\bdescombes\b/], [1.20, 'Château Thivin', /\bthivin\b/], [1.20, 'Louis-Claude Desvignes', /\bdesvignes\b/],
+  [1.20, 'Jean-Paul Brun', /\bjean paul brun\b|\bterres dorees\b/],
 ];
-export const GROUPES_DOMAINE = ['Bourgogne', 'Vallée du Rhône', 'Vallée de la Loire', 'Alsace', 'Sud-Ouest, Jura, Savoie', 'Provence et Corse', 'Languedoc-Roussillon'];
+export const GROUPES_DOMAINE = ['Bourgogne', 'Beaujolais', 'Vallée du Rhône', 'Vallée de la Loire', 'Alsace', 'Sud-Ouest, Jura, Savoie', 'Provence et Corse', 'Languedoc-Roussillon'];
 // Domaine de référence reconnu dans le domaine ou le nom de la cuvée : { nom, coef, f } (f = multiplicateur de durée appliqué), ou null.
 export function domaineReference(name, dom) {
   const t = cle(`${dom || ''} | ${name || ''}`);
