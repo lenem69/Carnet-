@@ -7,15 +7,15 @@ import * as PR from '../profils.js';
 const out=[];const T=(n,c,x='')=>out.push((c?'PASS ':'FAIL ')+n+(c?'':' → '+x));
 // Température de service et repères d'appellation (1.26.0)
 {const sv=(color,region,name='X')=>A.service({name,color,region});const tx=o=>o&&o.min+'-'+o.max;
-T('service: rouge de Bordeaux 16-18',tx(sv('Rouge','Pauillac'))==='16-18',tx(sv('Rouge','Pauillac')));
-T('service: Beaujolais léger 13-15',tx(sv('Rouge','Morgon'))==='13-15');
+T('service: rouge de Bordeaux 16-18',tx(sv('Rouge','Margaux'))==='16-18',tx(sv('Rouge','Margaux')));
+T('service: Beaujolais léger 13-15',tx(sv('Rouge','Moulin-à-Vent'))==='13-15');
 T('service: Champagne 8-10, crémant 6-8',tx(sv('Pétillant','Champagne'))==='8-10'&&tx(sv('Pétillant','Crémant d’Alsace'))==='6-8');
 T('service: rosé 8-10, liquoreux 8-10',tx(sv('Rosé','Bandol'))==='8-10'&&tx(sv('Blanc','Sauternes'))==='8-10');
 T('service: vin jaune 14-16 (pas la règle des liquoreux)',tx(sv('Blanc','Château-Chalon'))==='14-16'&&sv('Blanc','Château-Chalon').appellation===true);
-T('service: premier cru blanc 10-12',tx(sv('Blanc','Chablis premier cru'))==='10-12');
+T('service: premier cru blanc 10-12',tx(sv('Blanc','Rully premier cru'))==='10-12');
 T('service: couleur inconnue = rien',sv('Autre','')===null&&A.serviceTexte({name:'X',color:'Autre'})==='');
 T('service: texte « Service : 16 à 18 °C. »',A.serviceTexte({name:'X',color:'Rouge',region:'Cahors'})==='Service : 16 à 18 °C.');
-T('service: min < max pour toutes les couleurs et règles',['Rouge','Blanc','Rosé','Pétillant'].every(c=>['','Pauillac','Morgon','Sancerre','Chablis premier cru','Champagne','Sauternes','Cahors','IGP Pays d’Oc'].every(r=>{const o=A.service({name:'X',color:c,region:r});return !o||o.min<o.max&&o.min>=5&&o.max<=20})));
+T('service: min ≤ max pour toutes les couleurs et règles',['Rouge','Blanc','Rosé','Pétillant'].every(c=>['','Pauillac','Morgon','Sancerre','Chablis premier cru','Champagne','Sauternes','Cahors','IGP Pays d’Oc'].every(r=>{const o=A.service({name:'X',color:c,region:r});return !o||o.min<=o.max&&o.min>=5&&o.max<=20})));
 T('profil: Cahors rouge trouvé, cépages Malbec',PR.profil({color:'Rouge',region:'Cahors'}).cepages.includes('Malbec'));
 T('profil: apostrophe typographique ou droite (L’Étoile)',!!PR.profil({color:'Blanc',region:"L'Étoile"})&&!!PR.profil({color:'Blanc',region:'L’Étoile'}));
 T('profil: Jurançon blanc ambigu (sec ou doux) = aucun',PR.profil({color:'Blanc',region:'Jurançon'})===null);
@@ -398,6 +398,7 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   const cas = [
     [{ name: 'X', dom: 'D', year: 2019, story: 'saisie', src: { story: 'user' } }, { story: 'IA', grape: 'Syrah', pairings: ['Agneau'], from: 2025, to: 2032 }],
     [{ name: 'Y', dom: 'D', year: 2019, story: 'vieux', src: {} }, { story: 'neuf', from: 2030, to: 2024 }],
+    [{ name: 'B', dom: 'D', year: 2022, grape: 'Pinot noir', pairings: ['Gibier à poil (cerf)'], src: { grape: 'bible', pairings: 'bible' } }, { story: 'H', grape: 'Gamay', pairings: ['Pizza'] }],
     [{ name: 'Z', dom: 'D', year: 2019, from: 2026, to: 2030, src: { from: 'bible', to: 'bible' } }, { from: 2027, to: 2033, conf: 'vérifiée', sources: [{ t: 'a', u: 'https://a.fr' }] }],
   ];
   for (const [w, d] of cas) {
@@ -814,5 +815,85 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   const bk = L.parseBackup ? L.parseBackup(JSON.stringify({ app: 'cave-a-vin', schema: 11, wines: [{ name: 'Old', dom: 'D', year: 2010, from: 2015, to: 2025 }] })) : null;
   T('sauvegarde de schéma 11 : encore lisible, sans verdict', !bk || (bk.wines && bk.wines.length === 1 && bk.wines[0].gv === null), JSON.stringify(bk).slice(0, 200));
   T('schéma de fiche : 12', L.SCHEMA_VERSION === 12);
+  console.log(out.slice(o0).join('\n'));
+}
+
+// Repères d'appellation dérivés du fichier de référence (1.34.0) : service, carafage, cépage unique, accords sans IA
+{
+  const sv=(color,region,year=2023)=>A.service({name:'X',color,region,year});const tx=o=>o&&o.min+'-'+o.max;
+  T('repères : Sancerre blanc 11-12 (corrigé, l’ancienne règle disait 8-10)',tx(sv('Blanc','Sancerre'))==='11-12');
+  T('repères : Saumur-Champigny rouge 16-17',tx(sv('Rouge','Saumur-Champigny'))==='16-17');
+  T('repères : rang exact seulement (Chablis grand cru n’hérite pas du village, il garde la règle 11-13)',tx(sv('Blanc','Chablis Grand Cru Les Clos'))==='11-13');
+  T('repères : lieu-dit après un premier cru toléré (Meursault 1er cru Perrières)',!!A.service({name:'X',color:'Blanc',region:'Meursault 1er Cru Perrières'}).repere);
+  T('repères : vin doux jamais concerné (Alsace Vendanges Tardives = 8-10)',tx(sv('Blanc','Alsace Vendanges Tardives'))==='8-10');
+  T('repères : le profil curé du Sud-Ouest garde la priorité (Cahors 16-18)',tx(sv('Rouge','Cahors'))==='16-18'&&A.service({name:'X',color:'Rouge',region:'Cahors'}).appellation===true);
+  T('repères : une seule valeur affichée sans « à » (« Service : 17 °C. »)',/^Service : \d+ °C\.$/.test(A.serviceTexte({name:'X',color:'Rouge',region:'Corton',year:2022})));
+  T('carafage : Barolo récent = carafer longuement',A.carafageTexte({name:'X',color:'Rouge',region:'Barolo',year:2020},2026)==='Carafer longuement avant de servir.');
+  T('carafage : vin de plus de 12 ans = aucun conseil',A.carafageTexte({name:'X',color:'Rouge',region:'Barolo',year:2010},2026)==='');
+  T('carafage : sans repère ou vin doux = rien',A.carafageTexte({name:'X',color:'Rouge',region:'Zzz',year:2022},2026)===''&&A.carafageTexte({name:'X',color:'Blanc',region:'Sauternes',year:2022},2026)==='');
+  const rep=w=>A.repereVin(w);
+  const f=(o)=>L.normalizeWine({name:'Vin',year:2022,qty:1,...o});
+  const a=f({region:'Gevrey-Chambertin 1er Cru',color:'Rouge',name:'Domaine A Gevrey 1er cru'});
+  T('cépage unique : écrit (Pinot noir), origine bible',L.prefillReperes(a,rep,PR.accordsRepere)&&a.grape==='Pinot noir'&&a.src.grape==='bible');
+  T('accords : au plus 3 familles, origine bible, aucun texte du fichier',a.pairings.length>=1&&a.pairings.length<=3&&a.src.pairings==='bible'&&a.pairings.every(x=>/\(/.test(x)));
+  const cn=f({region:'Châteauneuf-du-Pape',color:'Rouge'});L.prefillReperes(cn,rep,PR.accordsRepere);
+  T('assemblage (Châteauneuf) : cépage jamais deviné',cn.grape==='');
+  const bx=f({region:'Bordeaux',color:'Rouge'});L.prefillReperes(bx,rep,PR.accordsRepere);
+  T('assemblage (Bordeaux) : cépage jamais deviné',bx.grape==='');
+  const u=f({region:'Sancerre',color:'Blanc',grape:'Mon cépage',src:{grape:'user'}});L.prefillReperes(u,rep,PR.accordsRepere);
+  T('saisie de l’utilisateur jamais remplacée',u.grape==='Mon cépage'&&u.src.grape==='user');
+  const ia=f({region:'Sancerre',color:'Blanc',grape:'Gamay',src:{grape:'ai'},pairings:['Pizza'],}); ia.src.pairings='ai';L.prefillReperes(ia,rep,PR.accordsRepere);
+  T('case déjà remplie (même par l’IA) jamais touchée par les repères',ia.grape==='Gamay'&&ia.pairings.join()==='Pizza');
+  const idem=f({region:'Sancerre',color:'Blanc'});L.prefillReperes(idem,rep,PR.accordsRepere);
+  T('repères : seconde application = aucun changement',L.prefillReperes(idem,rep,PR.accordsRepere)===false);
+  const prot=L.applyAi(JSON.parse(JSON.stringify(a)),{grape:'Gamay',pairings:['Pizza'],story:'Histoire'});
+  T('IA : un cépage et des accords « bible » ne sont jamais écrasés',prot.grape==='Pinot noir'&&prot.pairings.every(x=>/\(/.test(x))&&prot.src.grape==='bible'&&prot.src.pairings==='bible');
+  T('IA : l’histoire est toujours écrite',prot.story==='Histoire'&&prot.src.story==='ai');
+  const vide2=L.applyAi(f({region:'Zzz',color:'Rouge'}),{grape:'Gamay',pairings:['Pizza']});
+  T('IA : sur une fiche vide, elle écrit cépage et accords',vide2.grape==='Gamay'&&vide2.src.grape==='ai'&&vide2.pairings[0]==='Pizza');
+  T('IA : pas de recherche web demandée pour un cépage ou des accords « bible »',!L.doutesEffectifs(a).includes('grape')&&!L.doutesEffectifs(a).includes('pairings'));
+  const tout=JSON.parse(fs.readFileSync(new URL('../reperes.js',import.meta.url),'utf8').replace(/^[\s\S]*?export const REPERES = /,'').replace(/;\nexport const FAMILLES[\s\S]*$/,''));
+  T('repères : aucune clé sans donnée, effectif ≥ 3 vins',Object.values(tout).every(e=>e.n>=3&&(e.s||e.c||e.g||e.a)));
+  T('repères : service plausible (5 à 20 °C, min ≤ max)',Object.values(tout).filter(e=>e.s).every(e=>e.s[0]>=5&&e.s[1]<=20&&e.s[0]<=e.s[1]));
+  T('discrétion : reperes.js ne contient ni texte libre long ni citation (octets < 30 000)',fs.statSync(new URL('../reperes.js',import.meta.url)).size<30000);
+  console.log(out.slice(0).filter(l=>/repères|carafage|cépage|accords|IA :|assemblage|saisie de l’utilisateur|case déjà|discrétion : reperes/.test(l)).slice(-30).join('\n'));
+}
+// Maturité : frise, pastille, fiabilité (1.34.0)
+{
+  const o0=out.length;
+  const M=await import('../maturite.js');
+  const a={from:2030,to:2034,gFrom:2027,gTo:2042,sansMillesime:false};
+  const m=M.fenetreMaturite({year:2024},a);
+  T('maturité : fenêtre garde/apogée',m&&m.g0===2027&&m.a0===2030&&m.a1===2034&&m.g1===2042,JSON.stringify(m));
+  T('maturité : sans millésime = pas de frise',M.fenetreMaturite({},{sansMillesime:true})===null&&M.fenetreMaturite(null,a)===null);
+  const g=M.fenetreMaturite({from:2028,to:2040},a);
+  T('maturité : la garde enregistrée prime sur le calcul',g.g0===2028&&g.g1===2040);
+  T('maturité : l’apogée reste dans la garde',(()=>{const x=M.fenetreMaturite({from:2032,to:2036},a);return x.a0>=x.g0&&x.a1<=x.g1&&x.a0<=x.a1})());
+  T('maturité : garde de moins d’un an ou inversée = rien',M.fenetreMaturite({from:2030,to:2030},{...a,gFrom:null,gTo:null})===null&&M.fenetreMaturite({from:2040,to:2030},a)===null);
+  const ph=y=>M.phase(m,y);
+  T('maturité : les 4 phases',ph(2025)==='garde'&&ph(2028)==='jeune'&&ph(2031)==='apogee'&&ph(2037)==='declin'&&ph(2050)==='declin'&&ph(2027)==='jeune'&&ph(2030)==='apogee'&&ph(2034)==='apogee'&&ph(2035)==='declin');
+  const p=y=>M.pastille(m,y);
+  T('pastille : à garder',p(2026).label==='À garder'&&/2027/.test(p(2026).date));
+  T('pastille : prêt à boire',p(2031).label==='Prêt à boire'&&/2042/.test(p(2031).date)&&p(2028).label==='Prêt à boire'&&p(2036).label==='Prêt à boire');
+  T('pastille : à boire vite (dernière année ou l’année d’avant)',p(2041).label==='À boire vite'&&p(2042).label==='À boire vite');
+  T('pastille : passé',p(2043).label==='Passé, à boire vite'&&/2042/.test(p(2043).date));
+  T('pastille : couleur = phase (jeune, apogée, déclin)',p(2028).phase==='jeune'&&p(2031).phase==='apogee'&&p(2036).phase==='declin'&&p(2041).phase==='declin'&&p(2026).phase==='garde');
+  T('pastille : pas de fenêtre = rien',M.pastille(null,2026)===null&&M.pastilleHtml(null,2026)==='');
+  const f=M.fiabilite;
+  T('fiabilité : garde saisie = aucun niveau',f({userGarde:true,confirmee:true,entree:true})===null&&f(null)===null);
+  T('fiabilité : confirmée par l’IA = haute',f({confirmee:true,entree:true}).mot==='haute'&&f({confirmee:true}).n===3);
+  T('fiabilité : ligne de la bible = moyenne, sans raison',f({entree:true}).mot==='moyenne'&&f({entree:true}).raison==='');
+  const fa=f({entree:false,connue:true,w:{name:'X',year:2020,color:'Rouge',region:'Zzz'}});
+  T('fiabilité : absent de la bible = faible avec raison',fa.mot==='faible'&&fa.n===1&&/absent de la bible/.test(fa.raison),JSON.stringify(fa));
+  T('fiabilité : région inconnue = faible, raison propre',/non reconnue/.test(f({entree:false,connue:false}).raison));
+  T('fiabilité html : raison seulement pour faible',!/rs/.test(M.fiabiliteHtml(f({entree:true})))&&/class="rs"/.test(M.fiabiliteHtml(fa))&&M.fiabiliteHtml(null)==='');
+  const svg=M.friseSvg(m,2026);
+  T('frise : trois blocs unis, curseur, sans dégradé',/mf-j/.test(svg)&&/mf-a/.test(svg)&&/mf-d/.test(svg)&&/mf-now/.test(svg)&&!/linearGradient/.test(svg));
+  T('frise : dates des frontières',['2027','2030','2034','2042'].every(y=>svg.includes('>'+y+'<')));
+  T('frise : texte alternatif lisible',/aria-label="Garde de 2027 à 2042, apogée de 2030 à 2034, aujourd’hui 2026"/.test(svg));
+  const sv1=M.friseSvg({g0:2020,a0:2020,a1:2020,g1:2030},2026);
+  T('frise : apogée d’une seule année, début = apogée : pas d’erreur, bloc visible',/mf-a/.test(sv1)&&!/NaN/.test(sv1)&&(sv1.match(/>2020</g)||[]).length===1,sv1.slice(0,200));
+  T('frise : vin passé (curseur après la fin) ou à garder (avant) : pas de NaN',!/NaN/.test(M.friseSvg(m,2060))&&!/NaN/.test(M.friseSvg(m,2000)));
+  T('frise : ni script ni attribut dangereux (dates numériques seulement)',!/<script|onerror|javascript:/i.test(svg));
   console.log(out.slice(o0).join('\n'));
 }

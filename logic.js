@@ -174,8 +174,10 @@ function origins(v) {
 const vide = v => v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length);
 // L'IA peut écrire partout sauf dans une saisie de l'utilisateur (origine « user »). Les anciennes fiches sans origine sont réécrites
 // (choix de l'utilisateur, option B) : les textes saisis avant la version 1.16.0 peuvent donc être remplacés.
+// Exception (1.34.0, choix de l'utilisateur) : un cépage ou des accords venus de la bible ou du fichier de référence (origine « bible ») ne sont jamais écrasés par l'IA.
+const PROTEGES_BIBLE = ['grape', 'pairings'];
 function peutEcrire(w, src, k) {
-  return src[k] !== 'user';
+  return src[k] !== 'user' && !(PROTEGES_BIBLE.includes(k) && src[k] === 'bible');
 }
 // Origines après une modification à la main : un champ changé devient « user », un champ vidé perd son origine.
 export function editSrc(old, raw) {
@@ -199,7 +201,7 @@ function calcDoutes(w, d) {
   if (vide(w.story)) out.add('story');
   if (vide(w.pairings)) out.add('pairings');
   if (vide(w.from) || vide(w.to)) out.add('from');
-  return DOUTE.filter(k => out.has(k) && s[k] !== 'user');
+  return DOUTE.filter(k => out.has(k) && s[k] !== 'user' && !(PROTEGES_BIBLE.includes(k) && s[k] === 'bible'));
 }
 
 // Champs à chercher pour cette fiche (calculés si la fiche vient d'avant cette version).
@@ -319,6 +321,22 @@ export function prefillFromBible(w, bible, calcul) {
   if (w.from === avant.from && w.to === avant.to && JSON.stringify(w.src) === avant.src) return false;
   if (!w.conf) w.conf = 'estimée';
   return true;
+}
+
+// Repères d'appellation (fichier de référence, fiabilité B) : remplit un cépage ou des accords restés vides, origine « bible » (jamais une saisie, jamais un champ déjà rempli).
+// repere(fiche) → { g: [cépage], a: [familles d'accords] } | null. Retourne true si la fiche a changé.
+export function prefillReperes(w, repere, libelles) {
+  if (!w || typeof repere !== 'function') return false;
+  let r = null;
+  try { r = repere(w); } catch (e) { r = null; }
+  if (!r) return false;
+  const src = { ...(w.src || {}) };
+  let change = false;
+  if (vide(w.grape) && src.grape !== 'user' && Array.isArray(r.g) && r.g.length) { w.grape = r.g.join(', '); src.grape = 'bible'; change = true; }
+  const acc = typeof libelles === 'function' ? libelles(r) : [];
+  if (vide(w.pairings) && src.pairings !== 'user' && acc.length) { w.pairings = acc.slice(0, 3); src.pairings = 'bible'; change = true; }
+  if (change) { w.src = src; w.updated = Date.now(); }
+  return change;
 }
 
 export const keyOf = w => norm([w.name, w.dom, w.year].join('|'));

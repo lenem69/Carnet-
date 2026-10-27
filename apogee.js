@@ -2,7 +2,7 @@
 // Règle du sommelier de l'appli (brouillon de l'utilisateur), complétée par l'expérience. Pure : hors connexion, sans IA.
 import { norm } from './util.js';
 import { reconnaitre, reperage, estEtranger } from './chiffres.js';
-import { profil } from './profils.js';
+import { profil, repere } from './profils.js';
 import { TABLE_APOGEE } from './apogee-table.js';
 import { cle, niveauBourgogne, facteurBourgogne, COMMUNES, COTE_DE_BEAUNE, rangBordeaux, niveauAlsace, prestigeChampagne, cuveeCelebre, domaineReference, GROUPES_DOMAINE } from './crus.js';
 
@@ -410,6 +410,9 @@ export function service(w) {
   const rouge = w.color === 'Rouge', blanc = w.color === 'Blanc';
   if (!rouge && !blanc) return null;
   const nv = niveau(w);
+  // Repère d'appellation dérivé du fichier de référence (fiabilité B), jamais pour un vin doux (Vendanges Tardives, SGN) ; sans repère, la règle générale ci-dessous.
+  const rp = VT_SGN.test(texte) ? null : repere(w, nv === 'grand' ? 'g' : nv === 'premier' ? 'p' : 'v');
+  if (rp && rp.s) return { min: rp.s[0], max: rp.s[1], appellation: false, repere: true };
   if (nv === 'grand') return rouge ? r(16, 18) : r(11, 13);
   if (nv === 'premier') return rouge ? r(16, 18) : r(10, 12);
   if (VIN_LEGER.test(texte)) return rouge ? r(14, 16) : r(8, 10);
@@ -424,5 +427,24 @@ export function service(w) {
 
 export function serviceTexte(w) {
   const s = service(w);
-  return s ? `Service : ${s.min} à ${s.max} °C.` : '';
+  return s ? (s.min === s.max ? `Service : ${s.min} °C.` : `Service : ${s.min} à ${s.max} °C.`) : '';
+}
+
+// Repère d'appellation d'un vin (service, carafage, cépage d'une appellation à cépage unique, familles d'accords) ou null. Fiabilité B.
+export function repereVin(w) {
+  if (!w || !w.name || VT_SGN.test(texteVin(w)) || LIQUOREUX.test(texteVin(w))) return null;
+  const nv = niveau(w);
+  return repere(w, nv === 'grand' ? 'g' : nv === 'premier' ? 'p' : 'v');
+}
+
+// Conseil de carafage de l'appellation (repère du fichier de référence, fiabilité B). Seulement pour un vin récent (12 ans ou moins) : un vieux vin demande un
+// avis au cas par cas (dépôt, fragilité). Jamais pour un vin doux ni sans repère.
+const CARAFAGE = { long: 'Carafer longuement avant de servir.', carafe: 'Carafer avant de servir.', ouvrir: 'Ouvrir la bouteille à l’avance.', direct: 'Se sert directement, sans carafer.' };
+export function carafageTexte(w, annee = new Date().getFullYear()) {
+  if (!w || !w.year || annee - Number(w.year) > 12) return '';
+  const texte = texteVin(w);
+  if (VT_SGN.test(texte) || LIQUOREUX.test(texte) || (w.color !== 'Rouge' && w.color !== 'Blanc')) return '';
+  const nv = niveau(w);
+  const rp = repere(w, nv === 'grand' ? 'g' : nv === 'premier' ? 'p' : 'v');
+  return rp && rp.c ? CARAFAGE[rp.c] : '';
 }

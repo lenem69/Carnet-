@@ -8,9 +8,10 @@ import { saveFile, readText } from './files.js';
 import * as Stats from './stats.js';
 import * as Notes from './notes.js';
 import { demoWines, isDemo } from './demo.js';
-import { apogee, apogeeTexte, serviceTexte, fenetreRang } from './apogee.js';
-import { profil } from './profils.js';
+import { apogee, apogeeTexte, serviceTexte, carafageTexte, fenetreRang, repereVin } from './apogee.js';
+import { profil, accordsRepere } from './profils.js';
 import { chiffres, statutOf } from './chiffres.js';
+import { fenetreMaturite, phase, pastilleHtml, friseSvg, fiabilite, fiabiliteHtml } from './maturite.js';
 const STATUT_LIBELLE = { pret: 'Prêt à boire', garder: 'À garder', urgence: 'Urgence' };
 import { QUOTES } from './quotes.js';
 
@@ -243,9 +244,12 @@ const fmtPrice = v => (Math.round(v * 100) / 100).toLocaleString('fr-FR', { mini
 function card(w, mode, why) {
   const st = L.status(w, YEAR);
   const meta = [w.color, w.grape, w.price !== '' ? fmtPrice(w.price) : '', w.loc ? '📍 ' + w.loc : ''].filter(Boolean).map(esc).join(' · ');
+  // Maturité (frise, pastille, fiabilité) : seulement pour un vin avec millésime et une fenêtre exploitable.
+  const apoM = w.name && w.year ? apogee(w, YEAR, L.bibleQuality(w, S.bible)) : null;
+  const mat = apoM ? fenetreMaturite(w, apoM) : null;
   const tags = [
     w.check ? '<span class="tag bad">à vérifier</span>' : '',
-    st ? `<span class="tag stp ${st.cls}">${st.label}${w.from || w.to ? ' (' + (w.from || '…') + '–' + (w.to || '…') + ')' : ''}</span>` : '',
+    mat ? pastilleHtml(mat, YEAR) : st ? `<span class="tag stp ${st.cls}">${st.label}${w.from || w.to ? ' (' + (w.from || '…') + '–' + (w.to || '…') + ')' : ''}</span>` : '',
     w.qty <= 0 ? '<span class="tag">plus en cave</span>' : '',
   ].filter(Boolean).join(' ');
   const tags2 = [
@@ -259,18 +263,20 @@ function card(w, mode, why) {
   // Apogée estimée par la règle de l'appli (sans IA) : affichée dans la fiche du vin.
   const apoA = w.name ? apogee(w, YEAR, L.bibleQuality(w, S.bible)) : null;
   const apo = apoA ? apogeeTexte(apoA) : '';
-  const svc = w.name ? serviceTexte(w) : '';
+  const fb = mat ? fiabilite({ userGarde: !!(w.src && (w.src.from === 'user' || w.src.to === 'user')), confirmee: L.gardeConfirmee(w), entree: !!L.bibleEntry(w, S.bible), connue: apoM.connue, w }) : null;
+  const frise = mat ? friseSvg(mat, YEAR) + fiabiliteHtml(fb) : '';
+  const svc = w.name ? [serviceTexte(w), carafageTexte(w, YEAR)].filter(Boolean).join(' ') : '';
   const pf = w.name ? profil(w) : null;
   const repAppel = pf ? `Repères de l’appellation ${pf.appellation} (indicatifs) : ${[!w.grape ? 'cépages ' + pf.cepages : '', !w.pairings.length ? 'accords classiques : ' + pf.accords : ''].filter(Boolean).join(' ; ')}.` : '';
   const majIA = L.aiFields(w);
   const qty = mode === 'cave'
     ? `<div class="q"><button data-a="m" aria-label="Retirer une bouteille">−</button><b>${w.qty}</b><button data-a="p" aria-label="Ajouter une bouteille">+</button></div>`
     : `<b style="font-size:18px">${w.qty}×</b>`;
-  return `<div class="w${w.qty <= 0 ? ' out' : ''}${S.highlight === w.id ? ' hl' : ''}" data-id="${esc(w.id)}">
+  return `<div class="w${w.qty <= 0 ? ' out' : ''}${mat && w.qty > 0 ? ' ph-' + phase(mat, YEAR) : ''}${S.highlight === w.id ? ' hl' : ''}" data-id="${esc(w.id)}">
   ${why ? `<p class="why">💡 ${esc(why)}</p>` : ''}
   <div class="row"><div><h4>${esc(w.name)}${w.year ? ' ' + esc(w.year) : ''}</h4><p>${esc([w.dom, w.region].filter(Boolean).join(' · '))}</p></div>${qty}</div>
   ${meta || tags ? `<div class="ml">${meta ? `<p class="mm">${meta}</p>` : ''}${tags ? `<p class="stl">${tags}</p>` : ''}</div>` : ''}
-  <div class="fr">${hasFiche || apo || svc || tags2 ? `<details${S.ouvert.has(w.id) ? ' open' : ''}><summary>Fiche et accords</summary>${tags2 ? `<p class="mu small sec">${tags2}</p>` : ''}${degLigne(w)}${apo ? `<p class="mu small">${esc(apo)}</p>` : ''}${svc ? `<p class="mu small">${esc(svc)}</p>` : ''}${repAppel && (!w.grape || !w.pairings.length) ? `<p class="mu small">${esc(repAppel)}</p>` : ''}${majIA.length ? `<p class="mu small">Mis à jour par l’IA : ${esc(majIA.join(', '))}.</p>` : ''}${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : degLigne(w) + journalHtml(w, mode)}<button class="am" type="button" data-a="menu" aria-haspopup="dialog">⋯ Actions</button></div>
+  <div class="fr">${hasFiche || apo || svc || tags2 ? `<details${S.ouvert.has(w.id) ? ' open' : ''}><summary>Fiche et accords</summary>${tags2 ? `<p class="mu small sec">${tags2}</p>` : ''}${degLigne(w)}${frise}${apo ? `<p class="mu small">${esc(apo)}</p>` : ''}${svc ? `<p class="mu small">${esc(svc)}</p>` : ''}${repAppel && (!w.grape || !w.pairings.length) ? `<p class="mu small">${esc(repAppel)}</p>` : ''}${majIA.length ? `<p class="mu small">Mis à jour par l’IA : ${esc(majIA.join(', '))}.</p>` : ''}${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : degLigne(w) + journalHtml(w, mode)}<button class="am" type="button" data-a="menu" aria-haspopup="dialog">⋯ Actions</button></div>
   <div class="acts-h" hidden>${!w.story && !w.pairings.length ? '<button data-a="gen" type="button">✨ Fiche (IA)</button>' : ''}<button data-a="e" type="button">Modifier</button>${mode === 'cave' ? '<button data-a="d" type="button">Supprimer</button>' : ''}</div>
 </div>`;
 }
@@ -570,6 +576,7 @@ async function saveForm() {
     const src = L.editSrc(old, f);
     const nw = L.normalizeWine({ ...old, ...f, src, check: false, conf: S.formExtra.conf || old.conf, sources: S.formExtra.sources, updated: now });
     L.prefillFromBible(nw, S.bible, fenetreRang);
+    L.prefillReperes(nw, repereVin, accordsRepere);
     Object.assign(old, nw);
     const ok = await persist(() => store.putWines([old]));
     finishSave(old, ok, '« ' + old.name + ' » modifié.');
@@ -580,6 +587,7 @@ async function saveForm() {
   // Tampon : la bible remplit la période de garde tant que l'IA n'a pas de crédit ; l'IA pourra la corriger.
   // La bible d'abord : la garde vient de la bible, sauf une garde saisie par l'utilisateur.
   L.prefillFromBible(nw, S.bible, fenetreRang);
+  L.prefillReperes(nw, repereVin, accordsRepere);
   const dup = S.wines.find(w => L.keyOf(w) === L.keyOf(nw));
   if (dup) {
     const c = await ask('Déjà dans votre cave', `« ${dup.name}${dup.year ? ' ' + dup.year : ''} » existe déjà (${dup.qty} bouteille(s)).`, [
@@ -1525,7 +1533,7 @@ async function initAuto() {
   initFond();
   // La bible d'abord, sur toute la cave : aucun jeton.
   const bibleMaj = [];
-  for (const w of S.wines) { const c = JSON.parse(JSON.stringify(w)); if (L.prefillFromBible(c, S.bible, fenetreRang)) bibleMaj.push(c); }
+  for (const w of S.wines) { const c = JSON.parse(JSON.stringify(w)); const a = L.prefillFromBible(c, S.bible, fenetreRang); const b = L.prefillReperes(c, repereVin, accordsRepere); if (a || b) bibleMaj.push(c); }
   if (bibleMaj.length) { if (await persist(() => store.putWines(bibleMaj))) bibleMaj.forEach(c => remplace(S.wines.find(x => x.id === c.id), c)); render(); }
   try { const m = await store.getMeta('autoFill'); if (m && typeof m === 'object') auto = { ...auto, ...m, tries: { ...(m.tries || {}) } }; } catch (e) { /* valeurs par défaut */ }
   // Sur iPhone, pas de tâche de fond : un rappel discret, au plus une fois par jour, s’il reste beaucoup de fiches à vérifier.

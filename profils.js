@@ -3,6 +3,7 @@
 // Un vin n’a de repères que si son appellation et sa couleur désignent UNE seule ligne (jamais de devinette :
 // « Jurançon » blanc peut être sec ou moelleux, il n’a donc pas de repères).
 import { norm } from './util.js';
+import { REPERES, FAMILLES } from './reperes.js';
 
 // [appellation, couleur (R B D E), cépages, service min, service max, accords]
 const P = [
@@ -37,3 +38,29 @@ export function profil(w) {
   const [appellation, , cepages, tmin, tmax, accords] = l[0];
   return { appellation, cepages, tmin, tmax, accords };
 }
+
+// Repères PAR APPELLATION dérivés d'un fichier de référence (voir data/construire-reperes.py) : service, carafage, cépage d'une appellation à cépage unique,
+// familles d'accords. Fiabilité B. Rang du vin : 'v' village (ou régionale), 'p' premier cru, 'g' grand cru. Sans correspondance exacte de niveau : rien (jamais le village pour un grand cru).
+const MOTS = /\b(aoc|aop|ac|appellation|controlee?|protegee|origine|d)\b/g;
+const cleR = s => norm(String(s || '').replace(/[’'-]/g, ' ')).replace(MOTS, ' ').replace(/\s+/g, ' ').trim();
+const COUL_R = { Rouge: 'R', Blanc: 'B' };
+export function repere(w, niv) {
+  if (!w || !w.region || !COUL_R[w.color]) return null;
+  const t0 = cleR(w.region);
+  const texteNv = /\bgrand cru\b/.test(t0) ? 'g' : /\b(1er|premier) cru\b/.test(t0) ? 'p' : 'v';
+  const t = t0.replace(/\b(1er|premier|grand) cru\b/g, ' ').replace(/\s+/g, ' ').trim();
+  // Le rang calculé par l'appli est essayé d'abord (Clos de Vougeot sans la mention « Grand Cru »), puis celui qu'annonce le texte (Barolo n'est pas un « grand cru »).
+  for (const nv of new Set([niv, texteNv].filter(Boolean))) {
+    let best = null;
+    for (const k of Object.keys(REPERES)) {
+      const [base, n, c] = k.split('|');
+      if (n !== nv || c !== COUL_R[w.color]) continue;
+      // village : l'appellation seule (ou « Alsace » suivi d'un cépage) ; premier et grand cru : le lieu-dit peut suivre
+      const ok = t === base || ((nv !== 'v' || base === 'alsace') && t.startsWith(base + ' '));
+      if (ok && (!best || base.length > best[0].length)) best = [base, REPERES[k]];
+    }
+    if (best) return { ...best[1], appellation: best[0] };
+  }
+  return null;
+}
+export const accordsRepere = r => (r && r.a ? r.a.map(k => FAMILLES[k]).filter(Boolean) : []);

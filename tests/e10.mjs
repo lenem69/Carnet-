@@ -35,7 +35,7 @@ await page.evaluate(async a=>{const s=await import('./store.js');
 await page.reload();await H.sl(2200);
 const att=await page.evaluate(async()=>{const j=await (await fetch('bible/bible.json')).json();const r=j.rows.find(x=>x.a==='Chassagne-Montrachet'&&x.c==='R');return r&&r.y['2018'];});
 const carte=await page.$eval('#vCave',e=>e.textContent);
-T('Chassagne-Montrachet rouge 2018 : la fenêtre de la nouvelle bible remplace 2028-2046',!!att&&carte.includes(att[1]+'–'+att[2])&&!carte.includes('2046'),JSON.stringify(att)+' '+carte.slice(0,220));
+T('Chassagne-Montrachet rouge 2018 : la fenêtre de la nouvelle bible remplace 2028-2046',!!att&&carte.includes(String(att[1]))&&carte.includes(String(att[2]))&&!carte.includes('2046'),JSON.stringify(att)+' '+carte.slice(0,220));
 T('plus de « Ramenée dans la fenêtre de garde » sur cette fiche',!carte.includes('Ramenée dans la fenêtre'),carte.slice(0,400));
 T('aucune erreur JavaScript',errs.length===0,errs.join('|'));
 await page.close();

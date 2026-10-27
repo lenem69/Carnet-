@@ -40,7 +40,7 @@
     if (vide(w.story)) out.add('story');
     if (vide(w.pairings)) out.add('pairings');
     if (vide(w.from) || vide(w.to)) out.add('from');
-    return DOUTE.filter(k => out.has(k) && s[k] !== 'user');
+    return DOUTE.filter(k => out.has(k) && s[k] !== 'user' && !((k === 'grape' || k === 'pairings') && s[k] === 'bible'));
   }
 
   // Champs à chercher : ceux signalés, ou calculés pour une fiche d'avant cette version.
@@ -72,6 +72,7 @@
     for (const k of CHAMPS) {
       const v = p[k];
       if (vide(v) || src[k] === 'user') continue;
+      if ((k === 'grape' || k === 'pairings') && src[k] === 'bible') continue; // 1.34.0 : même règle que logic.js (peutEcrire)
       if ((k === 'from' || k === 'to') && (controle || (w.from && w.to))) continue;
       w[k] = v; src[k] = 'ai';
     }

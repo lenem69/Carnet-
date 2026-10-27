@@ -353,3 +353,29 @@ details.adv[open] summary { margin-bottom: 6px; }
 
 /* Fenêtre à réponse obligatoire : pas de croix */
 .modal.force .sx{display:none}
+
+/* Maturité (1.34.0) : frise de la fiche, fiabilité, pastille et liseré de la liste. Blocs unis, couleurs naturelles. */
+:root { --mf-piste: #ece3e4; --ph-garde: #c9bbbe; --ph-jeune: #8e9c96; --ph-apogee: #d2aa5c; --ph-declin: #8e4a56; }
+.mat2 { margin: 10px 0 2px; }
+.mat2 svg { width: 100%; height: auto; display: block; overflow: visible; }
+.mat2 .mf-piste { fill: var(--mf-piste); }
+.mat2 .mf-j { fill: #8e9c96; } .mat2 .mf-a { fill: #e3c58c; } .mat2 .mf-d { fill: #8e4a56; }
+.mat2 .mf-now { fill: #fff; stroke: var(--tx); stroke-width: 2.5; }
+.mat2 .mf-tick { stroke: #b3a7ab; stroke-width: 1; }
+.mat2 .d { font-size: 12.5px; fill: var(--mu); font-variant-numeric: tabular-nums; }
+.mat2 .dk { fill: var(--tx); font-weight: 600; }
+.mat2 .au { font-size: 11.5px; fill: var(--mu); }
+.fiab { margin: 4px 0 6px; font-size: 13px; color: var(--mu); }
+.fiab b { color: var(--tx); font-weight: 600; }
+.fiab .rs { color: var(--wa); }
+.fiab .pts i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--bd); margin-right: 2px; }
+.fiab .pts i.on { background: var(--ac); }
+.tag.stp.pill { display: inline-flex; align-items: center; gap: 6px; border: 0; padding: 0; color: var(--tx); font-size: 13.5px; font-weight: 600; white-space: normal; }
+.tag.stp.pill i { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--ph); box-shadow: 0 0 0 1.5px rgba(42, 29, 32, .4); }
+.tag.stp.pill s { text-decoration: none; font-weight: 400; color: var(--mu); }
+.tag.stp.ph-garde i { --ph: var(--ph-garde); } .tag.stp.ph-jeune i { --ph: var(--ph-jeune); }
+.tag.stp.ph-apogee i { --ph: var(--ph-apogee); } .tag.stp.ph-declin i { --ph: var(--ph-declin); }
+/* Liseré de la carte (liste) : disparaît quand la fiche est dépliée pour garder une fiche sobre. */
+.w.ph-garde { box-shadow: inset 5px 0 0 var(--ph-garde); } .w.ph-jeune { box-shadow: inset 5px 0 0 var(--ph-jeune); }
+.w.ph-apogee { box-shadow: inset 5px 0 0 var(--ph-apogee); } .w.ph-declin { box-shadow: inset 5px 0 0 var(--ph-declin); }
+.w[class*="ph-"]:has(details[open]) { box-shadow: none; }
