@@ -646,6 +646,15 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
       // Morgon (27 octobre 2026) : Decanter (panel 2017 : Lapierre Camille 2015, 2017-2021 = +2/+6), fiches des domaines vendues en ligne (Lapierre 2023 : maintenant-2032, soit +3/+9 ;
       // Lapierre 2024 : maintenant-2033, soit +2/+9 ; Sunier 2022 : maintenant-2028, soit +4/+6). Enveloppe des quatre fenêtres, exprimée en âge : début +2/+4, fin +6/+9.
       ['Morgon 2023, domaine sans coefficient (enveloppe de 4 fenêtres : début +2/+4, fin +6/+9)', 'Morgon', 'Domaine Quelconque', 'Morgon', 'Rouge', 2023, 2, 4, 6, 9, 4],
+      // Crus du Beaujolais (27 octobre 2026, rapport de recherche de Jeff, sources vérifiées par lui ; fiabilité B : marchands et critiques relayés, une source par fenêtre).
+      // Enveloppes en âge (début min/max, fin min/max, nombre de fenêtres). Hors enveloppe : Desjourneys (Morgon 2019 fin +31, Fleurie 2019 fin +36), écart de domaine.
+      ['Morgon 2023, 7 fenêtres 2019-2024 (début +1/+6, fin +11/+16)', 'Morgon', 'Domaine Quelconque', 'Morgon', 'Rouge', 2023, 1, 6, 11, 16, 7],
+      ['Moulin-à-Vent 2018, 5 fenêtres (début +4/+10, fin +14/+25)', 'Moulin-à-Vent', 'Domaine Quelconque', 'Moulin-à-Vent', 'Rouge', 2018, 4, 10, 14, 25, 5],
+      ['Fleurie 2022, 5 fenêtres (début +1/+4, fin +7/+10)', 'Fleurie', 'Domaine Quelconque', 'Fleurie', 'Rouge', 2022, 1, 4, 7, 10, 5],
+      ['Côte de Brouilly 2023, 5 fenêtres (début +3/+4, fin +10/+15)', 'Côte de Brouilly', 'Domaine Quelconque', 'Côte de Brouilly', 'Rouge', 2023, 3, 4, 10, 15, 5],
+      ['Chiroubles 2023, 5 fenêtres (début +2/+3, fin +7/+11)', 'Chiroubles', 'Domaine Quelconque', 'Chiroubles', 'Rouge', 2023, 2, 3, 7, 11, 5],
+      ['Régnié 2023, 2 fenêtres (début +3, fin +7/+8)', 'Régnié', 'Domaine Quelconque', 'Régnié', 'Rouge', 2023, 3, 3, 7, 8, 2],
+      ['Brouilly 2018, 2 fenêtres (début +1/+2, fin +4/+6)', 'Brouilly', 'Domaine Quelconque', 'Brouilly', 'Rouge', 2018, 1, 2, 4, 6, 2],
       ['Chablis village 2019', 'Chablis', 'Domaine Moreau-Naudet', 'Chablis', 'Blanc', 2019, 2, 3, 4, 8, 3],
       ['Chablis 1er cru Côte de Léchet 2019', 'Côte de Léchet', 'Domaine Denis Pommier', 'Chablis 1er Cru', 'Blanc', 2019, 2, 4, 6, 16, 3],
       ['Chablis grand cru Les Clos 2018', 'Les Clos', 'Domaine Drouhin Vaudon', 'Chablis Grand Cru', 'Blanc', 2018, 2, 4, 6, 20, 2],

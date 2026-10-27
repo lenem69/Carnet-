@@ -76,7 +76,7 @@ const PAR_APPELLATION = {
   'reuilly': [3, 3], 'muscadet': [null, 3], 'muscadet sevre et maine': [null, 4], 'touraine': [3, 3], 'cheverny': [3, 3], 'cour cheverny': [null, 6], 'valencay': [3, 3],
   // Beaujolais
   'beaujolais': [4, 3], 'beaujolais villages': [4, null], 'morgon': [8, null], 'moulin a vent': [10, null], 'chenas': [7, null], 'julienas': [6, null],
-  'cote de brouilly': [6, null], 'brouilly': [4, null], 'fleurie': [5, null], 'chiroubles': [3, null], 'regnie': [4, null], 'saint amour': [5, null],
+  'cote de brouilly': [6, null], 'brouilly': [4, null], 'fleurie': [5, null], 'chiroubles': [4, null], 'regnie': [4, null], 'saint amour': [5, null],
   // Alsace
   'alsace riesling': [null, 6], 'alsace pinot gris': [5, 5], 'alsace gewurztraminer': [null, 5], 'alsace pinot noir': [4, null], 'alsace pinot blanc': [null, 3],
   'alsace sylvaner': [null, 3], 'alsace muscat': [null, 3], 'alsace edelzwicker': [null, 3],
@@ -302,7 +302,7 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
   } else {
     const doux = LIQUOREUX.test(texte) || DOUX_NOMS.test(texte);
     const court = rouge && REGIONS_COURTES.includes(grande);
-    L = largeur(r, { blanc: blanc && !doux, doux, court, beaujolais: rouge && grande === 'Beaujolais' });
+    L = largeur(r, { blanc: blanc && !doux, doux, court, beaujolais: rouge && grande === 'Beaujolais' && (/moulin[ -]a[ -]vent/.test(texte) ? COEF_MOULIN_A_VENT : true) });
     from = pic - L.h; to = pic + L.h;
     // Fenêtre de dégustation (garde). Début : une part de la durée au pic (la moitié pour les rouges, 0,4 pour les blancs secs, un tiers pour les vins doux, 0,55 pour les
     // champagnes), jamais plus tard que la marge avant l'apogée ; un grand millésime ne retarde pas le début ; un rouge hors Bourgogne n'est jamais attendu plus de
@@ -361,9 +361,11 @@ const DEBUT_MAX_ROUGE = 10;
 // Crus du Beaujolais (rouge) : les fenêtres publiées s'arrêtent à +6/+9 ans pour le Morgon (Decanter 2017, fiches de Lapierre et de Sunier), alors que le calcul fermait la garde à +17 ;
 // les amateurs gardent les bons crus 10 à 15 ans. Marge après l'apogée réduite à 0,3 (compromis entre les deux, fin de garde du Morgon à +12). Calage du 27 octobre 2026, fiabilité B.
 const COEF_BEAUJOLAIS = 0.3;
+// Moulin-à-Vent : 5 fenêtres publiées (Farr Vintners, Berry Bros, Idealwine, Burghound) finissent à +14, +16, +20, +20, +25 ans : marge 0,7 (fin de garde vers +18). Calage du 27 octobre 2026 (1.37.0), fiabilité B.
+const COEF_MOULIN_A_VENT = 0.7;
 export function largeur(r, { blanc = false, doux = false, court = false, beaujolais = false } = {}) {
   const ans = r.ans;
-  const cf = beaujolais ? COEF_BEAUJOLAIS : court ? COEF_COURT : 1;
+  const cf = beaujolais ? (typeof beaujolais === 'number' ? beaujolais : COEF_BEAUJOLAIS) : court ? COEF_COURT : 1;
   // La marge après l'apogée est proportionnelle à la durée de vie du vin : un grand vin de garde reste agréable bien après son pic.
   // Vins doux de longue garde : marge de 0,35 fois la durée au pic (Sauternes : fenêtres de 25 à 45 ans chez les critiques). Blancs secs de prestige : 0,5 fois (rouges : 0,8).
   if (doux && ans >= 20) return { cat: 'longue', h: 4, avant: 4, apres: Math.min(12, Math.round(ans * 0.35)) };
