@@ -12,6 +12,8 @@ const W=(id,o)=>({id,name:'Vin '+id,dom:'Domaine '+id,year:Y-5,color:'Rouge',reg
     W('vite',{name:'Presque fini',year:Y-15,from:Y-12,to:Y+1,src:{from:'user',to:'user'}}),
     W('passe',{name:'Dépassé',year:Y-20,from:Y-12,to:Y-3,src:{from:'user',to:'user'}}),
     W('inconnu',{name:'Region inconnue',year:Y-6,region:'Zzzland',color:'Rouge'}),
+    W('bibleorig',{name:'Garde bible hors ligne',year:Y-6,region:'Zzzland',color:'Rouge',from:Y-4,to:Y+9,src:{from:'bible',to:'bible'}}),
+    W('chassagne',{name:'Chassagne-Montrachet 2018',year:2018,color:'Rouge',region:'Chassagne-Montrachet',from:2022,to:2029,src:{from:'bible',to:'bible'}}),
     W('nomill',{name:'Sans année',year:'',region:'Champagne',color:'Pétillant'}),
   ]);
   await page.reload();await H.sl(1800);
@@ -35,12 +37,32 @@ const W=(id,o)=>({id,name:'Vin '+id,dom:'Domaine '+id,year:Y-5,color:'Rouge',reg
   await ouvre('Region inconnue');
   const fi=await page.evaluate(()=>{const w=[...document.querySelectorAll('#list .w')].find(e=>e.querySelector('h4').textContent.includes('Region inconnue'));return (w.querySelector('.fiab')||{}).textContent||''});
   T('fiche : fiabilité faible avec sa raison pour un vin sans repère',/faible/.test(fi)&&/·/.test(fi),fi);
+  await ouvre('Garde bible hors ligne');
+  const fb2=await page.evaluate(()=>{const w=[...document.querySelectorAll('#list .w')].find(e=>e.querySelector('h4').textContent.includes('Garde bible hors ligne'));return (w.querySelector('.fiab')||{}).textContent||''});
+  T('fiche : garde d’origine bible = jamais « absent de la bible »',/moyenne/.test(fb2)&&!/absent/.test(fb2),fb2);
+  await ouvre('Chassagne-Montrachet 2018');
+  const ch=await page.evaluate(()=>{const w=[...document.querySelectorAll('#list .w')].find(e=>e.querySelector('h4').textContent.includes('Chassagne-Montrachet 2018'));return {f:(w.querySelector('.fiab')||{}).textContent||'',t:w.textContent}});
+  T('fiche : une garde déjà d’origine bible est jugée avec la bible chargée (pas de « faible » au démarrage)',/moyenne/.test(ch.f)&&!/absent/.test(ch.f),ch.f);
+  T('fiche : l’apogée tient compte de la note du millésime dès le démarrage (Chassagne 2018 : +8 ans en bon millésime)',/Apogée estimée/.test(ch.t),ch.t.slice(0,300));
   await ouvre('Sans année');
   const sa=await page.evaluate(()=>{const w=[...document.querySelectorAll('#list .w')].find(e=>e.querySelector('h4').textContent.includes('Sans année'));return !!w.querySelector('.mat2')});
   T('fiche : pas de frise sans millésime',!sa);
   const bx=await page.evaluate(()=>{const s=document.querySelector('#list .mat2 svg');const r=s.getBoundingClientRect();return {w:r.width,over:document.documentElement.scrollWidth>document.documentElement.clientWidth}});
   T('petit écran : frise dans la largeur, pas de défilement horizontal',bx.w>200&&!bx.over,JSON.stringify(bx));
   T('aucune erreur de page',r.errs.length===0,r.errs.join(' | '));
+  await page.close();
+}
+// Bible périmée en mémoire au démarrage, puis remplacée : la liste doit être redessinée (apogée avec la note du millésime, fiabilité)
+{
+  const fs=await import('fs');
+  const r=await H.newPage(b,{ai:async()=>({json:{}})});const page=r.page;
+  await page.goto(H.URL0);await H.sl(1200);
+  const bible=JSON.parse(fs.readFileSync(new URL('../bible/bible.json',import.meta.url),'utf8'));
+  bible.rows=bible.rows.filter(x=>!(x.a==='Morgon'&&x.c==='R'));bible.date='2000-01-01';
+  await page.evaluate(async(txt,w)=>{const s=await import('./store.js');await s.replaceAll([w]);await s.setMeta('bible',txt);await s.setMeta('bibleAt',Date.now());await s.setMeta('bibleV','1.33.1')},JSON.stringify(bible),W('morgon',{name:'Côte du Py',dom:'Foillard',year:2024,color:'Rouge',region:'Morgon',from:2026,to:2035,src:{from:'bible',to:'bible'}}));
+  await page.reload();await H.sl(3500);
+  const t=await page.evaluate(()=>{const w=[...document.querySelectorAll('#list .w')].find(e=>e.querySelector('h4').textContent.includes('Côte du Py'));return w?w.textContent:'introuvable'});
+  T('bible remplacée après le premier affichage : liste redessinée (Morgon 2024 : +6 ans, pas +8)',/\+6 ans/.test(t)&&!/\+8 ans/.test(t),t.slice(0,400));
   await page.close();
 }
 S.out.forEach(l=>console.log(l));

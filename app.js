@@ -83,7 +83,7 @@ async function loadBible() {
     const txt = await r.text();
     const j = JSON.parse(txt);
     if (!L.bibleValid(j)) throw new Error('format');
-    if (!local || j.date !== local.date) { await store.setMeta('bible', txt); S.bible = j; }
+    if (!local || j.date !== local.date) { await store.setMeta('bible', txt); S.bible = j; if (S.ready) render(); } // la liste affichée avec l’ancienne copie est redessinée (apogée, fiabilité)
     await store.setMeta('bibleAt', Date.now());
     await store.setMeta('bibleV', VERSION);
   } catch (e) { console.warn('Bible non mise à jour :', e.message); }
@@ -263,7 +263,7 @@ function card(w, mode, why) {
   // Apogée estimée par la règle de l'appli (sans IA) : affichée dans la fiche du vin.
   const apoA = w.name ? apogee(w, YEAR, L.bibleQuality(w, S.bible)) : null;
   const apo = apoA ? apogeeTexte(apoA) : '';
-  const fb = mat ? fiabilite({ userGarde: !!(w.src && (w.src.from === 'user' || w.src.to === 'user')), confirmee: L.gardeConfirmee(w), entree: !!L.bibleEntry(w, S.bible), connue: apoM.connue, w }) : null;
+  const fb = mat && S.bible ? fiabilite({ userGarde: !!(w.src && (w.src.from === 'user' || w.src.to === 'user')), confirmee: L.gardeConfirmee(w), entree: !!L.bibleEntry(w, S.bible) || !!(w.src && (w.src.from === 'bible' || w.src.to === 'bible')), connue: apoM.connue, w }) : null;
   const frise = mat ? friseSvg(mat, YEAR) + fiabiliteHtml(fb) : '';
   const svc = w.name ? [serviceTexte(w), carafageTexte(w, YEAR)].filter(Boolean).join(' ') : '';
   const pf = w.name ? profil(w) : null;
