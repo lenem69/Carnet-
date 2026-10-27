@@ -57,7 +57,7 @@ export function fiabilite(ctx) {
 
 export function fiabiliteHtml(f) {
   if (!f) return '';
-  if (f.saisie) return `<p class="fiab">Fiabilité · <b>${f.mot}</b>${f.ecart ? ` <span class="rs">· écart avec la bible : ${f.ecart.from}–${f.ecart.to}</span>` : ''}</p>`;
+  if (f.saisie) return `<p class="fiab">Fiabilité · <b>${f.mot}</b>${f.ecart ? ` <span class="rs">· écart avec la bible : ${f.ecart.from}–${f.ecart.to}</span>` : ''} <button class="lnk" data-a="recalc" type="button">Recalculer cette garde</button></p>`;
   const pts = [1, 2, 3].map(i => `<i${i <= f.n ? ' class="on"' : ''}></i>`).join('');
   return `<p class="fiab">Fiabilité <span class="pts" role="img" aria-label="${f.n} sur 3">${pts}</span> <b>${f.mot}</b>${f.raison ? ` <span class="rs">· ${f.raison}</span>` : ''}</p>`;
 }

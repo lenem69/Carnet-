@@ -690,6 +690,21 @@ async function onCardAction(e) {
     w.updated = Date.now();
     render();
     await persist(() => store.putWines([w]));
+  } else if (a === 'recalc') {
+    const avant = JSON.parse(JSON.stringify(w));
+    const c = await ask('Recalculer cette garde ?', `Vos dates ${w.from}–${w.to} seront remplacées par celles de la bible ou du calcul de l’appli. Vous pourrez annuler.`, [
+      { label: 'Recalculer', value: 'yes' }, { label: 'Annuler', value: null, kind: 'o' }]);
+    if (c !== 'yes') return;
+    if (!L.recalculerGarde(w, S.bible, fenetreRang)) { errToast('Ni la bible ni le calcul ne donnent de garde pour ce vin : vos dates sont conservées.'); return; }
+    w.updated = Date.now();
+    S.ouvert.add(w.id); render();
+    if (await persist(() => store.putWines([w]))) {
+      toast(`Garde recalculée : ${w.from}–${w.to}.`, { action: { label: 'Annuler', fn: async () => {
+        for (const k of ['from', 'to', 'src', 'gv', 'conf', 'updated']) { if (avant[k] === undefined) delete w[k]; else w[k] = avant[k]; }
+        S.ouvert.add(w.id); render();
+        if (await persist(() => store.putWines([w]))) toast('Dates précédentes rétablies.');
+      } } });
+    }
   } else if (a === 'e') {
     openForm(w);
   } else if (a === 'd') {

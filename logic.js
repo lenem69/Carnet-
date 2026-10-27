@@ -327,6 +327,21 @@ export function prefillFromBible(w, bible, calcul) {
   return true;
 }
 
+// « Recalculer cette garde » : remplace la garde enregistrée (saisie, ancienne ou corrigée par l'IA) par celle de la bible, ou du calcul de l'appli.
+// Rien n'est changé si ni la bible ni le calcul ne donnent de fenêtre : les dates de l'utilisateur sont alors conservées. Le contrôle de l'IA repassera dessus.
+// Retourne true si la fiche a changé.
+export function recalculerGarde(w, bible, calcul) {
+  const c = JSON.parse(JSON.stringify(w));
+  c.from = ''; c.to = ''; delete c.gv;
+  const src = { ...(c.src || {}) }; delete src.from; delete src.to; c.src = src;
+  prefillFromBible(c, bible, calcul);
+  if (!(c.from && c.to)) return false;
+  if (c.from === w.from && c.to === w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user'))) return false;
+  w.from = c.from; w.to = c.to; w.src = c.src; delete w.gv;
+  if (!w.conf) w.conf = c.conf;
+  return true;
+}
+
 // Repères d'appellation (fichier de référence, fiabilité B) : remplit un cépage ou des accords restés vides, origine « bible » (jamais une saisie, jamais un champ déjà rempli).
 // repere(fiche) → { g: [cépage], a: [familles d'accords] } | null. Retourne true si la fiche a changé.
 export function prefillReperes(w, repere, libelles) {

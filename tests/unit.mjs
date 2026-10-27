@@ -643,6 +643,9 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
       ['Cahors Château du Cèdre 2014', 'Château du Cèdre', 'Château du Cèdre', 'Cahors', 'Rouge', 2014, 4, 4, 14, 14, 1],
       ['Hermitage La Chapelle 2015', 'La Chapelle', 'Paul Jaboulet Aîné', 'Hermitage', 'Rouge', 2015, 13, 13, 20, 25, 2],
       ['Fleurie Clos de la Roilette 2020', 'Clos de la Roilette', 'Clos de la Roilette', 'Fleurie', 'Rouge', 2020, 1, 3, 10, 12, 2],
+      // Morgon (27 octobre 2026) : Decanter (panel 2017 : Lapierre Camille 2015, 2017-2021 = +2/+6), fiches des domaines vendues en ligne (Lapierre 2023 : maintenant-2032, soit +3/+9 ;
+      // Lapierre 2024 : maintenant-2033, soit +2/+9 ; Sunier 2022 : maintenant-2028, soit +4/+6). Enveloppe des quatre fenêtres, exprimée en âge : début +2/+4, fin +6/+9.
+      ['Morgon 2023, domaine sans coefficient (enveloppe de 4 fenêtres : début +2/+4, fin +6/+9)', 'Morgon', 'Domaine Quelconque', 'Morgon', 'Rouge', 2023, 2, 4, 6, 9, 4],
       ['Chablis village 2019', 'Chablis', 'Domaine Moreau-Naudet', 'Chablis', 'Blanc', 2019, 2, 3, 4, 8, 3],
       ['Chablis 1er cru Côte de Léchet 2019', 'Côte de Léchet', 'Domaine Denis Pommier', 'Chablis 1er Cru', 'Blanc', 2019, 2, 4, 6, 16, 3],
       ['Chablis grand cru Les Clos 2018', 'Les Clos', 'Domaine Drouhin Vaudon', 'Chablis Grand Cru', 'Blanc', 2018, 2, 4, 6, 20, 2],
@@ -680,6 +683,11 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
     };
     borne('Dom Pérignon 2008 (critique seule : fin à +22 ; cuvées de prestige : +18 à +38)', { name: 'Dom Pérignon', dom: 'Moët & Chandon', region: 'Champagne', color: 'Pétillant', year: 2008 }, [8, 14, 18, 38]);
     borne('Chablis 1er cru Vaillons 2018 (critique seule : début à +8 ; autres 1ers crus : +2 à +4)', { name: 'Vaillons', dom: 'Domaine Moreau-Naudet', region: 'Chablis 1er Cru', color: 'Blanc', year: 2018 }, [2, 8, 6, 24]);
+    //  - Juliénas Pardon & Fils Les Mouilles 2021 (Decanter, Amy Wislocki : 2023-2026, fin à +5) : une seule fenêtre ; le calcul ferme la garde à +12 (règle des crus moyens, non recalée).
+    //  - Morgon des domaines de référence (Lapierre 2023, Foillard 2022) : le coefficient de domaine (non sourcé, effet réduit de moitié) ajoute 1 à 2 ans à la fin de garde par rapport aux fenêtres publiées (fin à +9).
+    borne('Morgon Lapierre 2023 (fenêtres publiées : fin à +9 ; coefficient de domaine non sourcé)', { name: 'Morgon', dom: 'Marcel Lapierre', region: 'Morgon', color: 'Rouge', year: 2023 }, [2, 6, 6, 14]);
+    borne('Morgon Foillard Côte du Py 2022 (fenêtres publiées : fin à +9 ; coefficient de domaine non sourcé)', { name: 'Côte du Py', dom: 'Jean Foillard', region: 'Morgon', color: 'Rouge', year: 2022 }, [2, 6, 6, 14]);
+    borne('Juliénas 2021 (critique seule : fin à +5)', { name: 'Les Mouilles', dom: 'Pardon & Fils', region: 'Juliénas', color: 'Rouge', year: 2021 }, [1, 4, 5, 13]);
     // Corrections de la 1.30.1 : chacune a un cas précis derrière.
     const fen = (o, q) => A.fenetreGarde({ dom: 'D', qty: 1, ...o }, q);
     const hb = A.apogee({ name: 'Château Haut-Brion', dom: 'Haut-Brion', region: 'Pessac-Léognan', color: 'Blanc', year: 2015 }, 2026, 4);
@@ -956,5 +964,21 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   T('balayage : aucune frise incohérente', incoh === 0, String(incoh));
   T('balayage : l’apogée est toujours dans la garde', horsGarde === 0, String(horsGarde));
   T('balayage : toute garde de 3 ans ou plus garde un bloc de déclin après l’apogée', sansDeclin === 0, sansDeclin + ' ' + ex.join(', '));
+  console.log(out.slice(o0).join('\n'));
+}
+
+// « Recalculer cette garde » (1.36.0)
+{
+  const o0 = out.length;
+  const bib = JSON.parse(fs.readFileSync(new URL('../bible/bible.json', import.meta.url), 'utf8'));
+  const mk = o => L.normalizeWine({ name: 'Côte du Py', dom: 'Foillard', year: 2024, color: 'Rouge', region: 'Morgon', qty: 1, ...o });
+  const w = mk({ from: 2026, to: 2032, src: { from: 'user', to: 'user' }, gv: { from: 2026, to: 2032, k: 'c' } });
+  const ok = L.recalculerGarde(w, bib, A.fenetreRang);
+  T('recalculer : une garde saisie est remplacée par celle de la bible ou du calcul (origine bible ou calc), contrôle de l’IA à refaire', ok && ['bible','calc'].includes(w.src.from) && ['bible','calc'].includes(w.src.to) && !w.gv && w.from !== 2026 && w.to !== 2032, JSON.stringify([w.from, w.to, w.src, w.gv]));
+  const x = mk({ region: 'Zzzland', from: 2026, to: 2032, src: { from: 'user', to: 'user' } });
+  const ko = L.recalculerGarde(x, bib, A.fenetreRang);
+  T('recalculer : sans bible ni calcul, les dates de l’utilisateur sont conservées', !ko && x.from === 2026 && x.to === 2032 && x.src.from === 'user', JSON.stringify([ko, x.from, x.to, x.src]));
+  const y = mk({ from: '', to: '' }); L.prefillFromBible(y, bib, A.fenetreRang);
+  T('recalculer : une garde déjà celle de la bible ne change rien', L.recalculerGarde(y, bib, A.fenetreRang) === false);
   console.log(out.slice(o0).join('\n'));
 }

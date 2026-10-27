@@ -76,5 +76,28 @@ const W=(id,o)=>({id,name:'Vin '+id,dom:'Domaine '+id,year:Y-5,color:'Rouge',reg
   T('bible locale à jour (aucun téléchargement) : la liste est calculée avec elle (fiabilité moyenne, apogée +7 ans)',/Fiabilité\s+moyenne/.test(t)&&/\+7 ans/.test(t),JSON.stringify(t).slice(0,500));
   await page.close();
 }
+// Bouton « Recalculer cette garde » (1.36.0) : garde héritée en écart avec la bible
+{
+  const r=await H.newPage(b,{ai:async()=>({json:{}})});const page=r.page;
+  await page.goto(H.URL0);await H.sl(1200);
+  const txt=(await import('fs')).readFileSync(new URL('../bible/bible.json',import.meta.url),'utf8');
+  await page.evaluate(async(txt,w)=>{const s=await import('./store.js');await s.replaceAll([w]);await s.setMeta('bible',txt);await s.setMeta('bibleAt',Date.now());await s.setMeta('bibleV',self.APP_VERSION);await s.setMeta('seenVersion',self.APP_VERSION)},txt,W('recalc',{name:'Côte du Py',dom:'Foillard',year:2024,color:'Rouge',region:'Morgon',from:2026,to:2045,src:{from:'user',to:'user'}}));
+  await page.reload();await H.sl(3000);
+  const card=()=>page.evaluate(()=>{const w=[...document.querySelectorAll('#list .w')].find(e=>e.querySelector('h4').textContent.includes('Côte du Py'));return w?{t:w.textContent,btn:!!w.querySelector('[data-a="recalc"]')}:{t:'introuvable',btn:false}});
+  await page.evaluate(()=>{document.querySelector('#list .w details').open=true});await H.sl(300);
+  const a0=await card();
+  T('écart avec la bible : « garde modifiée par vous » et bouton « Recalculer cette garde »',/garde modifiée par vous/.test(a0.t)&&/écart avec la bible/.test(a0.t)&&a0.btn,a0.t.slice(0,300));
+  await page.evaluate(()=>document.querySelector('[data-a="recalc"]').click());await H.sl(500);
+  T('recalcul : confirmation demandée avant de remplacer',/Recalculer cette garde/.test(await H.txt(page,'#dlgT')),await H.txt(page,'#dlgT'));
+  await H.tapText(page,'#dlgB button','Recalculer');await H.sl(800);
+  const a1=await card();
+  T('recalcul : plus de « garde modifiée par vous », fiabilité de la bible, bouton disparu, fiche restée ouverte',!/garde modifiée par vous/.test(a1.t)&&/Fiabilité\s+moyenne/.test(a1.t)&&!a1.btn&&/Apogée estimée/.test(a1.t),a1.t.slice(0,300));
+  const g1=await page.evaluate(async()=>{const s=await import('./store.js');const w=(await s.allWines())[0];return {f:w.from,t:w.to,sf:(w.src||{}).from}});
+  T('recalcul : dates de la bible ou du calcul enregistrées (origine bible ou calc), plus 2026–2045',g1.f!==2026&&g1.t!==2045&&['bible','calc'].includes(g1.sf),JSON.stringify(g1));
+  await H.tapText(page,'#toasts button','Annuler');await H.sl(800);
+  const a2=await card();
+  T('annuler : dates saisies rétablies avec « garde modifiée par vous »',/garde modifiée par vous/.test(a2.t)&&a2.btn,a2.t.slice(0,200));
+  await page.close();
+}
 S.out.forEach(l=>console.log(l));
 await b.close();srv.close&&srv.close();process.exit(0);
