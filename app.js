@@ -725,7 +725,7 @@ async function onCardAction(e) {
       { label: 'Recalculer', value: 'yes' }, { label: 'Annuler', value: null, kind: 'o' }]);
     if (c !== 'yes') return;
     if (!L.recalculerGarde(w, S.bible, fenetreRang)) {
-      if (horsBible(w)) { await chercherHB(w); return; }
+      if (horsBibleBrut(w)) { await chercherHB(w); return; }
       errToast('Ni la bible ni le calcul ne donnent de garde pour ce vin : vos dates sont conservées.'); return;
     }
     w.updated = Date.now();
@@ -907,7 +907,10 @@ function cleEtape(n) {
 }
 // ---- Vin hors de la bible : l'IA propose la région et la garde, la personne valide ----
 // Hors bible = aucune ligne dans la bible et appellation/région non reconnue par le calcul (vin étranger, cuvée inconnue).
-const horsBible = w => !!(w && w.name && w.year && !L.bibleEntry(w, S.bible) && apogee(w, YEAR).connue === false);
+// Une garde déjà décidée (acceptée de l’IA ou saisie par vous) fait disparaître l’encart.
+const gardeDecidee = w => !!(w && w.from && w.to && w.src && (w.src.from === 'ai' || w.src.from === 'user'));
+const horsBibleBrut = w => !!(w && w.name && w.year && !L.bibleEntry(w, S.bible) && apogee(w, YEAR).connue === false);
+const horsBible = w => horsBibleBrut(w) && !gardeDecidee(w);
 const hbEncartHtml = () => '<div class="enc hb"><b>Vin hors de la bible</b><p>La bible ne couvre que la France. L’IA peut proposer la région et une garde (fiabilité faible, à vérifier). Rien n’est écrit sans votre accord.</p><button class="btn" data-a="hb" type="button">Chercher avec l’IA</button></div>';
 let hbBusy = false;
 async function chercherHB(w) {

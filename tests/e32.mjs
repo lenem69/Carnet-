@@ -12,7 +12,7 @@ const ai=async c=>{
     return G(rep);}
   return G(rep);};
 const r=await H.newPage(b,{ai});const page=r.page,errs=r.errs,calls=r.calls;
-const W=(o)=>({id:'s',name:'BSE Branco Seco Especial',dom:'José Maria da Fonseca',year:2025,qty:2,from:2026,to:2029,src:{from:'user',to:'user'},color:'Blanc',region:'',grape:'',price:9,created:1,updated:1,story:'',pairings:[],check:false,conf:'',sources:[],note:'',loc:'',tastings:[],...o});
+const W=(o)=>({id:'s',name:'BSE Branco Seco Especial',dom:'José Maria da Fonseca',year:2025,qty:2,from:2026,to:2029,src:{from:'',to:''},color:'Blanc',region:'',grape:'',price:9,created:1,updated:1,story:'',pairings:[],check:false,conf:'',sources:[],note:'',loc:'',tastings:[],...o});
 const FR={id:'f',name:'Cornas',dom:'Domaine X',year:2015,qty:1,from:2020,to:2035,src:{from:'bible',to:'bible'},color:'Rouge',region:'Cornas',grape:'Syrah',price:30,created:1,updated:1,story:'',pairings:[],check:false,conf:'',sources:[],note:'',loc:'',tastings:[]};
 const reset=async(o={})=>{await page.evaluate(async(o)=>{
   localStorage.setItem('cave-gratuit','off');localStorage.removeItem('cave-ai-cool');
@@ -42,16 +42,17 @@ T('proposition : deux boutons « Appliquer cette proposition » / « Garder mes 
 T('avec clé Gemini : la mention indique la recherche web',d.x.includes('avec recherche web (Gemini)'),JSON.stringify(d.x));
 await tapDlg('Garder mes dates');await H.sl(300);
 let w=await wine('s');
-T('« Garder mes dates » : rien n’est changé',w.from===2026&&w.to===2029&&w.src.from==='user'&&!w.region);
+T('« Garder mes dates » : rien n’est changé',w.from===2026&&w.to===2029&&!w.region);
 
 // Accord, puis annulation
 await ouvre('s');await clickHb('s');await H.sl(800);await tapDlg('Appliquer cette proposition');await H.sl(600);
 w=await wine('s');
 T('accord : garde 2026–2030 d’origine IA, région remplie, fiche « estimée »',w.from===2026&&w.to===2030&&w.src.from==='ai'&&w.src.to==='ai'&&w.region==='Península de Setúbal (Portugal)'&&w.conf==='estimée',JSON.stringify(w));
+T('après accord : l’encart disparaît (garde décidée par l’IA)',!(await hbBtn('s')));
 T('accord : message avec action « Annuler »',await page.evaluate(()=>/Garde proposée par l’IA : 2026–2030/.test(document.body.innerText)));
 await H.tapText(page,'button','Annuler');await H.sl(600);
 w=await wine('s');
-T('annulation : dates et origine précédentes rétablies, région vide',w.from===2026&&w.to===2029&&w.src.from==='user'&&w.src.to==='user'&&!w.region,JSON.stringify(w));
+T('annulation : dates précédentes rétablies, région vide',w.from===2026&&w.to===2029&&!w.region,JSON.stringify(w));
 
 // Région saisie jamais écrasée
 await reset({key:'AIzaTEST_0123456789abcdefghij',wines:[W({region:'Setúbal'})]});
@@ -60,7 +61,7 @@ w=await wine('s');
 T('région déjà saisie : conservée',w.region==='Setúbal'&&w.to===2030,w.region);
 
 // Via « Recalculer cette garde » (garde saisie par l'utilisateur)
-await reset({key:'AIzaTEST_0123456789abcdefghij',wines:[W()]});
+await reset({key:'AIzaTEST_0123456789abcdefghij',wines:[W({src:{from:'user',to:'user'}})]});
 await ouvre('s');
 await page.evaluate(()=>document.querySelector('[data-id="s"] button[data-a="recalc"]').click());await H.sl(400);
 await H.tapText(page,'#dlgB button','Recalculer');await H.sl(900);
@@ -69,6 +70,7 @@ T('« Recalculer » sur un vin hors bible : plus d’impasse, proposition de l�
 await tapDlg('Garder mes dates');await H.sl(300);
 
 // Réponse invalide
+await reset({key:'AIzaTEST_0123456789abcdefghij',wines:[W()]});
 mode='invalide';
 await ouvre('s');await clickHb('s');await H.sl(1000);
 w=await wine('s');
@@ -90,7 +92,12 @@ T('sans IA : « Recherche impossible », dates conservées, bouton « Activer ma
 await tapDlg('Activer ma clé gratuite');await H.sl(400);
 T('sans IA → « Activer ma clé gratuite » ouvre la feuille d’activation',await H.shown(page,'#sCle'));
 w=await wine('s');
-T('sans IA : dates intactes',w.from===2026&&w.to===2029&&w.src.from==='user');
+T('sans IA : dates intactes',w.from===2026&&w.to===2029);
+
+// Garde saisie par la personne : l’encart ne reste pas affiché
+await reset({key:'AIzaTEST_0123456789abcdefghij',wines:[W({src:{from:'user',to:'user'}})]});
+await ouvre('s');
+T('garde saisie par vous : aucun encart « Chercher avec l’IA »',!(await hbBtn('s')));
 
 T('aucune erreur de page ni fenêtre native',errs.length===0,errs.join(' | '));
 await b.close();srv.close();

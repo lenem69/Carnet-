@@ -8,7 +8,7 @@ src=src.replace(/const STATS_POST = '[^']*';/,"const STATS_POST = 'https://docs.
 fs.writeFileSync(ap,src);
 const srv=await start(8123);const b=await H.browser();
 const {T,out}=H.suite('Statistiques');
-const RE=/^v1\|[0-9a-f]{10}\|\d{4}-\d\d-\d\d\|1.38.0\|\d{4}-\d\d-\d\d\|(-?\d+\|){23}-?\d+$/;
+const RE=/^v1\|[0-9a-f]{10}\|\d{4}-\d\d-\d\d|1.39.0|\d{4}-\d\d-\d\d\|(-?\d+\|){23}-?\d+$/;
 async function mk(){const r=await H.newPage(b);
   await H.simulerFormulaires(r.page);
   return r}
@@ -41,6 +41,8 @@ await setmeta(page,'statsConsent',null);await page.reload();await H.sl(1500);
 await H.tapText(page,'#dlgB button','Oui, aider');await H.sl(300);
 T('accord enregistré',(await meta(page,'statsConsent'))==='oui');
 T('identifiant aléatoire de 10 caractères',/^[0-9a-f]{10}$/.test(await meta(page,'statsId')||''));
+const ouv=await page.evaluate(async()=>{const w=(s)=>new Promise(r=>setTimeout(r,s));const S=await import('./stats.js');const db=await import('./store.js');await w(600);const a=((await db.getMeta('stats')).weeks[S.weekKey()]||{n:{}}).n.ouvertures||0;S.track('ouvertures');S.track('ouvertures');await w(700);const b=((await db.getMeta('stats')).weeks[S.weekKey()]||{n:{}}).n.ouvertures||0;return [a,b]});
+T('ouvertures : une seule par jour, rechargements compris',ouv[0]>=1&&ouv[0]===ouv[1],JSON.stringify(ouv));
 await H.click(page,'#fab');await H.tapText(page,'#sMenu button','Saisie manuelle');await page.type('#f-name','Château Secretissime');await H.click(page,'#f-save');await H.sl(1200);
 await page.evaluate(()=>document.querySelector('#bSet').click());await H.sl(500);
 T('réglages : case cochée et bloc visible',(await page.$eval('#st-stats',e=>e.checked))&&(await page.$eval('#st-stats-w',e=>!e.hidden)));

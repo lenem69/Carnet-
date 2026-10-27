@@ -21,6 +21,7 @@ export function weekKey(d = new Date()) {
 
 let st = null;          // { weeks: { 'AAAA-MM-JJ': { n: {...}, d: [jours] } }, sent: [semaines] }
 let consent = null;     // 'oui' | 'non' | null (pas encore demandé)
+let ouvJour = null;     // dernier jour où une ouverture a été comptée (une seule par jour et par appareil)
 let timer = null;
 let sending = false;
 
@@ -36,6 +37,7 @@ export async function init(wines) {
   consent = (await meta('statsConsent')) || null;
   st = (await meta('stats')) || empty();
   if (!st.weeks || !Array.isArray(st.sent)) st = empty();
+  ouvJour = (await meta('statsOuvJour')) || null;
   if (!(await meta('installAt'))) {
     await setm('installAt', Date.now());
     await setm('installWithWines', wines > 0);
@@ -45,6 +47,7 @@ export async function init(wines) {
 export async function setConsent(yes) {
   consent = yes ? 'oui' : 'non';
   await setm('statsConsent', consent);
+  ouvJour = null; await setm('statsOuvJour', null);
   if (yes) {
     if (!(await meta('statsId'))) await setm('statsId', randomId());
   } else {
@@ -66,6 +69,12 @@ function save() {
 // Compte un geste. Sans accord de l'utilisateur, ne fait rien.
 export function track(name, n = 1) {
   if (consent !== 'oui' || !st || !FIELDS.includes(name) || !(n > 0)) return;
+  // « ouvertures » = jours d'ouverture, pas chargements de page (un rechargement ne compte pas une 2e fois le même jour).
+  if (name === 'ouvertures') {
+    const today = dayKey(new Date());
+    if (ouvJour === today) return;
+    ouvJour = today; setm('statsOuvJour', today);
+  }
   const wk = weekKey();
   const w = st.weeks[wk] || (st.weeks[wk] = { n: {}, d: [] });
   w.n[name] = (w.n[name] || 0) + n;
