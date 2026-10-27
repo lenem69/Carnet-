@@ -45,7 +45,7 @@ let dl=await page.evaluate(()=>window.__dl);const csv=dl.find(d=>d.name.endsWith
 T('export CSV : fichier produit avec en-têtes et accents',csv&&csv.text.includes('Cuvée;')===false&&csv.text.includes('"Cuvée";"Domaine"')&&csv.text.includes('Lapierre'),csv&&csv.text.slice(0,120));
 T('export CSV : 1000+ lignes',csv&&csv.text.split('\r\n').length>1000);
 // sauvegarde (téléchargement)
-await H.click(page,'#banners [data-b="bk"]');await H.sl(800);dl=await page.evaluate(()=>window.__dl);const bk=dl.find(d=>d.name.endsWith('.json'));
+await H.click(page,'#banners [data-b="bk"]');await page.waitForFunction(()=>window.__dl.some(d=>d.name.endsWith('.json')),{timeout:8000,polling:100}).catch(()=>{});dl=await page.evaluate(()=>window.__dl);const bk=dl.find(d=>d.name.endsWith('.json'));
 T('sauvegarde : fichier JSON complet',bk&&JSON.parse(bk.text).wines.length>=1002,bk&&bk.name);
 T('sauvegarde : bandeau disparaît',!(await H.txt(page,'#banners')).includes('sauvegarde'));
 fs.writeFileSync('.site/backup-full.json',bk.text);

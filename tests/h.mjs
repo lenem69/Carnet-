@@ -39,7 +39,7 @@ export function suite(name){const out=[];return {T:(n,c,x='')=>out.push((c?'PASS
 export const txt=(p,s)=>p.$eval(s,e=>e.innerText);
 export const shown=(p,s)=>p.$eval(s,e=>e.classList.contains('show'));
 export async function tapText(p,sel,text){const ok=await p.evaluate((sel,text)=>{const el=[...document.querySelectorAll(sel)].find(e=>e.offsetParent!==null&&e.textContent.includes(text));if(!el)return false;el.click();return true},sel,text);if(!ok)throw new Error('introuvable: '+sel+' '+text);await sl(120)}
-export async function click(p,sel){await p.waitForSelector(sel,{visible:true,timeout:4000});await p.tap(sel);await sl(120)}
+export async function click(p,sel){const t=Date.now();while(!(await p.evaluate(s=>{const e=document.querySelector(s);return !!e&&e.getClientRects().length>0&&getComputedStyle(e).visibility!=='hidden'},sel))){if(Date.now()-t>4000)throw new Error('introuvable ou invisible: '+sel);await sl(100)}await p.tap(sel);await sl(120)}
 export async function pickFiles(p,trigger,files){const [fc]=await Promise.all([p.waitForFileChooser({timeout:5000}),trigger()]);await fc.accept(files)}
 export async function setAI(p,provider='gemini',key='AIzaTEST',extra={}){await p.evaluate((v)=>localStorage.setItem('cave-ai',JSON.stringify(v)),{provider,key,...extra})}
 
