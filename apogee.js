@@ -335,6 +335,17 @@ export function apogee(w, annee = new Date().getFullYear(), qualite) {
       from = Math.min(from, pic); to = Math.max(to, pic);
     }
   }
+  // Un déclin reste visible après l'apogée (1.35.0) : quand la garde enregistrée se termine en même temps que l'apogée, au moins un an
+  // (un cinquième de la garde) est gardé pour la phase de déclin, sans jamais déplacer la garde elle-même.
+  if (wt && !(wf && wf > wt)) {
+    const debutG = wf || gFrom;
+    if (debutG && wt - debutG >= 3 && to >= wt) {
+      const m = Math.max(1, Math.round(0.2 * (wt - debutG)));
+      to = wt - m; from = Math.max(Math.min(from, to), debutG);
+      if (pic > to) { pic = to; ajuste = true; }
+      if (pic < from) { pic = from; ajuste = true; }
+    }
+  }
   const statut = annee < from ? 'À garder' : annee > to ? 'Urgence' : 'Prêt à boire';
   return { pic, from, to, statut, regle: r.label, ans: ansEff, ansPic, ansRegle: r.ans, sansMillesime: false, ajuste, cat: L.cat, avant: L.avant, apres: L.apres, rang, forme, gFrom, gTo, domaine: domaine ? domaine.nom : null, connue: !!(app || grande || PRESTIGE.test(texte) || (rouge && GRANDS_ROUGES_ETRANGERS.test(texte))) };
 }

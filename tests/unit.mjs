@@ -305,7 +305,7 @@ T('sources : absentes → liste vide (anciennes sauvegardes)',L.normalizeWine({n
     const dedans = ap({ name: 'X', dom: 'D', color: 'Rouge', region: 'Richebourg', year: 2020, from: 2028, to: 2042 }, 2026);
     T('apogée : déjà dans la fenêtre → inchangée', dedans.pic === 2038 && dedans.ajuste === false, JSON.stringify(dedans));
     const hors2 = ap({ name: 'X', dom: 'D', color: 'Rouge', region: 'Richebourg', year: 2020, from: 2025, to: 2029 }, 2026);
-    T('apogée : hors fenêtre → ramenée à la fin de la fenêtre et signalée', hors2.pic === 2029 && hors2.ajuste === true && /Ramenée dans la fenêtre/.test(A.apogeeTexte(hors2)), JSON.stringify(hors2));
+    T('apogée : hors fenêtre → ramenée à la fin de la fenêtre, en gardant un an de déclin (1.35.0), et signalée', hors2.pic === 2028 && hors2.to === 2028 && hors2.ajuste === true && /Ramenée dans la fenêtre/.test(A.apogeeTexte(hors2)), JSON.stringify(hors2));
   }
 }
 console.log(out.join('\n'));
@@ -575,7 +575,19 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
     T('Champagne de prestige : début de garde inchangé par la règle du millésimé (au moins +9)', dpg.from - 2012 >= 9, JSON.stringify(dpg));
     const fob = A.apogee({ name: 'Côte du Py', dom: 'Jean Foillard', region: 'Morgon', color: 'Rouge', year: 2024 }, 2026, 2), mo = A.apogee({ name: 'Morgon', dom: 'Domaine Dupont', region: 'Morgon', color: 'Rouge', year: 2024 }, 2026, 2);
     T('Beaujolais : Foillard et Lapierre sont des domaines de référence (Morgon 2024 note 2 : +7 ans contre +6 sans domaine)', fob.ans === 7 && mo.ans === 6 && A.apogee({ name: 'Morgon', dom: 'Marcel Lapierre', region: 'Morgon', color: 'Rouge', year: 2023 }, 2026, 4).ans === 9, JSON.stringify([fob.ans, mo.ans]));
-    T('Beaujolais : un autre domaine n’est pas touché (Morgon 2023 note 4 : +8)', A.apogee({ name: 'Morgon', dom: 'Domaine Dupont', region: 'Morgon', color: 'Rouge', year: 2023 }, 2026, 4).ans === 8);
+      { // 1.35.0 : la frise garde toujours un bloc de déclin après l'apogée
+      const MAT = await import('../maturite.js');
+      const mg = { name: 'Morgon', dom: 'Foillard', region: 'Morgon', color: 'Rouge', year: 2024, from: 2026, to: 2032 };
+      const am = A.apogee(mg, 2026, 2), fm = MAT.fenetreMaturite(mg, am);
+      T('frise : garde 2026-2032 (Morgon 2024) = déclin visible après l’apogée (apogée finit avant 2032)', am.to < 2032 && fm.a1 < fm.g1 && fm.g0 === 2026 && fm.g1 === 2032, JSON.stringify([am.from, am.to, fm]));
+      const em = { name: 'Émilien', dom: 'Château Le Puy', region: 'Côtes de Francs', color: 'Rouge', year: 2022, from: 2024, to: 2030 };
+      const ae = A.apogee(em, 2026, 4), fe = MAT.fenetreMaturite(em, ae);
+      T('frise : garde 2024-2030 (Émilien 2022) = déclin visible, apogée toujours dans la garde', fe.a1 < fe.g1 && fe.a0 >= fe.g0 && ae.pic >= ae.from && ae.pic <= ae.to, JSON.stringify([ae.from, ae.to, fe]));
+      let ko = 0;
+      for (const [f, t] of [[2026, 2029], [2025, 2033], [2024, 2040], [2027, 2028]]) { const w = { ...mg, from: f, to: t }, a = A.apogee(w, 2026, 3); if (!(a.from >= f && a.to <= t && a.pic >= a.from && a.pic <= a.to)) ko++; if (t - f >= 3 && a.to >= t) ko++; }
+      T('frise : apogée dans la garde et déclin gardé pour toute garde d’au moins 3 ans', ko === 0, String(ko));
+    }
+  T('Beaujolais : un autre domaine n’est pas touché (Morgon 2023 note 4 : +8)', A.apogee({ name: 'Morgon', dom: 'Domaine Dupont', region: 'Morgon', color: 'Rouge', year: 2023 }, 2026, 4).ans === 8);
     const simple = g('Alsace', 'Riesling', 'Blanc', 2015, 4), vt = g('Alsace', 'Riesling Vendanges Tardives', 'Blanc', 2015, 4), sgn = g('Alsace', 'Riesling Sélection de Grains Nobles', 'Blanc', 2015, 4);
     T('Alsace : Vendanges Tardives ×2 et SGN ×3,5 sur la durée du cépage (Riesling 6 ans : 6, 12, 21)', simple.a.ans === 6 && vt.a.ans === 12 && sgn.a.ans === 21 && simple.f.to < vt.f.to && vt.f.to < sgn.f.to, JSON.stringify([simple.a.ans, vt.a.ans, sgn.a.ans]));
     T('Alsace : VT de Gewurztraminer 10 ans, abréviation « VT » comprise', g('Alsace', 'Gewurztraminer VT', 'Blanc', 2015, 4).a.ans === 10);
@@ -917,5 +929,32 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   T('frise : apogée d’une seule année, début = apogée : pas d’erreur, bloc visible',/mf-a/.test(sv1)&&!/NaN/.test(sv1)&&(sv1.match(/>2020</g)||[]).length===1,sv1.slice(0,200));
   T('frise : vin passé (curseur après la fin) ou à garder (avant) : pas de NaN',!/NaN/.test(M.friseSvg(m,2060))&&!/NaN/.test(M.friseSvg(m,2000)));
   T('frise : ni script ni attribut dangereux (dates numériques seulement)',!/<script|onerror|javascript:/i.test(svg));
+  console.log(out.slice(o0).join('\n'));
+}
+// Balayage de la bible (1.35.0) : pour chaque vin, la frise est complète (jeune, apogée, déclin) et l'apogée reste dans la garde.
+{
+  const o0 = out.length;
+  const M = await import('../maturite.js');
+  const bib = JSON.parse(fs.readFileSync(new URL('../bible/bible.json', import.meta.url), 'utf8'));
+  const NOM = { R: 'Rouge', B: 'Blanc', D: 'Blanc', E: 'Pétillant' };
+  let n = 0, incoh = 0, horsGarde = 0, sansDeclin = 0; const ex = [];
+  for (const r of bib.rows) for (const [y, c] of Object.entries(r.y)) {
+    if (!Array.isArray(c) || typeof c[0] !== 'number') continue;
+    const base = { name: 'Cuvée', dom: 'Domaine', region: r.a.replace(/ Premier Cru$/, ' 1er Cru'), color: NOM[r.c], year: Number(y), qty: 1 };
+    const a0 = A.apogee(base, 2026, c[0]);
+    if (a0.sansMillesime) continue;
+    for (const g of [[c[1], c[2]], [Math.max(Number(y) + 1, a0.from - 2), a0.to], [Number(y) + 2, Number(y) + 7]]) {
+      const w = { ...base, from: g[0], to: g[1] };
+      if (!(g[0] && g[1] && g[0] < g[1])) continue;
+      const a = A.apogee(w, 2026, c[0]); const f = M.fenetreMaturite(w, a); n++;
+      if (!f) { incoh++; continue; }
+      if (!(f.a0 >= f.g0 && f.a1 <= f.g1 && f.a0 <= f.a1)) horsGarde++;
+      if (f.g1 - f.g0 >= 3 && !(f.a1 < f.g1)) { sansDeclin++; if (ex.length < 3) ex.push(r.a + ' ' + y); }
+    }
+  }
+  T('balayage de la bible : plus de 20 000 cas contrôlés (' + n + ')', n > 20000, String(n));
+  T('balayage : aucune frise incohérente', incoh === 0, String(incoh));
+  T('balayage : l’apogée est toujours dans la garde', horsGarde === 0, String(horsGarde));
+  T('balayage : toute garde de 3 ans ou plus garde un bloc de déclin après l’apogée', sansDeclin === 0, sansDeclin + ' ' + ex.join(', '));
   console.log(out.slice(o0).join('\n'));
 }

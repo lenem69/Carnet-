@@ -6,7 +6,7 @@ Utilisateur : francophone, veut des réponses directes et des corrections compl�
 
 ## Principes non négociables
 - **Données uniquement sur le téléphone** (IndexedDB). Jamais de données, sauvegardes, tableurs de cave ni clés d’IA dans le dépôt (public).
-- **L’appli fonctionne sans IA et hors connexion.** L’IA (ai.js) est optionnelle et exige une clé saisie par l’utilisateur. Appelée sur action explicite, sauf le remplissage automatique des fiches incomplètes (réglable, 10 vins par appel, 4 appels/jour, pause sur limite, jamais pendant une saisie).
+- **L’appli fonctionne sans IA et hors connexion.** L’IA (ai.js) est optionnelle et exige une clé saisie par l’utilisateur. Appelée sur action explicite, sauf le remplissage automatique des fiches incomplètes (réglable, 10 vins par appel, 20 appels/jour, pause sur limite, jamais pendant une saisie).
 - **Aucune dépendance externe au chargement** : pas de CDN, pas de police web. Le lecteur Excel est embarqué (`xlsx.min.js`, SheetJS 0.18.5, licence Apache-2.0).
 - **Discrétion** : garder `<meta name="robots" content="noindex…">` et `<meta name="referrer" content="no-referrer">` dans index.html.
 - **Jamais d’échec silencieux** : toute erreur est expliquée à l’utilisateur ; jamais de message de succès si l’enregistrement a échoué.

@@ -9,7 +9,7 @@ const ai=async c=>{
   if(!JSON.stringify(c.body).includes('Pour chaque vin'))return G({g:'Gamay',s:'Une belle cuvée.',f:2026,t:2031,p:['Poulet rôti','Fromages'],c:'estimée'});
   const ids=[...(JSON.stringify(c.body).matchAll(/\\"id\\":\\"?([\w-]+)/g))].map(m=>m[1]);
   return G({items:[...new Set(ids)].map(id=>({id,g:'Gamay',s:'Une belle cuvée.',f:2026,t:2031,p:['Poulet rôti','Fromages'],c:'estimée'}))})};
-const wine=(i,extra={})=>({id:'w'+i,name:'Vin '+i,dom:'Dom '+i,year:2020,color:'Rouge',region:'X',grape:'',qty:2,price:'',loc:'',from:'',to:'',story:'',note:'',pairings:[],check:false,conf:'',sources:[],created:i,updated:i,...extra});
+const wine=(i,extra={})=>({id:'w'+i,name:'Vin '+i,dom:'Dom '+i,year:2020,color:'Rouge',region:'Bordeaux',grape:'',qty:2,price:'',loc:'',from:'',to:'',story:'',note:'',pairings:[],check:false,conf:'',sources:[],created:i,updated:i,...extra});
 async function mk(n,opts={}){
   const r=await H.newPage(b,{ai});
   await r.page.evaluateOnNewDocument(o=>{window.__AUTO_DELAY=o.delay;window.__AUTO_EVERY=o.every},{delay:opts.delay??600,every:opts.every??700});
@@ -67,9 +67,9 @@ await page.close();mode='ok';
 ({page,errs}=await mk(0));await H.sl(1500);
 await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('seenVersion','1.16.0')});
 await page.reload();await H.sl(1500);
-T('mise à jour : fenêtre des nouveautés affichée',(await H.shown(page,'#sDlg'))&&/Mise à jour 1.34.2/.test(await H.txt(page,'#dlgT')),await H.txt(page,'#dlgT'));
+T('mise à jour : fenêtre des nouveautés affichée',(await H.shown(page,'#sDlg'))&&/Mise à jour 1.35.0/.test(await H.txt(page,'#dlgT')),await H.txt(page,'#dlgT'));
 const nx=await H.txt(page,'#dlgX');
-T('résumé : points des versions manquées, pas ceux déjà vus',/chevron/.test(nx)&&/Température de service/.test(nx)&&!/Onglet « Magic »/.test(nx)&&!/Publier ma requête/.test(nx)&&!/Choix automatique de l’IA/.test(nx),nx);
+T('résumé : points des versions manquées, pas ceux déjà vus',/déclin/.test(nx)&&/Côtes de Francs/.test(nx)&&!/Onglet « Magic »/.test(nx)&&!/Publier ma requête/.test(nx)&&!/Choix automatique de l’IA/.test(nx),nx);
 await H.tapText(page,'#dlgB button','Compris');await H.sl(300);
 await page.reload();await H.sl(1500);
 T('nouveautés : affichées une seule fois',!(await H.shown(page,'#sDlg')));

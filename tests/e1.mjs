@@ -20,14 +20,14 @@ await page.evaluate(()=>{window.__sh=null;navigator.share=async d=>{window.__sh=
 await page.$eval('#ct-msg',e=>{e.value='Le bouton + ne répond plus'});
 await page.evaluate(()=>document.querySelector('#ct-share').click());await H.sl(300);
 const sh=await page.evaluate(()=>window.__sh);
-T('aide et contact : message partagé avec version et appareil, sans donnée de cave',!!sh&&sh.text.includes('[Bug]')&&sh.text.includes('Le bouton + ne répond plus')&&sh.text.includes('version 1.34.2')&&sh.text.includes('Appareil :')&&!/vin|bouteille/i.test(sh.text.replace('Ma cave','')),JSON.stringify(sh));
+T('aide et contact : message partagé avec version et appareil, sans donnée de cave',!!sh&&sh.text.includes('[Bug]')&&sh.text.includes('Le bouton + ne répond plus')&&sh.text.includes('version 1.35.0')&&sh.text.includes('Appareil :')&&!/vin|bouteille/i.test(sh.text.replace('Ma cave','')),JSON.stringify(sh));
 T('publier : message vide refusé',await page.evaluate(()=>{document.querySelector('#ct-msg').value='';document.querySelector('#ct-pub').click();return true})&&(await H.sl(200),(await H.txt(page,'#toasts')).includes('Écrivez d’abord')));
 await page.$eval('#ct-msg',e=>{e.value='Le bouton + ne répond plus'});
 await H.simulerFormulaires(page);
 await page.evaluate(()=>document.querySelector('#ct-pub').click());await H.sl(400);
 const fx=(await page.evaluate(()=>window.__posts)).map(p=>({u:p.u,m:p.m,mode:p.mode,b:p.body}));
 T('publier : envoi direct au formulaire Google, sans quitter l’appli (POST par formulaire)',fx.length===1&&fx[0].u==='https://docs.google.com/forms/d/e/1FAIpQLSfOirVg2Xykiv6DvPS1jNM5NQJSpnW0ajhbdP1gD3bKap1QDw/formResponse'&&fx[0].m==='POST'&&fx[0].mode==='form',JSON.stringify(fx));
-T('publier : champ « Votre message » rempli avec le message, la version et l’appareil',fx.length===1&&decodeURIComponent(fx[0].b.replace(/\+/g,' ')).startsWith('entry.1804718778=[Bug] Le bouton + ne répond plus')&&fx[0].b.includes('1.34.2'),fx[0]&&fx[0].b);
+T('publier : champ « Votre message » rempli avec le message, la version et l’appareil',fx.length===1&&decodeURIComponent(fx[0].b.replace(/\+/g,' ')).startsWith('entry.1804718778=[Bug] Le bouton + ne répond plus')&&fx[0].b.includes('1.35.0'),fx[0]&&fx[0].b);
 T('publier : confirmation affichée et fenêtre fermée',(await H.txt(page,'#toasts')).includes('Requête publiée')&&!(await H.shown(page,'#sContact')),await H.txt(page,'#toasts'));
 await page.evaluate(()=>document.querySelector('#bContact').click());await H.sl(300);
 T('publier : message effacé après envoi',(await page.$eval('#ct-msg',e=>e.value))==='');

@@ -62,7 +62,7 @@ const W=(id,o)=>({id,name:'Vin '+id,dom:'Domaine '+id,year:Y-5,color:'Rouge',reg
   await page.evaluate(async(txt,w)=>{const s=await import('./store.js');await s.replaceAll([w]);await s.setMeta('bible',txt);await s.setMeta('bibleAt',Date.now());await s.setMeta('bibleV','1.33.1')},JSON.stringify(bible),W('morgon',{name:'Côte du Py',dom:'Foillard',year:2024,color:'Rouge',region:'Morgon',from:2026,to:2035,src:{from:'bible',to:'bible'}}));
   await page.reload();await H.sl(3500);
   const t=await page.evaluate(()=>{const w=[...document.querySelectorAll('#list .w')].find(e=>e.querySelector('h4').textContent.includes('Côte du Py'));return w?w.textContent:'introuvable'});
-  T('bible remplacée après le premier affichage : liste redessinée (Morgon 2024 : +6 ans, pas +8)',/\+6 ans/.test(t)&&!/\+8 ans/.test(t),t.slice(0,400));
+  T('bible remplacée après le premier affichage : liste redessinée (Foillard Morgon 2024 : +7 ans, pas +8)',/\+7 ans/.test(t)&&!/\+8 ans/.test(t),t.slice(0,400));
   await page.close();
 }
 // Cas réel (téléphone après mise à jour) : la bible locale est valide et à jour, donc rien n'est retéléchargé ; la liste doit quand même être calculée avec elle
@@ -73,7 +73,7 @@ const W=(id,o)=>({id,name:'Vin '+id,dom:'Domaine '+id,year:Y-5,color:'Rouge',reg
   await page.evaluate(async(txt,w)=>{const s=await import('./store.js');await s.replaceAll([w]);await s.setMeta('bible',txt);await s.setMeta('bibleAt',Date.now());await s.setMeta('bibleV',self.APP_VERSION);await s.setMeta('seenVersion','1.30.0')},txt,W('morgon2',{name:'Morgon Lapierre',dom:'Lapierre',year:2024,color:'Rouge',region:'Morgon',from:2026,to:2035,src:{from:'bible',to:'bible'}}));
   await page.reload();await H.sl(3500);
   const t=await page.evaluate(()=>{const w=[...document.querySelectorAll('#list .w')].find(e=>e.querySelector('h4').textContent.includes('Morgon Lapierre'));return w?w.textContent:'introuvable'});
-  T('bible locale à jour (aucun téléchargement) : la liste est calculée avec elle (fiabilité moyenne, apogée +6 ans)',/Fiabilité\s+moyenne/.test(t)&&/\+6 ans/.test(t),JSON.stringify(t).slice(0,500));
+  T('bible locale à jour (aucun téléchargement) : la liste est calculée avec elle (fiabilité moyenne, apogée +7 ans)',/Fiabilité\s+moyenne/.test(t)&&/\+7 ans/.test(t),JSON.stringify(t).slice(0,500));
   await page.close();
 }
 S.out.forEach(l=>console.log(l));
