@@ -117,7 +117,7 @@ const MULTI={v:2,provider:'gemini',list:{gemini:{key:'AIzaTEST'},openai:{key:'sk
 await page.evaluate(v=>{localStorage.removeItem('cave-ai-cool');localStorage.setItem('cave-ai',JSON.stringify(v))},MULTI);
 mode='gem429';const c0n=calls.length;const t0=Date.now();
 const okm=await page.evaluate(async()=>{const m=await import('./ai.js');return m.testKey()});
-T('2 IA : Gemini épuisé → ChatGPT prend le relais aussitôt',okm&&calls.length-c0n===2&&calls[c0n].url.includes('googleapis')&&calls[c0n+1].url.includes('example-ai')&&Date.now()-t0<8000,String(calls.length-c0n));
+T('2 IA : Gemini épuisé → ChatGPT prend le relais aussitôt',okm&&calls.length-c0n===3&&calls[c0n].url.includes('googleapis')&&calls[c0n+1].url.includes('googleapis')&&calls[c0n+2].url.includes('example-ai')&&Date.now()-t0<8000,String(calls.length-c0n));
 T('2 IA : message de relais affiché',(await H.txt(page,'#toasts')).includes('prend le relais'),await H.txt(page,'#toasts'));
 const c1n=calls.length;await page.evaluate(async()=>{const m=await import('./ai.js');return m.testKey()});
 T('2 IA : Gemini mis de côté, appel direct à ChatGPT',calls.length-c1n===1&&calls[c1n].url.includes('example-ai'));

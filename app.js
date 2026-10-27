@@ -287,8 +287,8 @@ function card(w, mode, why) {
   ${why ? `<p class="why">💡 ${esc(why)}</p>` : ''}
   <div class="row"><div><h4>${esc(w.name)}${w.year ? ' ' + esc(w.year) : ''}</h4><p>${esc([w.dom, w.region].filter(Boolean).join(' · '))}</p></div>${qty}</div>
   ${meta || tags ? `<div class="ml">${meta ? `<p class="mm">${meta}</p>` : ''}${tags ? `<p class="stl">${tags}</p>` : ''}</div>` : ''}
-  <div class="fr">${hasFiche || apo || svc || tags2 ? `<details${S.ouvert.has(w.id) ? ' open' : ''}><summary>Fiche et accords</summary>${tags2 ? `<p class="mu small sec">${tags2}</p>` : ''}${degLigne(w)}${frise}${blocFiche('Repères', reperesHtml(apo, svc) + (repAppel && (!w.grape || !w.pairings.length) ? `<p class="mu small">${esc(repAppel)}</p>` : '') + (majIA.length ? `<p class="mu small">Mis à jour par l’IA : ${esc(majIA.join(', '))}.</p>` : ''))}${w.story ? blocFiche('L’histoire', histoireHtml(w.story)) : ''}${w.pairings.length ? blocFiche('Accords', `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>`) : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : degLigne(w) + journalHtml(w, mode)}<button class="am" type="button" data-a="menu" aria-haspopup="dialog">⋯ Actions</button></div>
-  <div class="acts-h" hidden>${!w.story && !w.pairings.length ? '<button data-a="gen" type="button">✨ Fiche (IA)</button>' : ''}<button data-a="e" type="button">Modifier</button>${mode === 'cave' ? '<button data-a="d" type="button">Supprimer</button>' : ''}</div>
+  <div class="fr">${hasFiche || apo || svc || tags2 ? `<details${S.ouvert.has(w.id) ? ' open' : ''}><summary>Fiche et accords</summary>${tags2 ? `<p class="mu small sec">${tags2}</p>` : ''}${degLigne(w)}${frise}${blocFiche('Repères', reperesHtml(apo, svc) + (repAppel && (!w.grape || !w.pairings.length) ? `<p class="mu small">${esc(repAppel)}</p>` : '') + (majIA.length ? `<p class="mu small">Mis à jour par l’assistant : ${esc(majIA.join(', '))}.</p>` : ''))}${w.story ? blocFiche('L’histoire', histoireHtml(w.story)) : ''}${w.pairings.length ? blocFiche('Accords', `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>`) : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : degLigne(w) + journalHtml(w, mode)}<button class="am" type="button" data-a="menu" aria-haspopup="dialog">⋯ Actions</button></div>
+  <div class="acts-h" hidden>${!w.story && !w.pairings.length ? '<button data-a="gen" type="button">✨ Fiche par l’assistant</button>' : ''}<button data-a="e" type="button">Modifier</button>${mode === 'cave' ? '<button data-a="d" type="button">Supprimer</button>' : ''}</div>
 </div>`;
 }
 
@@ -519,7 +519,7 @@ function bilanHtml(c) {
       : `${esc(court)}${detail}${pied}`;
   }
   else if (avisMem && avisMem.erreur) avisHtml = `<span class="mu">Pas encore d’avis : ${esc(avisMem.erreur)}</span>`;
-  else avisHtml = `<span class="mu">${AI.avisPossible() ? 'Avis en préparation…' : 'L’avis de l’IA demande votre propre clé, à ajouter dans ⚙ Réglages.'}</span>`;
+  else avisHtml = `<span class="mu">${AI.avisPossible() ? 'Avis en préparation…' : 'L’avis de l’assistant demande votre propre clé, à ajouter dans ⚙ Réglages.'}</span>`;
   return `<div class="bilan">
     <h3 class="bt">Équilibre de ma cave</h3>
     <p class="bsub"><b>${titre}</b></p>
@@ -527,7 +527,7 @@ function bilanHtml(c) {
     <p><b>Équilibre</b> ${esc(L.equilibre(c))}</p>
     <p><b>Valeur estimée</b> ${v.couverts ? `≈ ${fmtEur(v.total)}` : 'pas encore estimée'}</p>
     <p class="mu small">${v.couverts ? `${v.couverts} bouteille(s) sur ${v.bouteilles} estimée(s). ` : ''}Estimation indicative : peu de prix d’achat sont saisis, donc elle repose sur les connaissances de l’IA, sans vérification. Ce n’est pas une valeur de revente garantie.</p>
-    ${reste ? `<button class="lnk" data-act="valeur" type="button">Estimer la valeur (IA)</button>` : ''}
+    ${reste ? `<button class="lnk" data-act="valeur" type="button">Estimer la valeur avec l’assistant</button>` : ''}
   </div>`;
 }
 
@@ -677,7 +677,7 @@ async function genInForm() {
     Stats.track('fiches_ia'); if (d.conf === 'vérifiée') Stats.track('fiches_verif');
     toast(ficheMsg(d));
   } catch (e) { if (!(e && e.name === 'AbortError')) errToast(AI.errText(e)); }
-  b.disabled = false; b.textContent = '✨ Générer la fiche (IA)';
+  b.disabled = false; b.textContent = '✨ Générer la fiche avec l’assistant';
 }
 
 /* ============ Menu « Actions » d’une carte ============ */
@@ -771,7 +771,7 @@ async function onCardAction(e) {
     btn.disabled = true; btn.textContent = 'Génération…';
     try {
       const d = await AI.makeFiche(w);
-      if (!d.story && !d.pairings.length && !d.grape) { btn.disabled = false; btn.textContent = '✨ Fiche (IA)'; errToast('L’IA a répondu sans fiche exploitable pour ce vin. Réessayez dans un instant ; si cela se répète, vérifiez votre clé dans ⚙ Réglages.'); return; }
+      if (!d.story && !d.pairings.length && !d.grape) { btn.disabled = false; btn.textContent = '✨ Fiche par l’assistant'; errToast('L’assistant a répondu sans fiche exploitable pour ce vin. Réessayez dans un instant ; si cela se répète, vérifiez votre clé dans ⚙ Réglages.'); return; }
       Stats.track('fiches_ia'); if (d.conf === 'vérifiée') Stats.track('fiches_verif');
       const c = copieIA(w, d);
       if (await persist(() => store.putWines([c]))) {
@@ -782,11 +782,11 @@ async function onCardAction(e) {
         const el = document.querySelector(`.w[data-id="${CSS.escape(c.id)}"]`);
         if (el) el.scrollIntoView({ block: 'center' });
         setTimeout(() => { if (S.highlight === c.id) { S.highlight = null; const e2 = document.querySelector(`.w[data-id="${CSS.escape(c.id)}"]`); if (e2) e2.classList.remove('hl'); } }, 2500);
-        toast(chg ? '✅ ' + ficheMsg(d) + ' Ouvrez « Fiche et accords » pour la lire.' : 'La fiche est déjà à jour : l’IA n’a rien trouvé à changer (vos saisies sont conservées).');
+        toast(chg ? '✅ ' + ficheMsg(d) + ' Ouvrez « Fiche et accords » pour la lire.' : 'La fiche est déjà à jour : l’assistant n’a rien trouvé à changer (vos saisies sont conservées).');
         return;
       }
       render();
-    } catch (err) { btn.disabled = false; btn.textContent = '✨ Fiche (IA)'; errToast(AI.errText(err)); }
+    } catch (err) { btn.disabled = false; btn.textContent = '✨ Fiche par l’assistant'; errToast(AI.errText(err)); }
   }
 }
 
@@ -858,6 +858,8 @@ const ACT_CLE = { a: 'cle', label: 'Activer ma clé gratuite' }, ACT_MAIN = { a:
 function renderMenuEnc() {
   const el = $('#m-enc'); if (!el) return;
   const e = AI.etatPhoto();
+  // Photo gratuite du jour utilisée : les deux boutons de photo sont grisés (le message explique pourquoi).
+  $$('#sMenu [data-m="cam"], #sMenu [data-m="img"]').forEach(b => { b.classList.toggle('indispo', e === 'limite'); b.setAttribute('aria-disabled', e === 'limite' ? 'true' : 'false'); });
   if (e === 'gratuit') {
     el.className = 'enc mini';
     el.innerHTML = '<p class="mu small">1 photo gratuite par jour. Plus avec votre propre clé.</p><button class="lnk" type="button" data-enc="cle">Activer ma clé gratuite</button>';
@@ -911,7 +913,7 @@ function cleEtape(n) {
 const gardeDecidee = w => !!(w && w.from && w.to && w.src && (w.src.from === 'ai' || w.src.from === 'user'));
 const horsBibleBrut = w => !!(w && w.name && w.year && !L.bibleEntry(w, S.bible) && apogee(w, YEAR).connue === false);
 const horsBible = w => horsBibleBrut(w) && !gardeDecidee(w);
-const hbEncartHtml = () => '<div class="enc hb"><b>Vin hors de la bible</b><p>La bible ne couvre que la France. L’IA peut proposer la région et une garde (fiabilité faible, à vérifier). Rien n’est écrit sans votre accord.</p><button class="btn" data-a="hb" type="button">Chercher avec l’IA</button></div>';
+const hbEncartHtml = () => '<div class="enc hb"><b>Vin hors de la bible</b><p>La bible ne couvre que la France. L’assistant peut proposer la région et une garde (fiabilité faible, à vérifier). Rien n’est écrit sans votre accord.</p><button class="btn" data-a="hb" type="button">Chercher avec l’assistant</button></div>';
 let hbBusy = false;
 async function chercherHB(w) {
   if (hbBusy) return;
@@ -927,7 +929,7 @@ async function chercherHB(w) {
       if (!sansIA) { errToast(AI.errText(e)); return; }
       const v = await ask('Recherche impossible pour le moment',
         hors ? 'Pas de connexion. Vos dates sont conservées. Vous pourrez réessayer plus tard.'
-          : 'L’IA offerte a atteint sa limite du jour. Vos dates sont conservées. Vous pouvez réessayer demain, ou activer votre clé gratuite.',
+          : 'L’assistant offert a atteint sa limite du jour. Vos dates sont conservées. Vous pouvez réessayer demain, ou activer votre clé gratuite.',
         hors ? [{ label: 'Garder mes dates', value: null }]
           : [{ label: 'Activer ma clé gratuite', value: 'cle' }, { label: 'Garder mes dates', value: null, kind: 'o' }]);
       if (v === 'cle') openCle();
@@ -935,7 +937,7 @@ async function chercherHB(w) {
     }
     const actuel = w.from && w.to ? `${w.from}–${w.to}` : 'aucune';
     const base = AI.getConfig('gemini').key && r.searched ? 'avec recherche web (Gemini)' : 'à partir des connaissances de l’IA, sans recherche web';
-    const c = await ask('Proposition de l’IA',
+    const c = await ask('Proposition de l’assistant',
       `Région : ${r.region || 'non précisée'}\nGarde : ${r.from}–${r.to}\nVos dates actuelles : ${actuel}\n\nFiabilité faible : estimation ${base}. À vérifier.`,
       [{ label: 'Appliquer cette proposition', value: 'yes' }, { label: 'Garder mes dates', value: null, kind: 'o' }]);
     if (c !== 'yes') return;
@@ -948,7 +950,7 @@ async function chercherHB(w) {
     w.updated = Date.now();
     S.ouvert.add(w.id); render();
     if (await persist(() => store.putWines([w]))) {
-      toast(`Garde proposée par l’IA : ${w.from}–${w.to}.`, { action: { label: 'Annuler', fn: async () => {
+      toast(`Garde proposée par l’assistant : ${w.from}–${w.to}.`, { action: { label: 'Annuler', fn: async () => {
         for (const k of ['from', 'to', 'src', 'gv', 'conf', 'region', 'updated']) { if (avant[k] === undefined) delete w[k]; else w[k] = avant[k]; }
         S.ouvert.add(w.id); render();
         if (await persist(() => store.putWines([w]))) toast('Dates précédentes rétablies.');
@@ -1224,7 +1226,7 @@ async function valeurCaveIA() {
 
 async function enrichAll() {
   const todo = S.wines.filter(w => !w.aiPass);
-  if (!todo.length) { toast('Toutes les fiches ont déjà été mises à jour par l’IA.'); return; }
+  if (!todo.length) { toast('Toutes les fiches ont déjà été mises à jour par l’assistant.'); return; }
   if (!requireAIPerso()) return;
   const gemini = AI.geminiPerso();
   const calls = Math.ceil(todo.length / 10);
@@ -1282,12 +1284,12 @@ async function findForDish() {
   }
   if (!pre.length) { showLocal('Aucun vin prêt à boire.'); return; }
   const b = $('#go'); b.disabled = true; b.textContent = 'Recherche…';
-  $('#blist').innerHTML = '<p class="empty">L’IA choisit parmi vos vins…</p>';
+  $('#blist').innerHTML = '<p class="empty">L’assistant choisit parmi vos vins…</p>';
   try {
     const picks = await AI.pickForDish(dish, pre);
     const out = picks.map(p => ({ w: S.wines.find(w => w.id === p.id), why: p.why })).filter(x => x.w);
-    if (!out.length) showLocal('L’IA n’a rien proposé. Suggestions sans IA :');
-    else $('#blist').innerHTML = '<p class="mu small">Choix de l’IA parmi vos vins prêts à boire.</p>' + out.map(x => card(x.w, 'boire', x.why)).join('');
+    if (!out.length) showLocal('L’assistant n’a rien proposé. Suggestions sans IA :');
+    else $('#blist').innerHTML = '<p class="mu small">Choix de l’assistant parmi vos vins prêts à boire.</p>' + out.map(x => card(x.w, 'boire', x.why)).join('');
   } catch (e) {
     errToast(AI.errText(e));
     showLocal('IA indisponible. Suggestions sans IA :');
@@ -1544,7 +1546,7 @@ function menuAction(m) {
   const pick = id => { closeSheet('sMenu'); $(id).click(); };
   // Si l'IA n'est pas disponible (limite du jour, pas de clé), le menu se ferme : sinon la fenêtre d'explication attendrait derrière lui.
   // Photo gratuite du jour utilisée : l'encart du menu explique et propose deux actions, sans fenêtre bloquante.
-  if ((m === 'cam' || m === 'img') && AI.etatPhoto() === 'limite') { renderMenuEnc(); const el = $('#m-enc'); el.tabIndex = -1; el.focus(); return; }
+  if ((m === 'cam' || m === 'img') && AI.etatPhoto() === 'limite') { renderMenuEnc(); const el = $('#m-enc'); el.tabIndex = -1; el.focus(); toast('Photo gratuite du jour utilisée : activez votre clé gratuite, ou saisissez ce vin à la main.'); return; }
   if (m === 'cam') { if (requireAI()) pick('#fCam'); else closeSheet('sMenu'); }
   else if (m === 'img') { if (requireAI()) pick('#fImg'); else closeSheet('sMenu'); }
   else if (m === 'xls') pick('#fXls');
@@ -1891,7 +1893,7 @@ async function autoStep() {
         auto.lastOk = Date.now();
         if (g !== 'valeur') changed.forEach(([, c]) => S.ouvert.add(c.id));
         render();
-        if (g !== 'valeur') toast('✨ ' + changed.length + (changed.length > 1 ? ' fiches mises à jour' : ' fiche mise à jour') + ' par l’IA');
+        if (g !== 'valeur') toast('✨ ' + changed.length + (changed.length > 1 ? ' fiches mises à jour' : ' fiche mise à jour') + ' par l’assistant');
       } else changed.forEach(([w]) => { auto.tries[w.id] = (auto.tries[w.id] || 0) + 1; });
     }
     auto.pauseUntil = 0;

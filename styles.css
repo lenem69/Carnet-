@@ -411,3 +411,5 @@ details.adv[open] summary { margin-bottom: 6px; }
 .w .kv .mu { font-size: 14px; }
 .w p.hist { margin: 8px 0 0; font-size: 15.5px; line-height: 1.6; color: var(--tx); }
 .w p.hist.lead { margin-top: 0; font-weight: 600; }
+
+#sMenu [data-m].indispo { opacity: .5; }

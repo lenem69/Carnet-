@@ -105,6 +105,7 @@ await H.click(page,'#fab');await H.sl(300);await H.tapText(page,'#sMenu button',
 T('limite atteinte : aucun appel',calls.slice(n1).length===0,calls.slice(n1).length);
 const encC=await page.evaluate(()=>({t:document.querySelector('#m-enc')?.innerText||'',dlg:document.querySelector('#sDlg').classList.contains('show'),menu:document.querySelector('#sMenu').classList.contains('show')}));
 T('limite atteinte : encart « Plus de photo gratuite aujourd’hui » dans le menu, sans fenêtre bloquante',encC.t.includes('Plus de photo gratuite aujourd’hui')&&!encC.dlg&&encC.menu,JSON.stringify(encC));
+T('limite atteinte : les deux boutons de photo sont grisés et un message s’affiche au toucher',await page.evaluate(()=>{const b=[...document.querySelectorAll('#sMenu [data-m="cam"],#sMenu [data-m="img"]')];return b.length===2&&b.every(x=>x.classList.contains('indispo')&&x.getAttribute('aria-disabled')==='true')&&/Photo gratuite du jour utilisée/.test(document.body.innerText)}));
 await fermer();
 
 // L'avis de Magic : sans clé personnelle, le relais le prépare une seule fois par jour, sans toucher à la lecture gratuite Gemini.

@@ -29,7 +29,7 @@ const wine=id=>page.evaluate(async id=>{const s=await import('./store.js');retur
 await page.goto(H.URL0);await H.sl(1000);
 await reset({key:'AIzaTEST_0123456789abcdefghij',wines:[W(),FR]});
 await ouvre('s');await ouvre('f');
-T('vin hors bible : encart « Vin hors de la bible » avec bouton « Chercher avec l’IA »',await hbBtn('s')&&(await page.evaluate(()=>document.querySelector('[data-id="s"] .enc.hb').innerText)).includes('La bible ne couvre que la France'));
+T('vin hors bible : encart « Vin hors de la bible » avec bouton « Chercher avec l’assistant »',await hbBtn('s')&&(await page.evaluate(()=>document.querySelector('[data-id="s"] .enc.hb').innerText)).includes('La bible ne couvre que la France'));
 T('vin français de la bible : aucun encart',!(await hbBtn('f')));
 const hH=await page.evaluate(()=>document.querySelector('[data-id="s"] button[data-a="hb"]').getBoundingClientRect().height);
 T('bouton de l’encart : au moins 44 px',hH>=44,hH);
@@ -37,7 +37,7 @@ T('bouton de l’encart : au moins 44 px',hH>=44,hH);
 // Proposition, refus
 await clickHb('s');await H.sl(800);
 let d=await dlg();
-T('proposition : région, garde, dates actuelles et fiabilité faible',d.t==='Proposition de l’IA'&&d.x.includes('Península de Setúbal (Portugal)')&&d.x.includes('Garde : 2026–2030')&&d.x.includes('Vos dates actuelles : 2026–2029')&&d.x.includes('Fiabilité faible'),JSON.stringify(d));
+T('proposition : région, garde, dates actuelles et fiabilité faible',d.t==='Proposition de l’assistant'&&d.x.includes('Península de Setúbal (Portugal)')&&d.x.includes('Garde : 2026–2030')&&d.x.includes('Vos dates actuelles : 2026–2029')&&d.x.includes('Fiabilité faible'),JSON.stringify(d));
 T('proposition : deux boutons « Appliquer cette proposition » / « Garder mes dates »',d.b.join('|')==='Appliquer cette proposition|Garder mes dates',d.b.join('|'));
 T('avec clé Gemini : la mention indique la recherche web',d.x.includes('avec recherche web (Gemini)'),JSON.stringify(d.x));
 await tapDlg('Garder mes dates');await H.sl(300);
@@ -49,7 +49,7 @@ await ouvre('s');await clickHb('s');await H.sl(800);await tapDlg('Appliquer cett
 w=await wine('s');
 T('accord : garde 2026–2030 d’origine IA, région remplie, fiche « estimée »',w.from===2026&&w.to===2030&&w.src.from==='ai'&&w.src.to==='ai'&&w.region==='Península de Setúbal (Portugal)'&&w.conf==='estimée',JSON.stringify(w));
 T('après accord : l’encart disparaît (garde décidée par l’IA)',!(await hbBtn('s')));
-T('accord : message avec action « Annuler »',await page.evaluate(()=>/Garde proposée par l’IA : 2026–2030/.test(document.body.innerText)));
+T('accord : message avec action « Annuler »',await page.evaluate(()=>/Garde proposée par l’assistant : 2026–2030/.test(document.body.innerText)));
 await H.tapText(page,'button','Annuler');await H.sl(600);
 w=await wine('s');
 T('annulation : dates précédentes rétablies, région vide',w.from===2026&&w.to===2029&&!w.region,JSON.stringify(w));
@@ -66,7 +66,7 @@ await ouvre('s');
 await page.evaluate(()=>document.querySelector('[data-id="s"] button[data-a="recalc"]').click());await H.sl(400);
 await H.tapText(page,'#dlgB button','Recalculer');await H.sl(900);
 d=await dlg();
-T('« Recalculer » sur un vin hors bible : plus d’impasse, proposition de l’IA',d.t==='Proposition de l’IA',JSON.stringify(d));
+T('« Recalculer » sur un vin hors bible : plus d’impasse, proposition de l’IA',d.t==='Proposition de l’assistant',JSON.stringify(d));
 await tapDlg('Garder mes dates');await H.sl(300);
 
 // Réponse invalide
@@ -97,7 +97,7 @@ T('sans IA : dates intactes',w.from===2026&&w.to===2029);
 // Garde saisie par la personne : l’encart ne reste pas affiché
 await reset({key:'AIzaTEST_0123456789abcdefghij',wines:[W({src:{from:'user',to:'user'}})]});
 await ouvre('s');
-T('garde saisie par vous : aucun encart « Chercher avec l’IA »',!(await hbBtn('s')));
+T('garde saisie par vous : aucun encart « Chercher avec l’assistant »',!(await hbBtn('s')));
 
 T('aucune erreur de page ni fenêtre native',errs.length===0,errs.join(' | '));
 await b.close();srv.close();

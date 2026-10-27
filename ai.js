@@ -179,6 +179,8 @@ export function errText(e) {
   const c = (e && e.code) || '';
   const m = (e && e.message) || '';
   if (c === 'service_gratuit') return ERR[c] + (m ? ' (' + String(m).slice(0, 120) + ')' : '');
+  // Limite, panne ou modèle introuvable : on ajoute la phrase de Google (ou du relais) pour que la vraie cause soit visible, jamais un échec muet.
+  if (['rate_limited', 'server', 'bad_model'].includes(c) && ERR[c]) return ERR[c] + (m ? ' Détail du service : ' + String(m).replace(/\s+/g, ' ').slice(0, 160) : '');
   if (ERR[c]) return ERR[c];
   return 'Erreur inattendue' + (c || m ? ' [' + [c, m].filter(Boolean).join(' – ') + ']' : '') + '.';
 }
@@ -305,8 +307,8 @@ async function callOnce(s, prompt, images, signal, out) {
       think = ''; j = await call(search);
     }
   } catch (e) {
-    // La recherche web est un plus : si le service la refuse, on refait la demande sans elle.
-    if (!(search && e && e.code === 'server')) throw e;
+    // La recherche web est un plus : si le service la refuse (panne, ou limite propre à cet outil), on refait la demande sans elle.
+    if (!(search && e && (e.code === 'server' || (e.code === 'rate_limited' && !s.gratuit)))) throw e;
     search = false; if (out) out.fallback = true;
     j = await call(false);
   }
@@ -363,7 +365,16 @@ export async function callJson(prompt, opts = {}) {
     else s.model = modelFor(prov, opts.task, s.model);
     try {
       // Service gratuit partagé : pas d'attente automatique (la limite du jour ne se lève pas en 20 s) ; l'utilisateur voit tout de suite quoi faire.
-      const r = await callProvider(s, prompt, opts, last && !opts.noRetry && !s.relais && !s.gratuit ? cfg.retries : 0);
+      // Clé Gemini personnelle sur le modèle économique par défaut : si Google le refuse (limite), on essaie une fois le modèle précis
+      // (celui des étiquettes) avant d'attendre ou de passer au relais. Un modèle choisi à la main n'est jamais remplacé.
+      const retries = last && !opts.noRetry && !s.relais && !s.gratuit ? cfg.retries : 0;
+      const autreModele = prov === 'gemini' && !s.gratuit && s.model === PROVIDERS.gemini.model ? MODELE_TACHE.label.gemini : '';
+      let r;
+      try { r = await callProvider(s, prompt, opts, autreModele ? 0 : retries); }
+      catch (e0) {
+        if (!(autreModele && e0 && e0.code === 'rate_limited')) throw e0;
+        r = await callProvider({ ...s, model: autreModele }, prompt, opts, retries);
+      }
       uncool(prov); stat('ia_ok');
       if (s.gratuit) await compter(s.unites);
       if (s.relais) await compterRelais(s.unites);
