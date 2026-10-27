@@ -43,7 +43,7 @@ const W=(id,o)=>({id,name:'Vin '+id,dom:'Domaine '+id,year:Y-5,color:'Rouge',reg
   await ouvre('Chassagne-Montrachet 2018');
   const ch=await page.evaluate(()=>{const w=[...document.querySelectorAll('#list .w')].find(e=>e.querySelector('h4').textContent.includes('Chassagne-Montrachet 2018'));return {f:(w.querySelector('.fiab')||{}).textContent||'',t:w.textContent}});
   T('fiche : une garde déjà d’origine bible est jugée avec la bible chargée (pas de « faible » au démarrage)',/moyenne/.test(ch.f)&&!/absent/.test(ch.f),ch.f);
-  T('fiche : l’apogée tient compte de la note du millésime dès le démarrage (Chassagne 2018 : +8 ans en bon millésime)',/Apogée estimée/.test(ch.t),ch.t.slice(0,300));
+  T('fiche : l’apogée tient compte de la note du millésime dès le démarrage (Chassagne 2018 : +8 ans en bon millésime)',/Apogée\s*\d{4}/.test(ch.t),ch.t.slice(0,300));
   await ouvre('Sans année');
   const sa=await page.evaluate(()=>{const w=[...document.querySelectorAll('#list .w')].find(e=>e.querySelector('h4').textContent.includes('Sans année'));return !!w.querySelector('.mat2')});
   T('fiche : pas de frise sans millésime',!sa);
@@ -91,7 +91,7 @@ const W=(id,o)=>({id,name:'Vin '+id,dom:'Domaine '+id,year:Y-5,color:'Rouge',reg
   T('recalcul : confirmation demandée avant de remplacer',/Recalculer cette garde/.test(await H.txt(page,'#dlgT')),await H.txt(page,'#dlgT'));
   await H.tapText(page,'#dlgB button','Recalculer');await H.sl(800);
   const a1=await card();
-  T('recalcul : plus de « garde modifiée par vous », fiabilité de la bible, bouton disparu, fiche restée ouverte',!/garde modifiée par vous/.test(a1.t)&&/Fiabilité\s+moyenne/.test(a1.t)&&!a1.btn&&/Apogée estimée/.test(a1.t),a1.t.slice(0,300));
+  T('recalcul : plus de « garde modifiée par vous », fiabilité de la bible, bouton disparu, fiche restée ouverte',!/garde modifiée par vous/.test(a1.t)&&/Fiabilité\s+moyenne/.test(a1.t)&&!a1.btn&&/Apogée\s*\d{4}/.test(a1.t),a1.t.slice(0,300));
   const g1=await page.evaluate(async()=>{const s=await import('./store.js');const w=(await s.allWines())[0];return {f:w.from,t:w.to,sf:(w.src||{}).from}});
   T('recalcul : dates de la bible ou du calcul enregistrées (origine bible ou calc), plus 2026–2045',g1.f!==2026&&g1.t!==2045&&['bible','calc'].includes(g1.sf),JSON.stringify(g1));
   await H.tapText(page,'#toasts button','Annuler');await H.sl(800);

@@ -384,3 +384,30 @@ details.adv[open] summary { margin-bottom: 6px; }
 .w.ph-garde { box-shadow: inset 5px 0 0 var(--ph-garde); } .w.ph-jeune { box-shadow: inset 5px 0 0 var(--ph-jeune); }
 .w.ph-apogee { box-shadow: inset 5px 0 0 var(--ph-apogee); } .w.ph-declin { box-shadow: inset 5px 0 0 var(--ph-declin); }
 .w[class*="ph-"]:has(details[open]) { box-shadow: none; }
+
+/* Activation de la clé gratuite : encarts discrets, jamais bloquants */
+.enc { position: relative; background: var(--card); border: 1px solid var(--bd); border-left: 4px solid var(--or); border-radius: 12px; padding: 10px 12px 8px; margin: 10px 0; }
+.enc.cx { padding-right: 44px; }
+.enc:focus { outline: none; }
+.enc b { display: block; font-family: Georgia, 'Times New Roman', serif; font-size: 16px; margin-bottom: 2px; }
+.enc p { margin: 0 0 6px; font-size: 14px; }
+.enc .stack { margin-top: 6px; }
+.enc .x { position: absolute; right: 0; top: 0; width: 44px; height: 44px; border: 0; background: none; font-size: 22px; line-height: 1; color: var(--mu); }
+.enc.mini { background: transparent; border-color: transparent; border-left: 3px solid var(--or); border-radius: 4px; padding: 2px 12px; }
+.enc.mini p { margin: 0; }
+.enc.mini .lnk { display: block; min-height: 44px; padding: 0; font-weight: 600; text-align: left; }
+.cle-etape { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ac); margin: 2px 0 8px; }
+.res { border: 1px solid var(--bd); border-left: 4px solid var(--ok); border-radius: 10px; padding: 10px 12px; margin: 10px 0; background: var(--card); font-size: 15px; }
+.res.ko { border-left-color: var(--bad); } .res.att { border-left-color: var(--wa); }
+.photo { margin: 8px 0; text-align: center; } .photo img { display: block; max-width: 100%; max-height: 170px; border-radius: 8px; margin: 0 auto 4px; }
+
+/* Fiche dépliée : blocs titrés (Repères, L'histoire, Accords, Journal) */
+.w .bl, .w .jr { border-top: 1px solid var(--bd, #eadfe2); margin-top: 12px; padding-top: 10px; }
+.w .bl > h5, .w .jr > p:first-child b { display: block; margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ac); }
+.w .kv { display: grid; grid-template-columns: 74px 1fr; gap: 6px 10px; margin: 0; }
+.w .kv dt { color: var(--mu); font-size: 15px; }
+.w .kv dd { margin: 0; font-size: 15px; color: var(--tx); overflow-wrap: anywhere; }
+.w .kv small { display: block; margin-top: 1px; font-size: 13px; color: var(--mu); }
+.w .kv .mu { font-size: 14px; }
+.w p.hist { margin: 8px 0 0; font-size: 15.5px; line-height: 1.6; color: var(--tx); }
+.w p.hist.lead { margin-top: 0; font-weight: 600; }

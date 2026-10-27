@@ -52,7 +52,7 @@ const chev=page=>page.evaluate(()=>{const s=document.querySelector('#list .w det
   T('mise à jour, fenêtre ouverte : fiabilité « moyenne » (Chassagne, Morgon), « garde modifiée par vous » pour la garde saisie',/moyenne/.test(fb['Chassagne-Montrachet 2018'])&&/moyenne/.test(fb['Morgon 2023'])&&Object.entries(fb0).filter(([k])=>/^Garde à moi/.test(k)).every(([,v])=>/garde modifiée par vous/.test(v)),JSON.stringify(fb0));
   T('mise à jour : jamais « absent de la bible » pour un vin dont la garde vient de la bible',!/absent/.test(fb['Chassagne-Montrachet 2018']+fb['Morgon 2023']),JSON.stringify(fb0));
   const ap=(await carte(page,'Morgon 2023')).t;
-  T('mise à jour : apogée de Morgon 2023 calculée avec la bible (Lapierre, note du millésime neutre : +9 ans)',/Apogée estimée/.test(ap)&&/\+9 ans/.test(ap),ap.slice(0,200));
+  T('mise à jour : apogée de Morgon 2023 calculée avec la bible (Lapierre, note du millésime neutre : +9 ans)',/Apogée\s*\d{4}/.test(ap)&&/\+9 ans/.test(ap),ap.slice(0,200));
   // fermer la fenêtre : la bible plus récente est reprise, rien ne se casse
   await page.evaluate(()=>{const b=[...document.querySelectorAll('#sDlg button')][0];b&&b.click()});await H.sl(2500);
   const apres=await page.evaluate(async()=>{const s=await import('./store.js');const a=await s.allWines();const m=await s.getMeta('bible');return {n:a.length,date:JSON.parse(m).date,sancerre:a.find(w=>w.id==='vide')}});

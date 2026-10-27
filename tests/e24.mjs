@@ -16,7 +16,7 @@ const G=o=>({json:{candidates:[{content:{parts:[{text:JSON.stringify(o)}]}}]}});
   T('démo : plusieurs statuts de garde différents (à garder, prêt, urgent…)',d.pills.length>=3,JSON.stringify(d.pills));
   T('démo : toutes les couleurs présentes',['Rouge','Blanc','Rosé','Pétillant'].every(c=>d.colors.includes(c)),JSON.stringify(d.colors));
   const st=await page.evaluate(async()=>{const s=await import('./store.js');const a=await s.allWines();return {n:a.length,ids:a.every(w=>w.id.startsWith('demo-')),complet:a.every(w=>w.story&&w.pairings.length>=4&&w.from&&w.to&&w.from<=w.to)}});
-  const sv=await page.evaluate(()=>[...document.querySelectorAll('#list .w')].map(e=>e.textContent).filter(t=>/Service : \d+( à \d+)? °C\./.test(t)).length);
+  const sv=await page.evaluate(()=>[...document.querySelectorAll('#list .w')].map(e=>e.textContent).filter(t=>/Service\s*\d+( à \d+)? °C/.test(t)).length);
   T('démo : température de service dans la fiche des vins (15 sur 15)',sv===15,sv);
   T('démo : enregistrée (15, identifiants demo-) et fiches complètes',st.n===15&&st.ids&&st.complet,JSON.stringify(st));
   // un vin à soi, puis effacement de la démo

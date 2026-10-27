@@ -362,7 +362,8 @@ export async function callJson(prompt, opts = {}) {
     if (prov === 'groq') s.unites = Math.max(1, Math.min(relaisReste() || 1, opts.unites || 1));
     else s.model = modelFor(prov, opts.task, s.model);
     try {
-      const r = await callProvider(s, prompt, opts, last && !opts.noRetry && !s.relais ? cfg.retries : 0);
+      // Service gratuit partagé : pas d'attente automatique (la limite du jour ne se lève pas en 20 s) ; l'utilisateur voit tout de suite quoi faire.
+      const r = await callProvider(s, prompt, opts, last && !opts.noRetry && !s.relais && !s.gratuit ? cfg.retries : 0);
       uncool(prov); stat('ia_ok');
       if (s.gratuit) await compter(s.unites);
       if (s.relais) await compterRelais(s.unites);
@@ -455,6 +456,21 @@ async function ficheAvecRecherche(w, opts = {}) {
   f.searched = !!out.searched;
   f.fallback = !!out.fallback;
   return f;
+}
+
+// Vin hors de la bible (étranger, appellation inconnue) : l'IA propose la région et une fenêtre de garde. Rien n'est écrit ici.
+// Retourne { region, from, to, searched, provider } ; lève invalid_json si la réponse est inutilisable.
+export async function chercherGarde(w, opts = {}) {
+  const year = new Date().getFullYear();
+  const ask = s => { const web = s.provider === 'gemini'; return `${EXPERT} ${web ? 'Utilise la recherche web (site du domaine, guides, revues, sites de vente) pour' : 'Avec tes connaissances, sans inventer de faits précis, pour'} ce vin, indique le pays et la région viticole, puis la fenêtre de garde habituelle (années civiles de début et de fin de la période de dégustation conseillée) : ${JSON.stringify({ name: w.name, dom: w.dom, year: w.year, color: w.color, region: w.region })}. Nous sommes en ${year}. En cas de doute, élargis la fourchette. Réponds uniquement par un objet JSON : {"region":"Région (Pays)","from":année,"to":année}.`; };
+  const out = { wantSearch: true };
+  const d = await callJson(ask, { ...opts, out });
+  if (!d || typeof d !== 'object' || Array.isArray(d)) throw { code: 'invalid_json' };
+  const from = Math.round(Number(d.from)), to = Math.round(Number(d.to));
+  const y = Number(w.year) || year;
+  if (!Number.isFinite(from) || !Number.isFinite(to) || from < y || to < from || to > y + 80 || from < 1900) throw { code: 'invalid_json' };
+  const region = String(d.region || '').replace(/[<>]/g, '').trim().slice(0, 80);
+  return { region, from, to, searched: !!out.searched, provider: out.provider || '' };
 }
 
 // Fiche d'un seul vin : recherche web d'abord ; si elle échoue (réponse illisible, service, réseau) ou revient vide,
@@ -615,6 +631,29 @@ export async function estimeValeur(list, opts = {}) {
     if (x && x.id != null && min > 0) out.set(String(x.id), { min, max: max >= min ? max : min, date: Date.now() });
   }
   return out;
+}
+
+// Photo gratuite du jour, pour l'écran d'ajout : 'perso' (clé Gemini personnelle), 'gratuit' (photo du jour encore disponible),
+// 'limite' (photo du jour utilisée), 'aucun' (service gratuit indisponible sur cet appareil).
+export const etatPhoto = () => (getConfig('gemini').key ? 'perso' : modeGemini() === 'gratuit' ? 'gratuit' : gratuitBloque() ? 'limite' : 'aucun');
+
+// Test d'une clé Gemini AVANT de l'enregistrer : un appel de lecture (liste des modèles), qui ne consomme pas de génération.
+// Résultat : ok | limite (clé valide, Google à sa limite) | refusee | hors_ligne | indispo (Google ne répond pas correctement).
+export async function testerCleGemini(cle) {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return { etat: 'hors_ligne' };
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 20000);
+  try {
+    await httpJson('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1', { method: 'GET', headers: { 'x-goog-api-key': cle }, signal: ac.signal });
+    return { etat: 'ok' };
+  } catch (e) {
+    if (e && e.name === 'AbortError') return { etat: 'hors_ligne' };
+    const c = e && e.code;
+    if (c === 'rate_limited') return { etat: 'limite' };
+    if (c === 'bad_key') return { etat: 'refusee' };
+    if (c === 'network') return { etat: 'hors_ligne' };
+    return { etat: 'indispo' };
+  } finally { clearTimeout(timer); }
 }
 
 export async function testKey(opts) {

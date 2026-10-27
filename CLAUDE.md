@@ -16,6 +16,7 @@ Utilisateur : francophone, veut des réponses directes et des corrections compl�
 - `app.js` : interface et enchaînements. `logic.js` : règles métier pures (fiches, garde, accords sans IA, CSV, sauvegardes).
 - `store.js` : IndexedDB (repli en mémoire si refusé). `importer.js` : import Excel/CSV. `files.js` : partage/téléchargement.
 - `ai.js` : Gemini (défaut), Claude, compatible OpenAI ; nouvel essai auto sur limite par minute ; prompts métier.
+- `cle.js` : règles pures de l'activation de la clé Gemini (nettoyage de la clé collée, fréquence des invitations, reprise de l'étape). L'interface (encarts, feuille en 3 étapes `#sCle`) est dans `app.js` ; le test de clé (`testerCleGemini`) et l'état de la photo gratuite (`etatPhoto`) dans `ai.js`.
 - `stats.js` : statistiques anonymes facultatives (accord obligatoire, envoi hebdomadaire au formulaire Google). `notes.js` : nouveautés affichées une fois après mise à jour (ajouter une entrée à chaque version).
 - `sw.js` : hors connexion + mises à jour. `version.js` : **numéro de version unique** (lu par la page et le service worker).
 - `tests/` : tests unitaires et navigateur (non chargés par l’appli).

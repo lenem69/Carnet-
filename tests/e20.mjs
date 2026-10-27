@@ -101,10 +101,11 @@ await page.evaluate(async()=>{localStorage.removeItem('cave-ai');const s=await i
 await page.reload();await H.sl(1500);
 await page.evaluate(()=>document.querySelectorAll('.modal.show').forEach(m=>m.classList.remove('show')));
 const n1=calls.length;
-await H.click(page,'#fab');await H.sl(300);await H.tapText(page,'#sMenu button','Scanner une étiquette');await H.sl(3000);
+await H.click(page,'#fab');await H.sl(300);await H.tapText(page,'#sMenu button','Scanner une étiquette');await H.sl(1500);
 T('limite atteinte : aucun appel',calls.slice(n1).length===0,calls.slice(n1).length);
-const titre=await page.evaluate(()=>(document.querySelector('#dlgT')?.textContent||'')+'');
-T('limite atteinte : fenêtre « Limite du jour atteinte »',titre.includes('Limite du jour atteinte'),titre);
+const encC=await page.evaluate(()=>({t:document.querySelector('#m-enc')?.innerText||'',dlg:document.querySelector('#sDlg').classList.contains('show'),menu:document.querySelector('#sMenu').classList.contains('show')}));
+T('limite atteinte : encart « Plus de photo gratuite aujourd’hui » dans le menu, sans fenêtre bloquante',encC.t.includes('Plus de photo gratuite aujourd’hui')&&!encC.dlg&&encC.menu,JSON.stringify(encC));
+await fermer();
 
 // L'avis de Magic : sans clé personnelle, le relais le prépare une seule fois par jour, sans toucher à la lecture gratuite Gemini.
 await page.evaluate(async()=>{localStorage.removeItem('cave-ai');const s=await import('./store.js');await s.setMeta('gratuit',{jour:new Date().toISOString().slice(0,10),vins:0});await s.setMeta('relais',{jour:new Date().toISOString().slice(0,10),vins:0});await s.setMeta('avisRelais','');await s.setMeta('avis',null);

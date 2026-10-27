@@ -3,6 +3,7 @@ import { $, $$, esc, norm, num, price, uid, symPct } from './util.js';
 import * as store from './store.js';
 import * as L from './logic.js';
 import * as AI from './ai.js';
+import * as Cle from './cle.js';
 import * as IMP from './importer.js';
 import { saveFile, readText } from './files.js';
 import * as Stats from './stats.js';
@@ -112,6 +113,7 @@ function hideSheet(id) {
   const i = stack.indexOf(id); if (i >= 0) stack.splice(i, 1);
   $('#' + id).classList.remove('show');
   if (id === 'sDlg') { dlgForce = false; $('#sDlg').classList.remove('force'); settleDlg(null); }
+  if (id === 'sCle') apresCle();
 }
 // Fermeture voulue par l’utilisateur (croix, glisser, Retour) : demande confirmation si une saisie non enregistrée existe.
 const SAISIE_SHEETS = ['sForm', 'sTasting'];
@@ -273,7 +275,7 @@ function card(w, mode, why) {
     if (ref.from && ref.to && (Math.abs(ref.from - w.from) >= 2 || Math.abs(ref.to - w.to) >= 2)) ecart = { from: ref.from, to: ref.to };
   }
   const fb = mat && S.bible ? fiabilite({ ecart, userGarde: !!(w.src && (w.src.from === 'user' || w.src.to === 'user')), confirmee: L.gardeConfirmee(w), entree: !!L.bibleEntry(w, S.bible) || !!(w.src && (w.src.from === 'bible' || w.src.to === 'bible')), connue: apoM.connue, w }) : null;
-  const frise = mat ? friseSvg(mat, YEAR) + fiabiliteHtml(fb) : '';
+  const frise = (mat ? friseSvg(mat, YEAR) + fiabiliteHtml(fb) : '') + (horsBible(w) ? hbEncartHtml() : '');
   const svc = w.name ? [serviceTexte(w), carafageTexte(w, YEAR)].filter(Boolean).join(' ') : '';
   const pf = w.name ? profil(w) : null;
   const repAppel = pf ? `Repères de l’appellation ${pf.appellation} (indicatifs) : ${[!w.grape ? 'cépages ' + pf.cepages : '', !w.pairings.length ? 'accords classiques : ' + pf.accords : ''].filter(Boolean).join(' ; ')}.` : '';
@@ -285,9 +287,35 @@ function card(w, mode, why) {
   ${why ? `<p class="why">💡 ${esc(why)}</p>` : ''}
   <div class="row"><div><h4>${esc(w.name)}${w.year ? ' ' + esc(w.year) : ''}</h4><p>${esc([w.dom, w.region].filter(Boolean).join(' · '))}</p></div>${qty}</div>
   ${meta || tags ? `<div class="ml">${meta ? `<p class="mm">${meta}</p>` : ''}${tags ? `<p class="stl">${tags}</p>` : ''}</div>` : ''}
-  <div class="fr">${hasFiche || apo || svc || tags2 ? `<details${S.ouvert.has(w.id) ? ' open' : ''}><summary>Fiche et accords</summary>${tags2 ? `<p class="mu small sec">${tags2}</p>` : ''}${degLigne(w)}${frise}${apo ? `<p class="mu small">${esc(apo)}</p>` : ''}${svc ? `<p class="mu small">${esc(svc)}</p>` : ''}${repAppel && (!w.grape || !w.pairings.length) ? `<p class="mu small">${esc(repAppel)}</p>` : ''}${majIA.length ? `<p class="mu small">Mis à jour par l’IA : ${esc(majIA.join(', '))}.</p>` : ''}${w.story ? `<p>${esc(w.story)}</p>` : ''}${w.pairings.length ? `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>` : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : degLigne(w) + journalHtml(w, mode)}<button class="am" type="button" data-a="menu" aria-haspopup="dialog">⋯ Actions</button></div>
+  <div class="fr">${hasFiche || apo || svc || tags2 ? `<details${S.ouvert.has(w.id) ? ' open' : ''}><summary>Fiche et accords</summary>${tags2 ? `<p class="mu small sec">${tags2}</p>` : ''}${degLigne(w)}${frise}${blocFiche('Repères', reperesHtml(apo, svc) + (repAppel && (!w.grape || !w.pairings.length) ? `<p class="mu small">${esc(repAppel)}</p>` : '') + (majIA.length ? `<p class="mu small">Mis à jour par l’IA : ${esc(majIA.join(', '))}.</p>` : ''))}${w.story ? blocFiche('L’histoire', histoireHtml(w.story)) : ''}${w.pairings.length ? blocFiche('Accords', `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>`) : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : degLigne(w) + journalHtml(w, mode)}<button class="am" type="button" data-a="menu" aria-haspopup="dialog">⋯ Actions</button></div>
   <div class="acts-h" hidden>${!w.story && !w.pairings.length ? '<button data-a="gen" type="button">✨ Fiche (IA)</button>' : ''}<button data-a="e" type="button">Modifier</button>${mode === 'cave' ? '<button data-a="d" type="button">Supprimer</button>' : ''}</div>
 </div>`;
+}
+
+// Mise en page de la fiche dépliée (affichage seulement : les textes enregistrés ne changent pas).
+const blocFiche = (titre, html) => html ? `<section class="bl"><h5>${esc(titre)}</h5>${html}</section>` : '';
+// Repères : valeurs alignées en deux colonnes (Apogée, Service) ; la règle et le conseil de carafage passent en petit dessous.
+function reperesHtml(apo, svc) {
+  const lignes = [];
+  if (apo) {
+    const m = /^Apogée estimée (\d{4})(?: \(([^)]*)\))?(?: : ([^.]*))?\.\s*(.*)$/.exec(apo);
+    lignes.push(m
+      ? ['Apogée', `<b>${esc(m[1])}</b>${m[2] ? ` <span class="mu">(${esc(m[2])})</span>` : ''}${m[3] ? ` · ${esc(m[3])}` : ''}<small>Estimation${m[4] ? ' · ' + esc(m[4]) : ''}</small>`]
+      : ['Apogée', esc(apo)]);
+  }
+  if (svc) {
+    const m = /^Service : (.+? °C)\.\s*(.*)$/.exec(svc);
+    lignes.push(m ? ['Service', `<b>${esc(m[1])}</b>${m[2] ? `<small>${esc(m[2])}</small>` : ''}`] : ['Service', esc(svc)]);
+  }
+  return lignes.length ? `<dl class="kv">${lignes.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>` : '';
+}
+// Histoire : toutes les phrases sont gardées ; la première sert d'accroche, le reste est aéré par paragraphes de deux phrases.
+function histoireHtml(story) {
+  const ph = String(story).trim().split(/(?<=[.!?…])\s+(?=[A-ZÀ-ÝÉ«“"])/).filter(Boolean);
+  if (!ph.length) return '';
+  const reste = [];
+  for (let i = 1; i < ph.length; i += 2) reste.push(ph.slice(i, i + 2).join(' '));
+  return `<p class="hist lead">${esc(ph[0])}</p>${reste.map(t => `<p class="hist">${esc(t)}</p>`).join('')}`;
 }
 
 // Journal de dégustation (saisie manuelle uniquement).
@@ -538,6 +566,7 @@ const F = id => $('#f-' + id);
 function openForm(w, title) {
   S.editId = w && w.id && S.wines.some(x => x.id === w.id) ? w.id : null;
   S.formExtra = { conf: (w && w.conf) || '', sources: (w && w.sources) || [] };
+  $('#f-enc').hidden = true; effacerPhotoForm();
   $('#fT').textContent = title || (S.editId ? 'Modifier le vin' : 'Ajouter un vin');
   const v = w || {};
   F('name').value = v.name || ''; F('dom').value = v.dom || ''; F('year').value = v.year || '';
@@ -695,7 +724,10 @@ async function onCardAction(e) {
     const c = await ask('Recalculer cette garde ?', `Vos dates ${w.from}–${w.to} seront remplacées par celles de la bible ou du calcul de l’appli. Vous pourrez annuler.`, [
       { label: 'Recalculer', value: 'yes' }, { label: 'Annuler', value: null, kind: 'o' }]);
     if (c !== 'yes') return;
-    if (!L.recalculerGarde(w, S.bible, fenetreRang)) { errToast('Ni la bible ni le calcul ne donnent de garde pour ce vin : vos dates sont conservées.'); return; }
+    if (!L.recalculerGarde(w, S.bible, fenetreRang)) {
+      if (horsBible(w)) { await chercherHB(w); return; }
+      errToast('Ni la bible ni le calcul ne donnent de garde pour ce vin : vos dates sont conservées.'); return;
+    }
     w.updated = Date.now();
     S.ouvert.add(w.id); render();
     if (await persist(() => store.putWines([w]))) {
@@ -705,6 +737,8 @@ async function onCardAction(e) {
         if (await persist(() => store.putWines([w]))) toast('Dates précédentes rétablies.');
       } } });
     }
+  } else if (a === 'hb') {
+    await chercherHB(w);
   } else if (a === 'e') {
     openForm(w);
   } else if (a === 'd') {
@@ -786,10 +820,226 @@ function requireAI() {
 async function limiteWindow(scan) {
   await whenFree();
   const c = await ask('Limite du jour atteinte', scan
-    ? 'Vous avez utilisé la lecture d’étiquette gratuite d’aujourd’hui : elle est limitée à une photo par jour et revient demain. Pour lire autant d’étiquettes que vous voulez, ajoutez votre propre clé gratuite Gemini dans ⚙ Réglages : la marche à suivre y est expliquée pas à pas.'
-    : `Vous avez utilisé l’IA offerte d’aujourd’hui : elle est limitée à ${AI.LIMITE_RELAIS} vins par jour et revient demain. Pour l’utiliser sans limite, ajoutez votre propre clé gratuite Gemini dans ⚙ Réglages : la marche à suivre y est expliquée pas à pas.`,
-    [{ label: 'Plus tard', value: 'plus', kind: 'o' }, { label: 'Ouvrir Réglages', value: 'reglages' }]);
-  if (c === 'reglages') openSettings();
+    ? 'Vous avez utilisé la lecture d’étiquette gratuite d’aujourd’hui : elle est limitée à une photo par jour et revient demain. Pour lire autant d’étiquettes que vous voulez, activez votre propre clé gratuite Gemini (environ 2 minutes, sans carte bancaire).'
+    : `Vous avez utilisé l’IA offerte d’aujourd’hui : elle est limitée à ${AI.LIMITE_RELAIS} vins par jour et revient demain. Pour l’utiliser sans limite, activez votre propre clé gratuite Gemini (environ 2 minutes, sans carte bancaire).`,
+    [{ label: 'Plus tard', value: 'plus', kind: 'o' }, { label: 'Activer ma clé gratuite', value: 'cle' }]);
+  if (c === 'cle') openCle();
+}
+
+/* ============ Activation de la clé gratuite : encarts (jamais bloquants) et feuille en 3 étapes ============ */
+const CLE_URL = 'https://aistudio.google.com/app/apikey';
+const INVIT_K = 'cave-cle-invit', REPRISE_K = 'cave-cle-etape';
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* stockage bloqué : sans gravité, on garde en mémoire */ } };
+const lsDel = k => { try { localStorage.removeItem(k); } catch (e) { /* sans effet */ } };
+let invitMem = null, photoEchec = null, cleCandidate = '', cleBusy = false;
+const invitLire = () => invitMem || Cle.lireInvit(lsGet(INVIT_K));
+const invitEcrire = e => { invitMem = e; lsSet(INVIT_K, JSON.stringify(e)); };
+const jourIso = () => new Date().toISOString().slice(0, 10);
+
+const ENC = {
+  b: { titre: 'Votre photo gratuite du jour est utilisée', corps: 'Pour en lire d’autres aujourd’hui, activez votre clé gratuite (environ 2 minutes, sans carte bancaire). Sinon, la saisie à la main fonctionne très bien.' },
+  c1menu: { titre: 'Plus de photo gratuite aujourd’hui', corps: 'Elle revient demain. Pour continuer maintenant, activez votre clé gratuite (environ 2 minutes), ou saisissez vos vins à la main.' },
+  c1photo: { titre: 'Plus de photo gratuite aujourd’hui', corps: 'Elle revient demain. Pour continuer maintenant, activez votre clé gratuite (environ 2 minutes), ou saisissez ce vin à la main : votre photo reste affichée pour vous aider.' },
+  c1lot: { titre: 'Plus de photo gratuite aujourd’hui', corps: 'Elle revient demain. Pour continuer maintenant, activez votre clé gratuite (environ 2 minutes), ou saisissez vos vins à la main.' },
+  c2: { titre: 'Le service de photo gratuit est saturé', corps: 'Ce n’est pas de votre fait. Réessayez plus tard, activez votre clé gratuite, ou saisissez ce vin à la main.' },
+  revoquee: { titre: 'Google ne reconnaît plus votre clé', corps: 'Elle a peut-être été supprimée. Remplacez-la, ou saisissez à la main : les fiches continuent avec l’aide offerte.' },
+  limitePerso: { titre: 'Limite de Google atteinte', corps: 'Google a atteint sa limite du jour pour votre clé. Elle revient demain. En attendant, saisissez à la main.' },
+};
+function paintEnc(el, { titre, corps, actions = [], croix = '' }) {
+  el.className = 'enc' + (croix ? ' cx' : '');
+  el.innerHTML = (croix ? `<button class="x" type="button" data-enc="${croix}" aria-label="Fermer">×</button>` : '')
+    + (titre ? `<b>${esc(titre)}</b>` : '') + `<p>${esc(corps)}</p>`
+    + (actions.length ? `<div class="stack">${actions.map(a => `<button class="btn${a.o ? ' o' : ''}" type="button" data-enc="${a.a}">${esc(a.label)}</button>`).join('')}</div>` : '');
+  el.hidden = false;
+}
+const ACT_CLE = { a: 'cle', label: 'Activer ma clé gratuite' }, ACT_MAIN = { a: 'main', label: 'Saisir à la main', o: true };
+// Encart du menu d'ajout : A (une ligne discrète, permanente) tant que la photo du jour est disponible, C1 quand elle est utilisée.
+function renderMenuEnc() {
+  const el = $('#m-enc'); if (!el) return;
+  const e = AI.etatPhoto();
+  if (e === 'gratuit') {
+    el.className = 'enc mini';
+    el.innerHTML = '<p class="mu small">1 photo gratuite par jour. Plus avec votre propre clé.</p><button class="lnk" type="button" data-enc="cle">Activer ma clé gratuite</button>';
+    el.hidden = false;
+  } else if (e === 'limite') paintEnc(el, { ...ENC.c1menu, actions: [ACT_CLE, ACT_MAIN] });
+  else el.hidden = true;
+}
+// Encart B : juste après la photo gratuite du jour, au plus une fois par jour et 3 fois au total (voir cle.js).
+function encartB() {
+  if (AI.geminiPerso() || !Cle.peutAfficherB(invitLire(), jourIso(), Date.now())) return;
+  invitEcrire(Cle.noterB(invitLire(), jourIso()));
+  paintEnc($('#f-enc'), { ...ENC.b, actions: [ACT_CLE], croix: 'fermerB' });
+}
+// Encart C (ou clé révoquée / limite de Google) dans la fenêtre d'analyse, selon la cause réelle de l'échec.
+function encartLog(e, unePhoto) {
+  const el = $('#lgEnc'); if (!el || !e) return;
+  const c = e.code, perso = AI.geminiPerso();
+  if (!perso && (c === 'limite_gratuite' || c === 'service_gratuit' || c === 'cle_perso')) {
+    const limite = AI.etatPhoto() === 'limite';
+    paintEnc(el, { ...(limite ? (unePhoto ? ENC.c1photo : ENC.c1lot) : ENC.c2), actions: [ACT_CLE] });
+  } else if (perso && c === 'bad_key') paintEnc(el, { ...ENC.revoquee, actions: [{ a: 'cle', label: 'Remplacer ma clé' }] });
+  else if (perso && c === 'rate_limited') paintEnc(el, ENC.limitePerso);
+}
+function effacerPhotoForm() {
+  const i = $('#f-photo'); if (!i) return;
+  if (i.dataset.u) { try { URL.revokeObjectURL(i.dataset.u); } catch (e) { /* sans effet */ } i.dataset.u = ''; }
+  i.removeAttribute('src'); $('#f-photo-w').hidden = true;
+}
+function montrerPhotoForm(file) {
+  try { const u = URL.createObjectURL(file); const i = $('#f-photo'); i.dataset.u = u; i.src = u; $('#f-photo-w').hidden = false; } catch (e) { /* la saisie reste possible sans l'aperçu */ }
+}
+function majGuideCle() {
+  const a = !!AI.getConfig('gemini').key;
+  $('#ai-guide').hidden = a; $('#ai-repl').hidden = !a;
+}
+// Après la feuille d'activation (fermée par n'importe quel geste) : tout ce qui dépend de la clé est remis à jour.
+function apresCle() {
+  renderMenuEnc(); majGuideCle();
+  if (AI.geminiPerso()) { $('#f-enc').hidden = true; $('#lgEnc').hidden = true; }
+  if ($('#sSet').classList.contains('show')) { const s = AI.getSettings(); renderAiChoices(s.provider); fillAiFields(s.provider); $('#ai-key').type = 'password'; $('#ai-show').textContent = 'Voir'; }
+}
+
+function cleEtape(n) {
+  [1, 2, 3].forEach(i => { $('#cle-' + i).hidden = i !== n; });
+  $('#cle-stp').textContent = `Étape ${n} sur 3 · ${['', 'Obtenir ma clé', 'Coller ma clé', 'Tester ma clé'][n]}`;
+  if (n !== 3) { $('#cle-res').hidden = true; $('#cle-fin').hidden = true; $('#cle-test').hidden = false; }
+}
+// ---- Vin hors de la bible : l'IA propose la région et la garde, la personne valide ----
+// Hors bible = aucune ligne dans la bible et appellation/région non reconnue par le calcul (vin étranger, cuvée inconnue).
+const horsBible = w => !!(w && w.name && w.year && !L.bibleEntry(w, S.bible) && apogee(w, YEAR).connue === false);
+const hbEncartHtml = () => '<div class="enc hb"><b>Vin hors de la bible</b><p>La bible ne couvre que la France. L’IA peut proposer la région et une garde (fiabilité faible, à vérifier). Rien n’est écrit sans votre accord.</p><button class="btn" data-a="hb" type="button">Chercher avec l’IA</button></div>';
+let hbBusy = false;
+async function chercherHB(w) {
+  if (hbBusy) return;
+  hbBusy = true;
+  try {
+    let r;
+    try { r = await AI.chercherGarde(w); }
+    catch (e) {
+      if (e && e.name === 'AbortError') return;
+      const c = e && e.code;
+      const hors = typeof navigator !== 'undefined' && navigator.onLine === false;
+      const sansIA = hors || (!AI.geminiPerso() && ['no_key', 'limite_gratuite', 'cle_perso', 'rate_limited', 'network'].includes(c));
+      if (!sansIA) { errToast(AI.errText(e)); return; }
+      const v = await ask('Recherche impossible pour le moment',
+        hors ? 'Pas de connexion. Vos dates sont conservées. Vous pourrez réessayer plus tard.'
+          : 'L’IA offerte a atteint sa limite du jour. Vos dates sont conservées. Vous pouvez réessayer demain, ou activer votre clé gratuite.',
+        hors ? [{ label: 'Garder mes dates', value: null }]
+          : [{ label: 'Activer ma clé gratuite', value: 'cle' }, { label: 'Garder mes dates', value: null, kind: 'o' }]);
+      if (v === 'cle') openCle();
+      return;
+    }
+    const actuel = w.from && w.to ? `${w.from}–${w.to}` : 'aucune';
+    const base = AI.getConfig('gemini').key && r.searched ? 'avec recherche web (Gemini)' : 'à partir des connaissances de l’IA, sans recherche web';
+    const c = await ask('Proposition de l’IA',
+      `Région : ${r.region || 'non précisée'}\nGarde : ${r.from}–${r.to}\nVos dates actuelles : ${actuel}\n\nFiabilité faible : estimation ${base}. À vérifier.`,
+      [{ label: 'Appliquer cette proposition', value: 'yes' }, { label: 'Garder mes dates', value: null, kind: 'o' }]);
+    if (c !== 'yes') return;
+    const avant = JSON.parse(JSON.stringify(w));
+    if (r.region && !w.region) w.region = r.region; // jamais d'écrasement d'une région saisie
+    w.from = r.from; w.to = r.to;
+    w.src = { ...(w.src || {}), from: 'ai', to: 'ai' };
+    w.gv = { from: r.from, to: r.to, k: 'x' };
+    w.conf = 'estimée';
+    w.updated = Date.now();
+    S.ouvert.add(w.id); render();
+    if (await persist(() => store.putWines([w]))) {
+      toast(`Garde proposée par l’IA : ${w.from}–${w.to}.`, { action: { label: 'Annuler', fn: async () => {
+        for (const k of ['from', 'to', 'src', 'gv', 'conf', 'region', 'updated']) { if (avant[k] === undefined) delete w[k]; else w[k] = avant[k]; }
+        S.ouvert.add(w.id); render();
+        if (await persist(() => store.putWines([w]))) toast('Dates précédentes rétablies.');
+      } } });
+    }
+  } finally { hbBusy = false; }
+}
+
+function openCle() {
+  cleCandidate = ''; cleBusy = false;
+  const ch = $('#cle-champ'); ch.value = ''; ch.type = 'password'; $('#cle-voir').textContent = 'Voir'; $('#cle-err').hidden = true;
+  const remplace = AI.geminiPerso();
+  $('#cleT').textContent = remplace ? 'Remplacer ma clé' : 'Activer ma clé gratuite';
+  $('#cle-ancienne').hidden = !remplace;
+  cleEtape(Cle.lireReprise(lsGet(REPRISE_K), Date.now()) === 2 ? 2 : 1);
+  openSheet('sCle');
+}
+function cleSuite() {
+  const r = Cle.nettoyerCle($('#cle-champ').value);
+  const err = $('#cle-err');
+  if (r.err) {
+    err.textContent = r.err === 'vide' ? 'Collez d’abord votre clé.' : 'Cette clé semble incomplète. Recopiez-la en entier, sans espace.';
+    err.hidden = false; $('#cle-champ').focus(); return;
+  }
+  err.hidden = true; cleCandidate = r.cle; $('#cle-champ').value = r.cle;
+  $('#cle-apercu').textContent = Cle.masquerCle(r.cle);
+  cleEtape(3);
+}
+function cleResultat(txt, kind, actions) {
+  const r = $('#cle-res'); r.textContent = txt; r.className = 'res' + (kind ? ' ' + kind : ''); r.hidden = false;
+  const f = $('#cle-fin');
+  f.innerHTML = actions.map(a => `<button class="btn${a.o ? ' o' : ''}" type="button" data-cle="${a.a}">${esc(a.label)}</button>`).join('');
+  f.hidden = false; $('#cle-test').hidden = true;
+}
+async function cleTester() {
+  if (cleBusy || !cleCandidate) return;
+  cleBusy = true;
+  const b = $('#cle-test'); b.hidden = false; b.disabled = true; b.textContent = 'Test en cours…';
+  $('#cle-res').hidden = true; $('#cle-fin').hidden = true;
+  let r; try { r = await AI.testerCleGemini(cleCandidate); } catch (e) { r = { etat: 'indispo' }; }
+  cleBusy = false; b.disabled = false; b.textContent = 'Tester ma clé';
+  const ENREG = [{ a: 'photo', label: 'Photographier une étiquette' }, { a: 'fin', label: 'Terminer', o: true }];
+  const REESSAI = [{ a: 'reprendre', label: 'Réessayer' }, { a: 'nouvelle', label: 'Créer une nouvelle clé', o: true }, { a: 'main', label: 'Saisir à la main', o: true }];
+  const RETESTER = { a: 'retester', label: 'Réessayer' };
+  if (r.etat === 'refusee') { cleResultat('❌ Google a refusé cette clé. Vérifiez qu’elle est copiée en entier, ou créez-en une nouvelle.', 'ko', REESSAI); return; }
+  if (r.etat === 'indispo') { cleResultat('Google ne répond pas correctement pour le moment. Réessayez dans un instant.', 'att', [RETESTER, REESSAI[2]]); return; }
+  // Clé valide (ou impossible à tester maintenant) : elle est enregistrée ; l'ancienne reste active jusqu'ici.
+  try { AI.setSettings({ provider: 'gemini', key: cleCandidate, model: AI.getConfig('gemini').model, base: '' }); }
+  catch (e) { cleResultat('❌ Enregistrement impossible : le stockage du navigateur est bloqué. Votre clé n’a pas été enregistrée.', 'ko', [RETESTER, REESSAI[2]]); return; }
+  lsDel(REPRISE_K); cleCandidate = '';
+  if (r.etat === 'ok') cleResultat('✅ Clé activée. L’appli ne fixe plus de limite pour vos photos ; seul le quota gratuit de Google s’applique.', '', ENREG);
+  else if (r.etat === 'limite') cleResultat('✅ Clé valide. Google a atteint sa limite pour le moment : elle fonctionnera de nouveau plus tard.', '', [{ a: 'fin', label: 'Terminer' }]);
+  else cleResultat('Pas de réseau : impossible de tester maintenant. Votre clé est enregistrée ; elle sera vérifiée à votre prochaine photo.', 'att', [{ a: 'fin', label: 'Terminer' }]);
+  apresCle();
+}
+function initCle() {
+  // Boutons des encarts (menu, fiche, fenêtre d'analyse) : un seul écouteur, jamais de fenêtre bloquante.
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-enc]'); if (!b) return;
+    const a = b.dataset.enc;
+    if (a === 'cle') openCle();
+    else if (a === 'main') { closeSheet('sMenu'); openForm(null); }
+    else if (a === 'fermerB') { invitEcrire(Cle.fermerB(invitLire(), Date.now())); $('#f-enc').hidden = true; }
+  });
+  $('#cle-fin').addEventListener('click', e => {
+    const b = e.target.closest('[data-cle]'); if (!b) return;
+    const a = b.dataset.cle;
+    if (a === 'retester') cleTester();
+    else if (a === 'reprendre') { $('#cle-err').hidden = true; cleEtape(2); $('#cle-champ').focus(); }
+    else if (a === 'nouvelle') { lsDel(REPRISE_K); cleEtape(1); }
+    else if (a === 'main') { hideSheet('sCle'); closeSheet('sMenu'); openForm(null); }
+    else if (a === 'fin') closeSheet('sCle');
+    else if (a === 'photo') { hideSheet('sCle'); menuAction('cam'); }
+  });
+  $('#cle-open').onclick = () => {
+    lsSet(REPRISE_K, JSON.stringify({ etape: 2, t: Date.now() }));
+    try { window.open(CLE_URL, '_blank', 'noopener,noreferrer'); } catch (e) { errToast('Ouvrez aistudio.google.com dans votre navigateur.'); return; }
+    cleEtape(2);
+  };
+  $('#cle-copy').onclick = async () => { try { await navigator.clipboard.writeText(CLE_URL); toast('Adresse copiée. Collez-la dans votre navigateur.'); } catch (e) { errToast('Copie impossible : ouvrez aistudio.google.com dans votre navigateur.'); } };
+  $('#cle-have').onclick = () => cleEtape(2);
+  $('#cle-retour1').onclick = () => cleEtape(1);
+  $('#cle-voir').onclick = () => { const k = $('#cle-champ'); const v = k.type === 'password'; k.type = v ? 'text' : 'password'; $('#cle-voir').textContent = v ? 'Masquer' : 'Voir'; };
+  $('#cle-coller').onclick = async () => {
+    let t = '';
+    try { t = (await navigator.clipboard.readText()) || ''; }
+    catch (e) { const er = $('#cle-err'); er.textContent = 'Collage impossible : touchez le champ, maintenez le doigt et choisissez « Coller ».'; er.hidden = false; $('#cle-champ').focus(); return; }
+    $('#cle-champ').value = t; cleSuite();
+  };
+  $('#cle-suite').onclick = cleSuite;
+  $('#cle-champ').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); cleSuite(); } });
+  $('#cle-test').onclick = cleTester;
+  $('#ai-pas').onclick = openCle;
+  $('#ai-repl').onclick = openCle;
 }
 
 /* ============ Suivi des traitements longs ============ */
@@ -806,7 +1056,7 @@ function openLog(title, names, hint) {
     $('#lg').innerHTML = rows.map(r => `<div class="lr">${r.st === 'run' ? '<div class="sp" aria-hidden="true"></div>' : '<span aria-hidden="true">' + icon[r.st] + '</span>'}<div><b>${esc(r.name)}</b><small>${esc(r.msg)}</small></div></div>`).join('');
   }
   $('#lgT').textContent = title; $('#lgH').textContent = hint || '';
-  $('#lgStop').hidden = false; $('#lgStop').disabled = false; $('#lgX').hidden = true; $('#lgMan').hidden = true;
+  $('#lgStop').hidden = false; $('#lgStop').disabled = false; $('#lgX').hidden = true; $('#lgMan').hidden = true; $('#lgEnc').hidden = true;
   $('#lgStop').onclick = () => { log.stopped = true; ac.abort(); $('#lgStop').disabled = true; };
   logRunning = true;
   paint();
@@ -818,6 +1068,8 @@ function openLog(title, names, hint) {
 async function scanFiles(files) {
   files = [...files];
   if (!files.length || !requireAI()) return;
+  const etatAvant = AI.etatPhoto();   // « gratuit » : c'est la photo gratuite du jour
+  photoEchec = null; let derniereErr = null;
   const log = openLog(`Analyse de ${files.length} photo(s)…`, files.map((f, i) => f.name || 'Photo ' + (i + 1)), 'Chaque photo prend 5 à 30 secondes. Gardez l’appli ouverte.');
   let added = 0, dups = 0, fails = 0, single = null;
   // Avec une clé personnelle, la photo suivante est lue pendant que la précédente est enregistrée (2 lectures à la fois au plus).
@@ -853,7 +1105,7 @@ async function scanFiles(files) {
       render();
     } catch (e) {
       if (e && e.name === 'AbortError') { log.set(i, 'skip', 'Arrêté'); continue; }
-      fails++; log.set(i, 'err', AI.errText(e));
+      fails++; derniereErr = e; log.set(i, 'err', AI.errText(e));
       if (e && (e.code === 'rate_limited' || e.code === 'limite_gratuite' || e.code === 'service_gratuit' || e.code === 'bad_key' || e.code === 'no_key' || e.code === 'bad_model' || e.code === 'network')) {
         for (let j = i + 1; j < files.length; j++) log.set(j, 'skip', 'Non traité');
         break;
@@ -863,8 +1115,10 @@ async function scanFiles(files) {
   if (files.length > 1) Stats.track('add_photos', added); else if (single) Stats.track('add_scan');
   Stats.noteWines(S.wines.filter(w => !isDemo(w)).length + (single ? 1 : 0));
   log.manual = fails > 0;
+  if (fails > 0 && files.length === 1) photoEchec = files[0];
   log.finish(single ? 'Étiquette reconnue' : `Terminé : ${added} ajouté(s), ${dups} doublon(s), ${fails} échec(s)`);
-  if (single) { hideSheet('sLog'); openForm(single, 'Vérifier la fiche scannée'); }
+  if (derniereErr) encartLog(derniereErr, files.length === 1);
+  if (single) { hideSheet('sLog'); openForm(single, 'Vérifier la fiche scannée'); if (etatAvant === 'gratuit' && AI.etatPhoto() === 'limite') encartB(); }
 }
 
 /* ============ Fiches par lots ============ */
@@ -1159,7 +1413,7 @@ async function openSettings() {
   renderAiChoices(s.provider);
   fillAiFields(s.provider);
   $('#ai-key').type = 'password'; $('#ai-show').textContent = 'Voir';
-  $('#ai-guide').hidden = !!AI.getConfig('gemini').key;
+  majGuideCle();
   $('#st-ver').textContent = VERSION;
   $('#st-auto').checked = auto.on; $('#st-auto-info').textContent = autoStatus();
   $('#st-maj').onclick = () => { closeSheet('sSet'); enrichAll(); };
@@ -1198,7 +1452,7 @@ function saveAi(silent) {
   if (v.key && /\s/.test(v.model.trim())) { errToast('Nom de modèle invalide : il ne contient jamais d’espace (exemple : ' + (AI.PROVIDERS[v.provider].model || 'gpt-4o-mini') + ').'); return false; }
   try { AI.setSettings(v); } catch (e) { errToast('Enregistrement des réglages impossible (stockage du navigateur bloqué).'); return false; }
   renderAiChoices(v.provider);
-  $('#ai-guide').hidden = !!AI.getConfig('gemini').key;
+  majGuideCle();
   if (!silent) toast(v.key ? '✅ Réglages IA enregistrés.' : 'Clé retirée pour ce fournisseur.');
   return true;
 }
@@ -1286,6 +1540,8 @@ async function effacerDemo() {
 function menuAction(m) {
   const pick = id => { closeSheet('sMenu'); $(id).click(); };
   // Si l'IA n'est pas disponible (limite du jour, pas de clé), le menu se ferme : sinon la fenêtre d'explication attendrait derrière lui.
+  // Photo gratuite du jour utilisée : l'encart du menu explique et propose deux actions, sans fenêtre bloquante.
+  if ((m === 'cam' || m === 'img') && AI.etatPhoto() === 'limite') { renderMenuEnc(); const el = $('#m-enc'); el.tabIndex = -1; el.focus(); return; }
   if (m === 'cam') { if (requireAI()) pick('#fCam'); else closeSheet('sMenu'); }
   else if (m === 'img') { if (requireAI()) pick('#fImg'); else closeSheet('sMenu'); }
   else if (m === 'xls') pick('#fXls');
@@ -1300,7 +1556,7 @@ function menuAction(m) {
 }
 
 function bind() {
-  $('#fab').onclick = () => openSheet('sMenu');
+  $('#fab').onclick = () => { renderMenuEnc(); openSheet('sMenu'); };
   $('#bSet').onclick = openSettings;
   $('#bTitle').onclick = openTitle;
   $('#bContact').onclick = openContact;
@@ -1373,7 +1629,8 @@ function bind() {
 
   $('#lgStop').onclick = null;
   $('#lgX').onclick = () => closeSheet('sLog');
-  $('#lgMan').onclick = () => { hideSheet('sLog'); openForm(null); };
+  $('#lgMan').onclick = () => { const p = photoEchec; hideSheet('sLog'); openForm(null); if (p) montrerPhotoForm(p); };
+  initCle();
 
   $('#ai-prov').onchange = () => fillAiFields($('#ai-prov').value);
   AI.hooks.onSwitch = (from, to, e) => toast(`${AI.PROVIDERS[from].label.split(' ')[0]} indisponible (${AI.errText(e).replace(/\.$/, '').slice(0, 60)}) : ${AI.PROVIDERS[to].label.split(' ')[0]} prend le relais.`);

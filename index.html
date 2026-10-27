@@ -124,6 +124,7 @@
 <div class="modal" id="sMenu" role="dialog" aria-modal="true" aria-labelledby="mT"><div class="sheet">
   <h2 id="mT">Ajouter des vins</h2>
   <h3 class="first">Ajouter des bouteilles</h3>
+  <div id="m-enc" class="enc" hidden></div>
   <div class="stack">
     <button class="btn" data-m="cam">📷 Scanner une étiquette</button>
     <button class="btn o" data-m="img">🖼️ Importer des photos (plusieurs)</button>
@@ -145,6 +146,8 @@
 <div class="modal" id="sForm" role="dialog" aria-modal="true" aria-labelledby="fT"><div class="sheet fx">
   <div class="sb">
     <h2 id="fT">Ajouter un vin</h2>
+    <div id="f-enc" class="enc" hidden></div>
+    <figure id="f-photo-w" class="photo" hidden><img id="f-photo" alt="Photo de l’étiquette, pour vous aider à saisir le vin"><figcaption class="mu small">Votre photo reste ici pour vous aider à saisir le vin.</figcaption></figure>
     <label for="f-name">Nom / cuvée *</label><input id="f-name" autocomplete="off" list="dl-name">
     <label for="f-dom">Domaine / producteur</label><input id="f-dom" autocomplete="off" list="dl-dom">
     <div class="g2">
@@ -189,6 +192,7 @@
   <h2 id="lgT">Analyse en cours…</h2>
   <p id="lgH" class="mu small"></p>
   <div id="lg"></div>
+  <div id="lgEnc" class="enc" hidden></div>
   <div class="stack">
     <button class="btn o" id="lgStop">Arrêter</button>
     <button class="btn o" id="lgMan" hidden>Saisir à la main</button>
@@ -226,6 +230,7 @@
   <p class="mu small">L’IA lit les étiquettes, rédige les fiches, estime la valeur et rédige l’avis de Magic. Tout le reste fonctionne sans IA, même hors connexion.</p>
   <div id="ai-guide" class="guide" hidden>
     <p><b>Une clé gratuite, en 2 minutes</b></p>
+    <div class="stack"><button class="btn" id="ai-pas" type="button">Activer pas à pas</button></div>
     <p class="small">Adresse à ouvrir : <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com/app/apikey</a></p>
     <div class="stack"><button class="btn" id="ai-open" type="button">🔑 Obtenir ma clé gratuite</button><button class="btn o" id="ai-copy" type="button">Copier l’adresse</button></div>
     <ol class="steps">
@@ -265,6 +270,7 @@
   <label for="ai-prov">Fournisseur à configurer</label>
   <select id="ai-prov"></select>
   <p id="ai-help" class="mu small"></p>
+  <button class="lnk" id="ai-repl" type="button" hidden>Remplacer ma clé Gemini pas à pas</button>
   <label for="ai-key">Clé API</label>
   <div class="row2"><input id="ai-key" type="password" autocomplete="off" spellcheck="false"><button class="btn o sm" id="ai-paste" type="button">Coller la clé</button><button class="btn o sm" id="ai-show" type="button">Voir</button></div>
   <details class="adv"><summary>Options avancées</summary>
@@ -430,6 +436,40 @@ Pour ce premier lot seulement, commence par la ligne d’en-tête des colonnes.<
 </div></div>
 
 <!-- Boîte de dialogue générique -->
+<!-- Activer ma clé gratuite (3 étapes) -->
+<div class="modal" id="sCle" role="dialog" aria-modal="true" aria-labelledby="cleT"><div class="sheet">
+  <h2 id="cleT">Activer ma clé gratuite</h2>
+  <p class="cle-etape" id="cle-stp" aria-live="polite"></p>
+  <div id="cle-1">
+    <p class="mu small">Environ 2 minutes, sans carte bancaire. Il faut un compte Google (Gmail). Pas de compte ? Vous pouvez saisir vos vins à la main : l’appli marche très bien sans IA.</p>
+    <div class="stack"><button class="btn" id="cle-open" type="button">Ouvrir la page de Google</button><button class="btn o" id="cle-copy" type="button">Copier l’adresse</button></div>
+    <ol class="steps">
+      <li>Sur la page de Google, connectez-vous.</li>
+      <li>Touchez « Create API key » (le bouton est en anglais). Choisissez un projet si Google le propose.</li>
+      <li>Touchez l’icône de copie à côté de la clé.</li>
+      <li>Revenez ici : l’étape suivante vous attend.</li>
+    </ol>
+    <p class="mu small">Votre clé reste sur ce téléphone. Les photos d’étiquettes sont envoyées à Google. Avec l’offre gratuite de Google, ces envois peuvent servir à améliorer ses services : ne photographiez que des étiquettes.</p>
+    <button class="lnk" id="cle-have" type="button">J’ai déjà ma clé</button>
+  </div>
+  <div id="cle-2" hidden>
+    <label for="cle-champ">Votre clé</label>
+    <div class="row2"><input id="cle-champ" type="password" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="text"><button class="btn o sm" id="cle-coller" type="button">Coller</button><button class="btn o sm" id="cle-voir" type="button">Voir</button></div>
+    <p class="mu small">La clé est une longue suite de lettres et de chiffres. Touchez « Coller » après l’avoir copiée chez Google.</p>
+    <p id="cle-err" class="res ko" role="alert" hidden></p>
+    <div class="stack"><button class="btn" id="cle-suite" type="button">Continuer</button></div>
+    <button class="lnk" id="cle-retour1" type="button">Revoir l’étape 1</button>
+  </div>
+  <div id="cle-3" hidden>
+    <p>Clé collée : <b id="cle-apercu"></b></p>
+    <div class="stack"><button class="btn" id="cle-test" type="button">Tester ma clé</button></div>
+    <div id="cle-res" class="res" role="status" aria-live="polite" hidden></div>
+    <div class="stack" id="cle-fin" hidden></div>
+  </div>
+  <p class="mu small" id="cle-ancienne" hidden>Votre clé actuelle reste active tant que la nouvelle n’a pas été testée.</p>
+  <button class="lnk close" data-close="sCle" type="button">Fermer</button>
+</div></div>
+
 <div class="modal" id="sDlg" role="alertdialog" aria-modal="true" aria-labelledby="dlgT"><div class="sheet">
   <h2 id="dlgT"></h2>
   <p id="dlgX"></p>

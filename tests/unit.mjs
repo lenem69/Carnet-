@@ -991,3 +991,32 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   T('recalculer : une garde déjà celle de la bible ne change rien', L.recalculerGarde(y, bib, A.fenetreRang) === false);
   console.log(out.slice(o0).join('\n'));
 }
+
+// Activation de la clé gratuite (1.38.0) : nettoyage de la clé, fréquence des invitations, reprise
+{
+  const o0=out.length; const C=await import('../cle.js');
+  const K='AQ.Ab12-fakeKEY_0123456789abcdefghij';
+  T('clé : une clé qui commence par AQ. est acceptée (on ne se fie pas au début)',C.nettoyerCle(K).cle===K);
+  T('clé : une clé qui commence par AIza est acceptée',C.nettoyerCle('AIzaSyFAKEKEY0123456789abcdefghijklmn').cle==='AIzaSyFAKEKEY0123456789abcdefghijklmn');
+  T('clé : espaces, sauts de ligne et guillemets autour sont retirés',C.nettoyerCle('  "'+K+'"\n').cle===K&&C.nettoyerCle('“'+K+'”').cle===K&&C.nettoyerCle("'"+K+"'\r\n").cle===K);
+  T('clé : caractères invisibles retirés',C.nettoyerCle('\u200B'+K+'\uFEFF').cle===K);
+  T('clé : vide → « vide »',C.nettoyerCle('').err==='vide'&&C.nettoyerCle('   \n ').err==='vide'&&C.nettoyerCle(null).err==='vide'&&C.nettoyerCle(undefined).err==='vide');
+  T('clé : trop courte → incomplète',C.nettoyerCle('AQ.abc').err==='incomplete'&&C.nettoyerCle('x'.repeat(C.CLE_MIN-1)).err==='incomplete'&&C.nettoyerCle('x'.repeat(C.CLE_MIN)).cle);
+  T('clé : espace ou retour à la ligne au milieu → incomplète',C.nettoyerCle('AQ.Ab12-fake KEY_0123456789abcdefghij').err==='incomplete'&&C.nettoyerCle(K.slice(0,15)+'\n'+K.slice(15)).err==='incomplete'&&C.nettoyerCle('Ma clé : '+K).err==='incomplete');
+  T('clé : accents et guillemets typographiques au milieu → incomplète (un en-tête réseau les refuserait)',C.nettoyerCle('AQ.Ab12-fakéKEY_0123456789abcdefghij').err==='incomplete'&&C.nettoyerCle('AQ.Ab12-fake”KEY_0123456789abcdefghij').err==='incomplete');
+  T('clé : un très long texte collé par erreur est refusé, pas envoyé',C.nettoyerCle('Bonjour '.repeat(50)).err==='incomplete');
+  T('clé masquée : début et fin seulement',C.masquerCle(K)==='AQ.A…ghij'&&C.masquerCle('abc')==='••••'&&!C.masquerCle(K).includes('KEY'));
+  const j='2026-10-27', now=Date.UTC(2026,9,27,12);
+  const e0=C.lireInvit(null);
+  T('invitation : état vide pour du texte absent ou abîmé',JSON.stringify(e0)===JSON.stringify({vus:0,dernier:'',ferme:0})&&JSON.stringify(C.lireInvit('pas du json'))===JSON.stringify(e0)&&C.lireInvit('{"vus":"x","ferme":-4}').vus===0);
+  T('invitation B : permise au départ',C.peutAfficherB(e0,j,now)===true);
+  const e1=C.noterB(e0,j);
+  T('invitation B : pas deux fois le même jour',C.peutAfficherB(e1,j,now)===false&&e1.vus===1);
+  T('invitation B : permise le lendemain',C.peutAfficherB(e1,'2026-10-28',now+864e5)===true);
+  const e3=C.noterB(C.noterB(e1,'2026-10-28'),'2026-10-29');
+  T('invitation B : jamais plus de 3 fois au total',e3.vus===3&&C.peutAfficherB(e3,'2026-11-30',now+40*864e5)===false);
+  const ef=C.fermerB(e1,now);
+  T('invitation B : après la croix, 14 jours de pause',C.peutAfficherB(ef,'2026-10-28',now+864e5)===false&&C.peutAfficherB(ef,'2026-11-09',now+13*864e5)===false&&C.peutAfficherB(ef,'2026-11-11',now+15*864e5)===true);
+  T('reprise : étape 2 reprise dans l’heure, sinon étape 1',C.lireReprise(JSON.stringify({etape:2,t:now}),now+60000)===2&&C.lireReprise(JSON.stringify({etape:2,t:now}),now+2*3600e3)===1&&C.lireReprise('n’importe quoi',now)===1&&C.lireReprise(null,now)===1&&C.lireReprise(JSON.stringify({etape:2,t:now+9e6}),now)===1&&C.lireReprise(JSON.stringify({etape:7,t:now}),now)===1);
+  console.log(out.slice(o0).join('\n'));
+}
