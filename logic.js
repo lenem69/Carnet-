@@ -189,7 +189,9 @@ export function editSrc(old, raw, aiGen) {
     if (vide(nw[k]) && vide(avant)) continue;
     if (JSON.stringify(nw[k]) === JSON.stringify(avant)) continue;
     if (vide(nw[k])) delete src[k];
-    else src[k] = aiGen && JSON.stringify(aiGen[k]) === JSON.stringify(nw[k]) ? 'ai' : 'user';
+    else if (aiGen && JSON.stringify(aiGen[k]) === JSON.stringify(nw[k])) src[k] = 'ai';
+    else if (old) src[k] = 'user';
+    else delete src[k]; // création : seuls nom, producteur, millésime et appellation sont à l'utilisateur ; le reste suit les règles (bible, calcul, IA)
   }
   return src;
 }

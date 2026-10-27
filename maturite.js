@@ -46,7 +46,7 @@ export function pastille(m, annee) {
 // (ou d'une table de référence sûre) ; faible sinon, avec la raison. ctx : { userGarde, confirmee, entree, connue, w }.
 export function fiabilite(ctx) {
   if (!ctx) return null;
-  if (ctx.userGarde) return { n: 0, mot: 'garde saisie par vous', raison: '', saisie: true };
+  if (ctx.userGarde) return { n: 0, mot: 'garde modifiée par vous', raison: '', saisie: true, ecart: ctx.ecart || null };
   if (ctx.confirmee) return { n: 3, mot: 'haute', raison: '' };
   if (ctx.entree) return { n: 2, mot: 'moyenne', raison: '' };
   let t = null;
@@ -57,7 +57,7 @@ export function fiabilite(ctx) {
 
 export function fiabiliteHtml(f) {
   if (!f) return '';
-  if (f.saisie) return `<p class="fiab">Fiabilité · <b>${f.mot}</b></p>`;
+  if (f.saisie) return `<p class="fiab">Fiabilité · <b>${f.mot}</b>${f.ecart ? ` <span class="rs">· écart avec la bible : ${f.ecart.from}–${f.ecart.to}</span>` : ''}</p>`;
   const pts = [1, 2, 3].map(i => `<i${i <= f.n ? ' class="on"' : ''}></i>`).join('');
   return `<p class="fiab">Fiabilité <span class="pts" role="img" aria-label="${f.n} sur 3">${pts}</span> <b>${f.mot}</b>${f.raison ? ` <span class="rs">· ${f.raison}</span>` : ''}</p>`;
 }

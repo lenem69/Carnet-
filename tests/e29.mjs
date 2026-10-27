@@ -80,5 +80,22 @@ const chev=page=>page.evaluate(()=>{const s=document.querySelector('#list .w det
   T('Rully 1er cru : plus de « absent de la bible »',!/absent/.test(f),f);
   await page.close();
 }
+// ---------- (C) Bible locale ancienne avec la MÊME date que celle du site (cas réel : Rully 1er cru « absent de la bible ») ----------
+{
+  const r=await H.newPage(b,{ai:async()=>({json:{}})});const page=r.page;
+  await page.goto(H.URL0);await H.sl(1500);
+  const vieille=JSON.parse(bibleTxt);vieille.rows=vieille.rows.filter(x=>!/^Rully/.test(x.a)); // même date, contenu plus ancien
+  await page.evaluate(async(txt,ws)=>{const s=await import('./store.js');await s.replaceAll(ws);await s.setMeta('bible',txt);await s.setMeta('bibleAt',0);await s.setMeta('bibleV','1.0.0')},JSON.stringify(vieille),[
+    W('rully',{name:'Rully 1er Cru',dom:'Leflaive & Associés',year:2017,color:'Blanc',region:'Rully 1er Cru',qty:2}),
+  ]);
+  await page.reload();await H.sl(3500);
+  await page.evaluate(()=>{const d=document.querySelector('#sDlg button');d&&d.click()});await H.sl(1500);
+  const rows=await page.evaluate(async()=>{const s=await import('./store.js');return JSON.parse(await s.getMeta('bible')).rows.filter(x=>/^Rully/.test(x.a)).length});
+  T('bible locale de même date mais de contenu plus ancien : remplacée par celle du site (Rully présent)',rows===4,String(rows));
+  await page.evaluate(()=>{const d=document.querySelector('#list .w details');if(d)d.open=true});await H.sl(300);
+  const f=await page.evaluate(()=>(document.querySelector('#list .w .fiab')||{}).textContent||'');
+  T('Rully 1er cru : plus de « absent de la bible »',!/absent/.test(f),f);
+  await page.close();
+}
 S.out.forEach(l=>console.log(l));
 await b.close();srv.close&&srv.close();process.exit(0);

@@ -265,7 +265,14 @@ function card(w, mode, why) {
   // Apogée estimée par la règle de l'appli (sans IA) : affichée dans la fiche du vin.
   const apoA = w.name ? apogee(w, YEAR, L.bibleQuality(w, S.bible)) : null;
   const apo = apoA ? apogeeTexte(apoA) : '';
-  const fb = mat && S.bible ? fiabilite({ userGarde: !!(w.src && (w.src.from === 'user' || w.src.to === 'user')), confirmee: L.gardeConfirmee(w), entree: !!L.bibleEntry(w, S.bible) || !!(w.src && (w.src.from === 'bible' || w.src.to === 'bible')), connue: apoM.connue, w }) : null;
+  // Garde modifiée par l'utilisateur : jamais remplacée, mais signalée si elle s'écarte d'au moins 2 ans de la bible ou du calcul.
+  let ecart = null;
+  if (w.src && (w.src.from === 'user' || w.src.to === 'user') && w.from && w.to && S.bible) {
+    const ref = { ...w, from: '', to: '', src: {} };
+    L.prefillFromBible(ref, S.bible, fenetreRang);
+    if (ref.from && ref.to && (Math.abs(ref.from - w.from) >= 2 || Math.abs(ref.to - w.to) >= 2)) ecart = { from: ref.from, to: ref.to };
+  }
+  const fb = mat && S.bible ? fiabilite({ ecart, userGarde: !!(w.src && (w.src.from === 'user' || w.src.to === 'user')), confirmee: L.gardeConfirmee(w), entree: !!L.bibleEntry(w, S.bible) || !!(w.src && (w.src.from === 'bible' || w.src.to === 'bible')), connue: apoM.connue, w }) : null;
   const frise = mat ? friseSvg(mat, YEAR) + fiabiliteHtml(fb) : '';
   const svc = w.name ? [serviceTexte(w), carafageTexte(w, YEAR)].filter(Boolean).join(' ') : '';
   const pf = w.name ? profil(w) : null;
