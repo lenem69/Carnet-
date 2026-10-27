@@ -309,6 +309,11 @@ details.adv[open] summary { margin-bottom: 6px; }
 .w .acts .gen { margin-right: auto; color: var(--ac); }
 .w details { margin-top: 6px; }
 .w details > summary { font-weight: 600; color: var(--ac); min-height: 40px; display: flex; align-items: center; cursor: pointer; }
+/* Repère de dépliage : chevron vers la droite (fermée), vers le bas (dépliée). */
+.w details > summary { list-style: none; gap: 8px; }
+.w details > summary::-webkit-details-marker { display: none; }
+.w details > summary::after { content: ""; flex: none; width: 9px; height: 9px; margin-top: -2px; border-right: 2.5px solid currentColor; border-bottom: 2.5px solid currentColor; transform: rotate(-45deg); transition: transform .2s; }
+.w details[open] > summary::after { transform: rotate(45deg) translate(-2px, -2px); }
 
 /* Menu Actions : un seul bouton par carte, sur la ligne de « Fiche et accords » */
 .w .fr { position: relative; margin-top: 6px; min-height: 44px; }

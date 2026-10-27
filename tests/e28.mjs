@@ -65,5 +65,16 @@ const W=(id,o)=>({id,name:'Vin '+id,dom:'Domaine '+id,year:Y-5,color:'Rouge',reg
   T('bible remplacée après le premier affichage : liste redessinée (Morgon 2024 : +6 ans, pas +8)',/\+6 ans/.test(t)&&!/\+8 ans/.test(t),t.slice(0,400));
   await page.close();
 }
+// Cas réel (téléphone après mise à jour) : la bible locale est valide et à jour, donc rien n'est retéléchargé ; la liste doit quand même être calculée avec elle
+{
+  const r=await H.newPage(b,{ai:async()=>({json:{}})});const page=r.page;
+  await page.goto(H.URL0);await H.sl(1200);
+  const txt=(await import('fs')).readFileSync(new URL('../bible/bible.json',import.meta.url),'utf8');
+  await page.evaluate(async(txt,w)=>{const s=await import('./store.js');await s.replaceAll([w]);await s.setMeta('bible',txt);await s.setMeta('bibleAt',Date.now());await s.setMeta('bibleV',self.APP_VERSION);await s.setMeta('seenVersion','1.30.0')},txt,W('morgon2',{name:'Morgon Lapierre',dom:'Lapierre',year:2024,color:'Rouge',region:'Morgon',from:2026,to:2035,src:{from:'bible',to:'bible'}}));
+  await page.reload();await H.sl(3500);
+  const t=await page.evaluate(()=>{const w=[...document.querySelectorAll('#list .w')].find(e=>e.querySelector('h4').textContent.includes('Morgon Lapierre'));return w?w.textContent:'introuvable'});
+  T('bible locale à jour (aucun téléchargement) : la liste est calculée avec elle (fiabilité moyenne, apogée +6 ans)',/Fiabilité\s+moyenne/.test(t)&&/\+6 ans/.test(t),JSON.stringify(t).slice(0,500));
+  await page.close();
+}
 S.out.forEach(l=>console.log(l));
 await b.close();srv.close&&srv.close();process.exit(0);

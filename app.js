@@ -71,7 +71,9 @@ const BIBLE_EVERY = 864e5;
 async function loadBible() {
   let local = null;
   try { local = JSON.parse((await store.getMeta('bible')) || 'null'); } catch (e) { local = null; }
+  const avant = S.bible;
   if (L.bibleValid(local)) S.bible = local;
+  if (S.bible && S.bible !== avant && S.ready) render(); // la liste a pu être dessinée avant que la bible soit connue
   const last = Number(await store.getMeta('bibleAt')) || 0;
   // Après une nouvelle version de l'appli, la bible est reprise tout de suite : sinon l'ancienne copie reste jusqu'à 24 h
   // et les dates de garde des fiches ne suivent pas la nouvelle formule d'apogée.
