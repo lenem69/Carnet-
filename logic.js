@@ -180,14 +180,16 @@ function peutEcrire(w, src, k) {
   return src[k] !== 'user' && !(PROTEGES_BIBLE.includes(k) && src[k] === 'bible');
 }
 // Origines après une modification à la main : un champ changé devient « user », un champ vidé perd son origine.
-export function editSrc(old, raw) {
+// aiGen : valeurs que le bouton « Générer la fiche (IA) » a écrites dans le formulaire ; tant que l'utilisateur ne les change pas, leur origine reste « ai » (elles ne deviennent pas une saisie).
+export function editSrc(old, raw, aiGen) {
   const nw = normalizeWine({ ...(old || {}), ...raw });
   const src = { ...((old && old.src) || {}) };
   for (const k of AI_FIELDS) {
     const avant = old ? old[k] : (k === 'pairings' ? [] : '');
     if (vide(nw[k]) && vide(avant)) continue;
     if (JSON.stringify(nw[k]) === JSON.stringify(avant)) continue;
-    if (vide(nw[k])) delete src[k]; else src[k] = 'user';
+    if (vide(nw[k])) delete src[k];
+    else src[k] = aiGen && JSON.stringify(aiGen[k]) === JSON.stringify(nw[k]) ? 'ai' : 'user';
   }
   return src;
 }

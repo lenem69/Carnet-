@@ -891,7 +891,17 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   T('pastille : couleur = phase (jeune, apogée, déclin)',p(2028).phase==='jeune'&&p(2031).phase==='apogee'&&p(2036).phase==='declin'&&p(2041).phase==='declin'&&p(2026).phase==='garde');
   T('pastille : pas de fenêtre = rien',M.pastille(null,2026)===null&&M.pastilleHtml(null,2026)==='');
   const f=M.fiabilite;
-  T('fiabilité : garde saisie = aucun niveau',f({userGarde:true,confirmee:true,entree:true})===null&&f(null)===null);
+  T('fiabilité : garde saisie = mention « saisie par vous » (jamais rien), sans points',f({userGarde:true,confirmee:true,entree:true}).saisie===true&&/saisie par vous/.test(M.fiabiliteHtml(f({userGarde:true})))&&!/pts/.test(M.fiabiliteHtml(f({userGarde:true})))&&f(null)===null);
+  { // 1.35.0 : une valeur générée par l'IA dans le formulaire n'est plus comptée comme saisie
+    const gen = { grape: 'Gamay', story: 'Histoire.', from: 2026, to: 2034, pairings: ['Coq au vin'] };
+    const s1 = L.editSrc(null, { name: 'X', year: 2024, grape: 'Gamay', story: 'Histoire.', from: 2026, to: 2034, pairings: ['Coq au vin'] }, gen);
+    T('formulaire : valeurs générées par l’IA et non modifiées = origine « ai »', s1.from === 'ai' && s1.to === 'ai' && s1.grape === 'ai' && s1.story === 'ai' && s1.pairings === 'ai', JSON.stringify(s1));
+    const s2 = L.editSrc(null, { name: 'X', year: 2024, grape: 'Pinot noir', story: 'Histoire.', from: 2027, to: 2034, pairings: ['Coq au vin'] }, gen);
+    T('formulaire : valeur générée puis modifiée à la main = origine « user », les autres restent « ai »', s2.grape === 'user' && s2.from === 'user' && s2.to === 'ai', JSON.stringify(s2));
+    T('formulaire : sans génération, tout ce qui est rempli est « user »', L.editSrc(null, { name: 'X', from: 2026, to: 2034 }).from === 'user');
+    const cf = A.apogee({ name: 'Émilien', dom: 'Château Le Puy', region: 'Côtes de Francs', color: 'Rouge', year: 2022 }, 2026, 4);
+    T('Côtes de Francs reconnue (= Francs-Côtes de Bordeaux)', cf.connue === true, cf.regle);
+  }
   T('fiabilité : confirmée par l’IA = haute',f({confirmee:true,entree:true}).mot==='haute'&&f({confirmee:true}).n===3);
   T('fiabilité : ligne de la bible = moyenne, sans raison',f({entree:true}).mot==='moyenne'&&f({entree:true}).raison==='');
   const fa=f({entree:false,connue:true,w:{name:'X',year:2020,color:'Rouge',region:'Zzz'}});

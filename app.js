@@ -69,8 +69,8 @@ const SAVE_FAIL = 'Enregistrement impossible : la mémoire du téléphone est pl
 const BIBLE_URL = 'bible/bible.json';
 const BIBLE_EVERY = 864e5;
 async function loadBible() {
-  let local = null;
-  try { local = JSON.parse((await store.getMeta('bible')) || 'null'); } catch (e) { local = null; }
+  let local = null, localTxt = null;
+  try { localTxt = await store.getMeta('bible'); local = JSON.parse(localTxt || 'null'); } catch (e) { local = null; }
   const avant = S.bible;
   if (L.bibleValid(local)) S.bible = local;
   if (S.bible && S.bible !== avant && S.ready) render(); // la liste a pu être dessinée avant que la bible soit connue
@@ -85,7 +85,7 @@ async function loadBible() {
     const txt = await r.text();
     const j = JSON.parse(txt);
     if (!L.bibleValid(j)) throw new Error('format');
-    if (!local || j.date !== local.date) { await store.setMeta('bible', txt); S.bible = j; if (S.ready) render(); } // la liste affichée avec l’ancienne copie est redessinée (apogée, fiabilité)
+    if (!local || txt !== localTxt) { await store.setMeta('bible', txt); S.bible = j; if (S.ready) render(); } // la liste affichée avec l’ancienne copie est redessinée (apogée, fiabilité)
     await store.setMeta('bibleAt', Date.now());
     await store.setMeta('bibleV', VERSION);
   } catch (e) { console.warn('Bible non mise à jour :', e.message); }
@@ -575,7 +575,7 @@ async function saveForm() {
   if (S.editId) {
     const old = S.wines.find(w => w.id === S.editId);
     if (!old) { errToast('Ce vin n’existe plus.'); closeSheet('sForm'); return; }
-    const src = L.editSrc(old, f);
+    const src = L.editSrc(old, f, S.formExtra.aiGen);
     const nw = L.normalizeWine({ ...old, ...f, src, check: false, conf: S.formExtra.conf || old.conf, sources: S.formExtra.sources, updated: now });
     L.prefillFromBible(nw, S.bible, fenetreRang);
     L.prefillReperes(nw, repereVin, accordsRepere);
@@ -584,7 +584,7 @@ async function saveForm() {
     finishSave(old, ok, '« ' + old.name + ' » modifié.');
     return;
   }
-  const src = L.editSrc(null, f);
+  const src = L.editSrc(null, f, S.formExtra.aiGen);
   const nw = L.normalizeWine({ ...f, src, id: uid(), conf: S.formExtra.conf, sources: S.formExtra.sources, check: false, created: now, updated: now });
   // Tampon : la bible remplit la période de garde tant que l'IA n'a pas de crédit ; l'IA pourra la corriger.
   // La bible d'abord : la garde vient de la bible, sauf une garde saisie par l'utilisateur.
@@ -637,6 +637,7 @@ async function genInForm() {
     F('from').value = num(d.from); F('to').value = num(d.to);
     F('pairings').value = d.pairings.join(', ');
     S.formExtra.conf = d.conf; S.formExtra.sources = d.sources;
+    S.formExtra.aiGen = { grape: F('grape').value.trim(), story: F('story').value.trim(), from: readForm().from, to: readForm().to, pairings: readForm().pairings };
     Stats.track('fiches_ia'); if (d.conf === 'vérifiée') Stats.track('fiches_verif');
     toast(ficheMsg(d));
   } catch (e) { if (!(e && e.name === 'AbortError')) errToast(AI.errText(e)); }
@@ -1508,8 +1509,10 @@ let autoPrio = null;
 const AUTO_DELAY = self.__AUTO_DELAY ?? 20000, AUTO_EVERY = self.__AUTO_EVERY ?? 180000;
 let auto = { on: true, day: '', calls: 0, pauseUntil: 0, pauseWhy: '', tries: {} };
 let autoBusy = false;
+// Appellation non reconnue, sans ligne de la bible ni rang : la garde est cherchée sur le web (si une clé Gemini est saisie), jamais pour une garde saisie par l'utilisateur.
+const gardeInconnue = w => !!(w.aiPass && w.year && w.name && !(w.src && (w.src.from === 'user' || w.src.to === 'user' || w.src.from === 'bible' || w.src.from === 'calc')) && !L.bibleEntry(w, S.bible) && apogee(w, YEAR).connue === false);
 // À faire : les vins jamais passés (IA sans recherche, avec leur valeur), puis ceux à compléter (recherche web, valeur seule).
-const autoTodo = () => S.wines.filter(w => w.qty > 0 && (auto.tries[w.id] || 0) < AUTO_TRIES && (!w.aiPass || (!w.aiSearch && L.doutesEffectifs(w).length) || !w.estim))
+const autoTodo = () => S.wines.filter(w => w.qty > 0 && (auto.tries[w.id] || 0) < AUTO_TRIES && (!w.aiPass || (!w.aiSearch && (L.doutesEffectifs(w).length || gardeInconnue(w))) || !w.estim))
   .sort((a, b) => (!a.aiPass ? 0 : 1) - (!b.aiPass ? 0 : 1) || (b.qty > 0) - (a.qty > 0));
 function nextQuotaReset(now = Date.now()) {
   const d = new Date(now); d.setUTCHours(9, 0, 0, 0);
@@ -1584,7 +1587,7 @@ async function autoStep() {
   autoPrio = null;
   if (!premier) return gardeStep(now);
   // Un lot de même nature : fiche sans recherche (10 vins, avec la valeur), recherche web (5 vins) ou valeur seule (10 vins).
-  const genre = w => (!w.aiPass ? 'fiche' : (!w.aiSearch && L.doutesEffectifs(w).length) ? 'web' : 'valeur');
+  const genre = w => (!w.aiPass ? 'fiche' : (!w.aiSearch && (L.doutesEffectifs(w).length || gardeInconnue(w))) ? 'web' : 'valeur');
   const g = genre(premier);
   const lot = [premier, ...todo.filter(x => x.id !== premier.id && genre(x) === g)].slice(0, g === 'web' ? AUTO_LOT_WEB : AUTO_LOT);
   autoBusy = true; auto.calls++;

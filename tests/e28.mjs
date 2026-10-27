@@ -29,7 +29,7 @@ const W=(id,o)=>({id,name:'Vin '+id,dom:'Domaine '+id,year:Y-5,color:'Rouge',reg
   await ouvre('Garde saisie');
   const f=await page.evaluate(()=>{const w=[...document.querySelectorAll('#list .w')].find(e=>e.querySelector('h4').textContent.includes('Garde saisie'));return {svg:!!w.querySelector('details .mat2 svg'),fiab:!!w.querySelector('.fiab'),aria:(w.querySelector('.mat2 svg')||{getAttribute(){return ''}}).getAttribute('aria-label'),sh:getComputedStyle(w).boxShadow}});
   T('fiche : frise affichée dans « Fiche et accords »',f.svg,JSON.stringify(f));
-  T('fiche : garde saisie à la main = aucune fiabilité',!f.fiab,JSON.stringify(f));
+  T('fiche : garde saisie à la main = fiabilité « saisie par vous »',f.fiab,JSON.stringify(f));
   T('fiche : le liseré disparaît quand la fiche est dépliée',f.sh==='none',f.sh);
   await page.evaluate(n=>{const w=[...document.querySelectorAll('#list .w')].find(e=>e.querySelector('h4').textContent.includes(n));w.querySelector('details').open=false},'Garde saisie');await H.sl(200);
   const sh2=await page.evaluate(()=>getComputedStyle([...document.querySelectorAll('#list .w')].find(e=>e.querySelector('h4').textContent.includes('Garde saisie'))).boxShadow);

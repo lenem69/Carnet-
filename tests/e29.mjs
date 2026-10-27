@@ -49,7 +49,7 @@ const chev=page=>page.evaluate(()=>{const s=document.querySelector('#list .w det
   await page.evaluate(()=>{for(const w of document.querySelectorAll('#list .w'))w.querySelector('details').open=true});await H.sl(300);
   const fb0=await page.evaluate(()=>Object.fromEntries([...document.querySelectorAll('#list .w')].map(w=>[w.querySelector('h4').textContent,(w.querySelector('.fiab')||{}).textContent||''])));
   const fb=new Proxy(fb0,{get:(o,k)=>typeof k==='string'&&!(k in o)?(Object.entries(o).find(([n])=>n.startsWith(k))||[,undefined])[1]:o[k]});
-  T('mise à jour, fenêtre ouverte : fiabilité « moyenne » (Chassagne, Morgon), aucune pour la garde saisie',/moyenne/.test(fb['Chassagne-Montrachet 2018'])&&/moyenne/.test(fb['Morgon 2023'])&&Object.entries(fb0).filter(([k])=>/^Garde à moi/.test(k)).every(([,v])=>v===''),JSON.stringify(fb0));
+  T('mise à jour, fenêtre ouverte : fiabilité « moyenne » (Chassagne, Morgon), « saisie par vous » pour la garde saisie',/moyenne/.test(fb['Chassagne-Montrachet 2018'])&&/moyenne/.test(fb['Morgon 2023'])&&Object.entries(fb0).filter(([k])=>/^Garde à moi/.test(k)).every(([,v])=>/saisie par vous/.test(v)),JSON.stringify(fb0));
   T('mise à jour : jamais « absent de la bible » pour un vin dont la garde vient de la bible',!/absent/.test(fb['Chassagne-Montrachet 2018']+fb['Morgon 2023']),JSON.stringify(fb0));
   const ap=(await carte(page,'Morgon 2023')).t;
   T('mise à jour : apogée de Morgon 2023 calculée avec la bible (note du millésime neutre : +8 ans)',/Apogée estimée/.test(ap)&&/\+8 ans/.test(ap),ap.slice(0,200));
@@ -61,6 +61,23 @@ const chev=page=>page.evaluate(()=>{const s=document.querySelector('#list .w det
   const us=await page.evaluate(async()=>{const s=await import('./store.js');return (await s.allWines()).find(w=>w.id==='user')});
   T('mise à jour : la garde saisie n’est jamais modifiée',us.from===Y+1&&us.to===Y+10&&us.src.from==='user',JSON.stringify([us.from,us.to,us.src]));
   T('mise à jour : aucune erreur',r.errs.length===0,r.errs.join(' | '));
+  await page.close();
+}
+// ---------- (C) Bible locale ancienne avec la MÊME date que celle du site (cas réel : Rully 1er cru « absent de la bible ») ----------
+{
+  const r=await H.newPage(b,{ai:async()=>({json:{}})});const page=r.page;
+  await page.goto(H.URL0);await H.sl(1500);
+  const vieille=JSON.parse(bibleTxt);vieille.rows=vieille.rows.filter(x=>!/^Rully/.test(x.a)); // même date, contenu plus ancien
+  await page.evaluate(async(txt,ws)=>{const s=await import('./store.js');await s.replaceAll(ws);await s.setMeta('bible',txt);await s.setMeta('bibleAt',0);await s.setMeta('bibleV','1.0.0')},JSON.stringify(vieille),[
+    W('rully',{name:'Rully 1er Cru',dom:'Leflaive & Associés',year:2017,color:'Blanc',region:'Rully 1er Cru',qty:2}),
+  ]);
+  await page.reload();await H.sl(3500);
+  await page.evaluate(()=>{const d=document.querySelector('#sDlg button');d&&d.click()});await H.sl(1500);
+  const rows=await page.evaluate(async()=>{const s=await import('./store.js');return JSON.parse(await s.getMeta('bible')).rows.filter(x=>/^Rully/.test(x.a)).length});
+  T('bible locale de même date mais de contenu plus ancien : remplacée par celle du site (Rully présent)',rows===4,String(rows));
+  await page.evaluate(()=>{const d=document.querySelector('#list .w details');if(d)d.open=true});await H.sl(300);
+  const f=await page.evaluate(()=>(document.querySelector('#list .w .fiab')||{}).textContent||'');
+  T('Rully 1er cru : plus de « absent de la bible »',!/absent/.test(f),f);
   await page.close();
 }
 S.out.forEach(l=>console.log(l));

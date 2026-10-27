@@ -184,6 +184,7 @@ export const TAXONOMIE = {
   "fitou": ["Fitou","Languedoc","Languedoc-Roussillon"],
   "fixin": ["Fixin","Bourgogne : Côte de Nuits et Côte de Beaune","Bourgogne"],
   "fleurie": ["Fleurie","Beaujolais","Beaujolais"],
+  "cotesdefrancs": ["Francs-Côtes de Bordeaux","Bordeaux rive droite et satellites","Bordeaux"],
   "francscotesdebordeaux": ["Francs-Côtes de Bordeaux","Bordeaux rive droite et satellites","Bordeaux"],
   "fronsac": ["Fronsac","Bordeaux rive droite et satellites","Bordeaux"],
   "fronton": ["Fronton","Sud-Ouest, Jura, Savoie","Sud-Ouest, Jura, Savoie"],

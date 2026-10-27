@@ -45,7 +45,8 @@ export function pastille(m, annee) {
 // Fiabilité de la garde : null (rien affiché) si l'utilisateur l'a saisie ; haute si l'IA l'a confirmée ; moyenne si elle vient de la bible
 // (ou d'une table de référence sûre) ; faible sinon, avec la raison. ctx : { userGarde, confirmee, entree, connue, w }.
 export function fiabilite(ctx) {
-  if (!ctx || ctx.userGarde) return null;
+  if (!ctx) return null;
+  if (ctx.userGarde) return { n: 0, mot: 'garde saisie par vous', raison: '', saisie: true };
   if (ctx.confirmee) return { n: 3, mot: 'haute', raison: '' };
   if (ctx.entree) return { n: 2, mot: 'moyenne', raison: '' };
   let t = null;
@@ -56,6 +57,7 @@ export function fiabilite(ctx) {
 
 export function fiabiliteHtml(f) {
   if (!f) return '';
+  if (f.saisie) return `<p class="fiab">Fiabilité · <b>${f.mot}</b></p>`;
   const pts = [1, 2, 3].map(i => `<i${i <= f.n ? ' class="on"' : ''}></i>`).join('');
   return `<p class="fiab">Fiabilité <span class="pts" role="img" aria-label="${f.n} sur 3">${pts}</span> <b>${f.mot}</b>${f.raison ? ` <span class="rs">· ${f.raison}</span>` : ''}</p>`;
 }
