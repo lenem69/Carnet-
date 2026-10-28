@@ -75,6 +75,7 @@
       const v = p[k];
       if (vide(v) || src[k] === 'user') continue;
       if ((k === 'grape' || k === 'pairings') && src[k] === 'bible') continue; // 1.34.0 : même règle que logic.js (peutEcrire)
+      if (k === 'story' && w.histRelue) continue; // 1.40.0 : une histoire relue par l'utilisateur n'est plus réécrite (même règle que logic.js)
       if ((k === 'from' || k === 'to') && (controle || (w.from && w.to))) continue;
       w[k] = v; src[k] = 'ai';
     }

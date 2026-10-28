@@ -16,7 +16,7 @@ const l0=await H.txt(page,'#list');
 T('très ancienne installation : les fiches s’affichent (valeurs en texte, sans origine ni verdict)',['Vieux Bordeaux','Côte du Py','Garde à moi','Sans rien'].every(n=>l0.includes(n)),l0.slice(0,200));
 T('aucune valeur « undefined » ou « NaN » dans la liste',!/undefined|NaN/.test(l0),l0.slice(0,200));
 const schema=await page.evaluate(()=>new Promise(res=>{const r=indexedDB.open('cave-a-vin',1);r.onsuccess=()=>{const g=r.result.transaction('meta').objectStore('meta').get('schema');g.onsuccess=()=>res(g.result)}}));
-T('version de schéma enregistrée (12)',schema===12,String(schema));
+T('version de schéma enregistrée (13)',schema===13,String(schema));
 const ai=await page.evaluate(async()=>{const A=await import('./ai.js');return {k:A.getConfig('gemini').key,p:A.getSettings().provider}});
 T('ancien réglage d’IA (un seul fournisseur) reconnu',ai.k==='AIzaTEST'&&ai.p==='gemini',JSON.stringify(ai));
 await page.evaluate(()=>{document.querySelectorAll('#list .w details').forEach(d=>d.open=true)});await H.sl(400);

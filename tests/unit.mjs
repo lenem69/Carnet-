@@ -409,6 +409,7 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
     [{ name: 'Y', dom: 'D', year: 2019, story: 'vieux', src: {} }, { story: 'neuf', from: 2030, to: 2024 }],
     [{ name: 'B', dom: 'D', year: 2022, grape: 'Pinot noir', pairings: ['Gibier à poil (cerf)'], src: { grape: 'bible', pairings: 'bible' } }, { story: 'H', grape: 'Gamay', pairings: ['Pizza'] }],
     [{ name: 'Z', dom: 'D', year: 2019, from: 2026, to: 2030, src: { from: 'bible', to: 'bible' } }, { from: 2027, to: 2033, conf: 'vérifiée', sources: [{ t: 'a', u: 'https://a.fr' }] }],
+    [{ name: 'R', dom: 'D', year: 2019, story: 'relue', src: { story: 'ai' }, histRelue: 5 }, { story: 'nouvelle', grape: 'Syrah' }],
   ];
   for (const [w, d] of cas) {
     const now = 1700000000000;
@@ -863,7 +864,7 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   T('verdict : valeur invalide ignorée', L.normalizeWine({ name: 'Bad', dom: 'D', gv: { from: 'x', to: 3, k: 'z' } }).gv === null);
   const bk = L.parseBackup ? L.parseBackup(JSON.stringify({ app: 'cave-a-vin', schema: 11, wines: [{ name: 'Old', dom: 'D', year: 2010, from: 2015, to: 2025 }] })) : null;
   T('sauvegarde de schéma 11 : encore lisible, sans verdict', !bk || (bk.wines && bk.wines.length === 1 && bk.wines[0].gv === null), JSON.stringify(bk).slice(0, 200));
-  T('schéma de fiche : 12', L.SCHEMA_VERSION === 12);
+  T('schéma de fiche : 13', L.SCHEMA_VERSION === 13);
   console.log(out.slice(o0).join('\n'));
 }
 
@@ -1027,5 +1028,33 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   const ef=C.fermerB(e1,now);
   T('invitation B : après la croix, 14 jours de pause',C.peutAfficherB(ef,'2026-10-28',now+864e5)===false&&C.peutAfficherB(ef,'2026-11-09',now+13*864e5)===false&&C.peutAfficherB(ef,'2026-11-11',now+15*864e5)===true);
   T('reprise : étape 2 reprise dans l’heure, sinon étape 1',C.lireReprise(JSON.stringify({etape:2,t:now}),now+60000)===2&&C.lireReprise(JSON.stringify({etape:2,t:now}),now+2*3600e3)===1&&C.lireReprise('n’importe quoi',now)===1&&C.lireReprise(null,now)===1&&C.lireReprise(JSON.stringify({etape:2,t:now+9e6}),now)===1&&C.lireReprise(JSON.stringify({etape:7,t:now}),now)===1);
+  console.log(out.slice(o0).join('\n'));
+}
+
+// Relecture de l'histoire, une seule génération et recherche web manuelle (1.40.0)
+{
+  const o0 = out.length;
+  const w0 = { name: 'Côte du Py', dom: 'Jean Foillard', year: 2024, region: 'Morgon', story: 'Texte IA.', src: { story: 'ai' } };
+  T('relecture : histoire de l’assistant non relue → à relire', L.aRelire(L.normalizeWine(w0)));
+  T('relecture : histoire saisie par l’utilisateur → pas à relire', !L.aRelire(L.normalizeWine({ ...w0, src: { story: 'user' } })));
+  T('relecture : histoire relue → plus à relire', !L.aRelire(L.normalizeWine({ ...w0, histRelue: 5 })));
+  T('relecture : pas d’histoire → rien à relire', !L.aRelire(L.normalizeWine({ ...w0, story: '' })));
+  const r = L.applyAi(L.normalizeWine({ ...w0, histRelue: 5 }), { story: 'Nouvelle histoire.', grape: 'Gamay' }, 1700000000000);
+  T('histoire relue : l’assistant ne la réécrit plus, mais complète le reste', r.story === 'Texte IA.' && r.grape === 'Gamay', JSON.stringify(r));
+  const nr = L.applyAi(L.normalizeWine(w0), { story: 'Nouvelle histoire.' }, 1700000000000);
+  T('histoire non relue : l’assistant peut encore la réécrire', nr.story === 'Nouvelle histoire.');
+  T('génération : une seule par vin (formulaire ou passe de l’assistant)', !L.generationFaite(L.normalizeWine(w0)) && L.generationFaite(L.normalizeWine({ ...w0, genFaite: 5 })) && L.generationFaite(L.normalizeWine({ ...w0, aiPass: 5 })));
+  const n = L.normalizeWine({ ...w0, histRelue: 'x', histWeb: 7 });
+  T('nouveaux champs : valeur invalide ramenée à 0, valeur valide gardée', n.histRelue === 0 && n.histWeb === 7, JSON.stringify([n.histRelue, n.histWeb]));
+  const vieux = L.normalizeWine({ name: 'Old', dom: 'D', year: 2010, from: 2015, to: 2025 });
+  T('ancienne fiche : relecture, génération et recherche web à 0', vieux.histRelue === 0 && vieux.genFaite === 0 && vieux.histWeb === 0);
+  const bk = L.parseBackup(JSON.stringify({ app: 'cave-a-vin', schema: 12, wines: [{ name: 'Old', dom: 'D', year: 2010, from: 2015, to: 2025 }] }));
+  T('sauvegarde de schéma 12 : encore lisible, champs à 0', bk && bk.wines && bk.wines.length === 1 && bk.wines[0].histRelue === 0 && bk.wines[0].histWeb === 0, JSON.stringify(bk).slice(0, 200));
+  const c = L.consigneHistoire({ dom: 'Jean Foillard', name: 'Côte du Py', year: 2024, region: 'Morgon' });
+  T('consigne : domaine, cuvée, millésime et appellation', c === 'Écris en français une histoire de 3 phrases maximum sur le domaine Jean Foillard et sa cuvée Côte du Py, millésime 2024, appellation Morgon. Ne donne que des faits sûrs. Si tu ne sais pas, écris-le. Termine par la liste des points à vérifier.', c);
+  T('consigne : sans domaine ni millésime', L.consigneHistoire({ name: 'Côte du Py' }).startsWith('Écris en français une histoire de 3 phrases maximum sur la cuvée Côte du Py. '));
+  T('consigne : aucune autre donnée de la fiche (prix, emplacement, notes)', !/99|Casier|secret/.test(L.consigneHistoire({ dom: 'D', name: 'N', price: 99, loc: 'Casier B', note: 'secret' })));
+  const u = L.urlRechercheIA(c);
+  T('adresse Google : mode IA, consigne encodée', u.startsWith('https://www.google.com/search?udm=50&q=') && decodeURIComponent(u.split('&q=')[1]) === c);
   console.log(out.slice(o0).join('\n'));
 }

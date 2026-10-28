@@ -413,3 +413,10 @@ details.adv[open] summary { margin-bottom: 6px; }
 .w p.hist.lead { margin-top: 0; font-weight: 600; }
 
 #sMenu [data-m].indispo { opacity: .5; }
+
+/* 1.40.0 : mention « À relire » sous l'histoire (formulaire et fiche), discrète mais visible */
+.rlr { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 6px 0 0; font-size: 13px; color: var(--ac); }
+.rlr > span { border-left: 3px solid var(--or); padding-left: 8px; }
+.rlr .lnk { font-size: 13px; padding: 4px 0; min-height: 32px; }
+#f-web { margin-top: 8px; }
+#f-web-n { margin-top: 6px; }

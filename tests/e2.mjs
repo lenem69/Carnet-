@@ -64,9 +64,11 @@ const lk=await page.$$eval('#list .src a',a=>a.map(x=>x.href+'|'+x.rel+'|'+x.tar
 T('carte : sources cliquables (https, sans doublon, sans http)',lk.length===2&&lk.every(x=>x.startsWith('https://')&&x.includes('noopener')&&x.endsWith('_blank')),JSON.stringify(lk));
 mode='nosrc';await page.evaluate(()=>document.querySelector('#list .w [data-a="e"]').click());await H.sl(300);
 await page.evaluate(()=>{const f=document.querySelector('#f-story');f.value='';const p=document.querySelector('#f-pairings');p.value=''});
+// 1.40.0 : une seule génération par vin masque le bouton ; ces essais vérifient les messages, on le rend visible (la règle est testée dans e36).
+await page.evaluate(()=>{document.querySelector('#f-gen').hidden=false});
 await H.click(page,'#f-gen');await H.sl(500);
 T('fiche sans source web : message unique « Fiche mise à jour par l’assistant. » (jamais vérifiée sans sources)',(await H.txt(page,'#toasts')).includes('Fiche mise à jour par l’assistant.')&&!(await H.txt(page,'#toasts')).includes('Rien de sûr trouvé'),await H.txt(page,'#toasts'));
-mode='notools';await H.click(page,'#f-gen');await H.sl(600);
+mode='notools';await page.evaluate(()=>{document.querySelector('#f-gen').hidden=false});await H.click(page,'#f-gen');await H.sl(600);
 T('recherche refusée par le service : repli sans recherche, même message unique (plus de « Recherche web indisponible »)',(await H.txt(page,'#toasts')).includes('Fiche mise à jour par l’assistant.')&&!(await H.txt(page,'#toasts')).includes('Recherche web indisponible')&&!(await H.txt(page,'#toasts')).includes('Détail du service'),await H.txt(page,'#toasts'));
 mode='ok';await page.evaluate(()=>document.querySelector('#f-cancel').click());await H.sl(300);
 // lot de 3 photos : nouveau douteux, doublon, nouveau

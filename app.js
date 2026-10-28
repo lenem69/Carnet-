@@ -287,7 +287,7 @@ function card(w, mode, why) {
   ${why ? `<p class="why">💡 ${esc(why)}</p>` : ''}
   <div class="row"><div><h4>${esc(w.name)}${w.year ? ' ' + esc(w.year) : ''}</h4><p>${esc([w.dom, w.region].filter(Boolean).join(' · '))}</p></div>${qty}</div>
   ${meta || tags ? `<div class="ml">${meta ? `<p class="mm">${meta}</p>` : ''}${tags ? `<p class="stl">${tags}</p>` : ''}</div>` : ''}
-  <div class="fr">${hasFiche || apo || svc || tags2 ? `<details${S.ouvert.has(w.id) ? ' open' : ''}><summary>Fiche et accords</summary>${tags2 ? `<p class="mu small sec">${tags2}</p>` : ''}${degLigne(w)}${frise}${blocFiche('Repères', reperesHtml(apo, svc) + (repAppel && (!w.grape || !w.pairings.length) ? `<p class="mu small">${esc(repAppel)}</p>` : '') + (majIA.length ? `<p class="mu small">Mis à jour par l’assistant : ${esc(majIA.join(', '))}.</p>` : ''))}${w.story ? blocFiche('L’histoire', histoireHtml(w.story)) : ''}${w.pairings.length ? blocFiche('Accords', `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>`) : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : degLigne(w) + journalHtml(w, mode)}<button class="am" type="button" data-a="menu" aria-haspopup="dialog">⋯ Actions</button></div>
+  <div class="fr">${hasFiche || apo || svc || tags2 ? `<details${S.ouvert.has(w.id) ? ' open' : ''}><summary>Fiche et accords</summary>${tags2 ? `<p class="mu small sec">${tags2}</p>` : ''}${degLigne(w)}${frise}${blocFiche('Repères', reperesHtml(apo, svc) + (repAppel && (!w.grape || !w.pairings.length) ? `<p class="mu small">${esc(repAppel)}</p>` : '') + (majIA.length ? `<p class="mu small">Mis à jour par l’assistant : ${esc(majIA.join(', '))}.</p>` : ''))}${w.story ? blocFiche('L’histoire', histoireHtml(w.story) + relireHtml(w)) : ''}${w.pairings.length ? blocFiche('Accords', `<p>${w.pairings.map(p => `<span class="pc">${esc(p)}</span>`).join('')}</p>`) : ''}${w.note ? `<p><i>${esc(w.note)}</i></p>` : ''}${w.sources.length ? `<p class="src">Sources consultées : ${w.sources.map(x => `<a href="${esc(x.u)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a>`).join(' · ')}</p>` : ''}${journalHtml(w, mode)}</details>` : degLigne(w) + journalHtml(w, mode)}<button class="am" type="button" data-a="menu" aria-haspopup="dialog">⋯ Actions</button></div>
   <div class="acts-h" hidden>${!w.story && !w.pairings.length ? '<button data-a="gen" type="button">✨ Fiche par l’assistant</button>' : ''}<button data-a="e" type="button">Modifier</button>${mode === 'cave' ? '<button data-a="d" type="button">Supprimer</button>' : ''}</div>
 </div>`;
 }
@@ -316,6 +316,11 @@ function histoireHtml(story) {
   const reste = [];
   for (let i = 1; i < ph.length; i += 2) reste.push(ph.slice(i, i + 2).join(' '));
   return `<p class="hist lead">${esc(ph[0])}</p>${reste.map(t => `<p class="hist">${esc(t)}</p>`).join('')}`;
+}
+
+// 1.40.0 : histoire écrite par l'assistant et pas encore relue : mention discrète avec le prénom, et « J'ai relu » (l'histoire n'est alors plus réécrite par l'assistant).
+function relireHtml(w) {
+  return L.aRelire(w) ? `<p class="rlr"><span>À relire${prenomMem ? ', ' + esc(prenomMem) : ''}</span><button class="lnk" data-a="relu" type="button">J’ai relu</button></p>` : '';
 }
 
 // Journal de dégustation (saisie manuelle uniquement).
@@ -565,7 +570,9 @@ function renderChiffres() {
 const F = id => $('#f-' + id);
 function openForm(w, title) {
   S.editId = w && w.id && S.wines.some(x => x.id === w.id) ? w.id : null;
-  S.formExtra = { conf: (w && w.conf) || '', sources: (w && w.sources) || [] };
+  // 1.40.0 : aiStory = histoire écrite par l'assistant et pas encore relue ; relu / web / genOk = gestes faits pendant cette ouverture du formulaire.
+  S.formExtra = { conf: (w && w.conf) || '', sources: (w && w.sources) || [],
+    aiStory: w && L.aRelire(w) ? String(w.story).trim() : '', relu: false, web: Number(w && w.histWeb) || 0, genOk: false };
   $('#f-enc').hidden = true; effacerPhotoForm();
   $('#fT').textContent = title || (S.editId ? 'Modifier le vin' : 'Ajouter un vin');
   const v = w || {};
@@ -575,10 +582,41 @@ function openForm(w, title) {
   F('qty').value = v.qty ?? 1; F('price').value = v.price !== undefined && v.price !== '' ? String(v.price).replace('.', ',') : '';
   F('from').value = v.from || ''; F('to').value = v.to || ''; F('loc').value = v.loc || '';
   F('story').value = v.story || ''; F('pairings').value = (v.pairings || []).join(', '); F('note').value = v.note || '';
+  F('gen').hidden = S.editId ? L.generationFaite(w) : false; // une seule génération par vin
+  majRelecture();
   renderDatalists();
   closeSheet('sMenu');
   openSheet('sForm');
   $('#sForm .sb').scrollTop = 0;
+}
+
+// Mention « À relire, <prénom> » sous l'histoire écrite par l'assistant, et recours « Pas satisfait ? Chercher sur le web » (une seule fois par vin).
+// L'histoire retouchée à la main n'est plus celle de l'assistant : la mention et le bouton disparaissent d'eux-mêmes.
+function majRelecture() {
+  const X = S.formExtra || {}, cur = F('story').value.trim();
+  const deIA = !!cur && cur === X.aiStory;
+  F('rl').hidden = !deIA;
+  F('rl-t').textContent = X.relu ? '✓ Relue' : 'À relire' + (prenomMem ? ', ' + prenomMem : '');
+  F('rl-ok').hidden = !!X.relu;
+  const web = deIA && !X.relu && !X.web;
+  F('web').hidden = !web; F('web-n').hidden = !web;
+}
+
+async function webHistoire() {
+  const X = S.formExtra, f = readForm();
+  if (!f.name && !f.dom) { errToast('Indiquez au moins le nom ou le domaine.'); F('name').focus(); return; }
+  const consigne = L.consigneHistoire(f);
+  const c = await ask('Ouvrir Google ?', `Google s’ouvre en mode IA, dans une nouvelle fenêtre, avec cette consigne déjà écrite : « ${consigne} » Le nom du vin et du domaine est envoyé à Google. Cette recherche n’est proposée qu’une seule fois pour ce vin.`, [
+    { label: 'Ouvrir Google', value: 'go' }, { label: 'Annuler', value: null, kind: 'o' }]);
+  if (c !== 'go') return;
+  const win = window.open(L.urlRechercheIA(consigne), '_blank');
+  if (!win) { errToast('Le navigateur a bloqué l’ouverture de Google. Autorisez les fenêtres pour cette appli, puis touchez de nouveau le bouton.'); return; }
+  try { win.opener = null; } catch (e) { /* sans effet */ }
+  X.web = Date.now();
+  majRelecture();
+  // Vin déjà enregistré : l'usage est gardé tout de suite (le bouton ne reviendra pas, même si le formulaire est fermé sans enregistrer).
+  const old = S.editId && S.wines.find(w => w.id === S.editId);
+  if (old) { old.histWeb = X.web; await persist(() => store.putWines([old])); }
 }
 
 function readForm() {
@@ -602,6 +640,16 @@ function validate(f) {
   return true;
 }
 
+// 1.40.0 : gestes faits dans le formulaire (génération, relecture, recherche web), à enregistrer avec la fiche ; ceux d'avant sont gardés.
+function gestesFiche(old) {
+  const X = S.formExtra || {}, now = Date.now();
+  return {
+    genFaite: X.genOk ? now : (old && old.genFaite) || 0,
+    histRelue: X.relu && F('story').value.trim() === X.aiStory ? now : (old && old.histRelue) || 0,
+    histWeb: X.web || (old && old.histWeb) || 0,
+  };
+}
+
 async function saveForm() {
   const f = readForm();
   if (!validate(f)) return;
@@ -612,7 +660,7 @@ async function saveForm() {
     const old = S.wines.find(w => w.id === S.editId);
     if (!old) { errToast('Ce vin n’existe plus.'); closeSheet('sForm'); return; }
     const src = L.editSrc(old, f, S.formExtra.aiGen);
-    const nw = L.normalizeWine({ ...old, ...f, src, check: false, conf: S.formExtra.conf || old.conf, sources: S.formExtra.sources, updated: now });
+    const nw = L.normalizeWine({ ...old, ...f, src, check: false, conf: S.formExtra.conf || old.conf, sources: S.formExtra.sources, updated: now, ...gestesFiche(old) });
     L.prefillFromBible(nw, S.bible, fenetreRang);
     L.prefillReperes(nw, repereVin, accordsRepere);
     Object.assign(old, nw);
@@ -621,7 +669,7 @@ async function saveForm() {
     return;
   }
   const src = L.editSrc(null, f, S.formExtra.aiGen);
-  const nw = L.normalizeWine({ ...f, src, id: uid(), conf: S.formExtra.conf, sources: S.formExtra.sources, check: false, created: now, updated: now });
+  const nw = L.normalizeWine({ ...f, src, id: uid(), conf: S.formExtra.conf, sources: S.formExtra.sources, check: false, created: now, updated: now, ...gestesFiche(null) });
   // Tampon : la bible remplit la période de garde tant que l'IA n'a pas de crédit ; l'IA pourra la corriger.
   // La bible d'abord : la garde vient de la bible, sauf une garde saisie par l'utilisateur.
   L.prefillFromBible(nw, S.bible, fenetreRang);
@@ -675,6 +723,10 @@ async function genInForm() {
     S.formExtra.conf = d.conf; S.formExtra.sources = d.sources;
     S.formExtra.aiGen = { grape: F('grape').value.trim(), story: F('story').value.trim(), from: readForm().from, to: readForm().to, pairings: readForm().pairings };
     Stats.track('fiches_ia'); if (d.conf === 'vérifiée') Stats.track('fiches_verif');
+    // 1.40.0 : une seule génération par vin (le bouton disparaît) ; l'histoire écrite reste « à relire ».
+    S.formExtra.genOk = true; S.formExtra.aiStory = F('story').value.trim(); S.formExtra.relu = false;
+    b.hidden = true;
+    majRelecture();
     toast(ficheMsg(d));
   } catch (e) { if (!(e && e.name === 'AbortError')) errToast(AI.errText(e)); }
   b.disabled = false; b.textContent = '✨ Générer la fiche avec l’assistant';
@@ -753,6 +805,13 @@ async function onCardAction(e) {
         if (await persist(() => store.putWines([w]))) toast('Suppression annulée.');
       } } });
     }
+  } else if (a === 'relu') {
+    const copie = JSON.parse(JSON.stringify(w));
+    copie.histRelue = Date.now(); copie.updated = copie.histRelue;
+    const idx = S.wines.indexOf(w);
+    S.wines[idx] = copie;
+    S.ouvert.add(copie.id);
+    if (await persist(() => store.putWines([copie]))) { render(); toast('Histoire relue : l’assistant ne la réécrira plus.'); } else { S.wines[idx] = w; render(); }
   } else if (a === 'dg') {
     openTasting(w);
   } else if (a === 'dgdel') {
@@ -1626,6 +1685,9 @@ function bind() {
   F('save').onclick = saveForm;
   F('cancel').onclick = () => closeSheet('sForm');
   F('gen').onclick = genInForm;
+  F('story').addEventListener('input', majRelecture);
+  F('rl-ok').onclick = () => { S.formExtra.relu = true; majRelecture(); };
+  F('web').onclick = webHistoire;
 
   const onFiles = (id, fn) => { $(id).addEventListener('change', e => { const fl = [...e.target.files]; e.target.value = ''; if (fl.length) fn(fl); }); };
   onFiles('#fCam', scanFiles); onFiles('#fImg', scanFiles);

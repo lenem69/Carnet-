@@ -2,7 +2,7 @@
 import { norm, num, price, uid } from './util.js';
 
 export const COLORS = ['Rouge', 'Blanc', 'Rosé', 'Pétillant', 'Autre'];
-export const SCHEMA_VERSION = 12;
+export const SCHEMA_VERSION = 13;
 
 export function normColor(v) {
   const s = norm(v);
@@ -82,6 +82,12 @@ export function normalizeWine(raw) {
     // Date de la recherche web (0 = jamais) et champs encore à chercher.
     aiSearch: Number(raw.aiSearch) || 0,
     aiDoute: Array.isArray(raw.aiDoute) ? toDoute(raw.aiDoute) : undefined, // ancienne fiche : calculé à la demande
+    // v13 : histoire relue par l'utilisateur (date, 0 = pas encore : elle reste « à relire » et l'IA peut la réécrire),
+    // génération de la fiche faite depuis le formulaire (date, 0 = jamais : une seule par vin),
+    // recherche web manuelle de l'histoire déjà utilisée (date, 0 = jamais : une seule par vin).
+    histRelue: Number(raw.histRelue) || 0,
+    genFaite: Number(raw.genFaite) || 0,
+    histWeb: Number(raw.histWeb) || 0,
     created: Number(raw.created) || now,
     updated: Number(raw.updated) || now,
   };
@@ -177,7 +183,29 @@ const vide = v => v === null || v === undefined || v === '' || (Array.isArray(v)
 // Exception (1.34.0, choix de l'utilisateur) : un cépage ou des accords venus de la bible ou du fichier de référence (origine « bible ») ne sont jamais écrasés par l'IA.
 const PROTEGES_BIBLE = ['grape', 'pairings'];
 function peutEcrire(w, src, k) {
+  if (k === 'story' && w.histRelue) return false; // 1.40.0 : une histoire relue par l'utilisateur n'est plus réécrite par l'IA
   return src[k] !== 'user' && !(PROTEGES_BIBLE.includes(k) && src[k] === 'bible');
+}
+
+// 1.40.0 : l'histoire écrite par l'assistant reste « à relire » tant que l'utilisateur ne l'a ni relue (« J'ai relu ») ni retouchée (origine « user »).
+export function aRelire(w) {
+  return !!(w && str(w.story) && w.src && w.src.story === 'ai' && !w.histRelue);
+}
+// Une seule génération de fiche par vin : faite depuis le formulaire (genFaite) ou par la passe de l'assistant (aiPass).
+export function generationFaite(w) {
+  return !!(w && (Number(w.genFaite) || Number(w.aiPass)));
+}
+// Consigne prête à coller dans un moteur d'IA (recherche web manuelle de l'histoire, une fois par vin) : seuls les champs de la fiche sont utilisés.
+export function consigneHistoire(w) {
+  const dom = str(w && w.dom), nom = str(w && w.name);
+  const sujet = dom && nom ? `le domaine ${dom} et sa cuvée ${nom}` : dom ? `le domaine ${dom}` : `la cuvée ${nom}`;
+  const an = num(w && w.year), reg = str(w && w.region);
+  const suite = [an ? `millésime ${an}` : '', reg ? `appellation ${reg}` : ''].filter(Boolean).join(', ');
+  return `Écris en français une histoire de 3 phrases maximum sur ${sujet}${suite ? ', ' + suite : ''}. Ne donne que des faits sûrs. Si tu ne sais pas, écris-le. Termine par la liste des points à vérifier.`;
+}
+// Adresse de Google en mode IA avec la consigne déjà écrite (paramètre non officiel : sans effet, la recherche s'ouvre quand même).
+export function urlRechercheIA(consigne) {
+  return 'https://www.google.com/search?udm=50&q=' + encodeURIComponent(consigne);
 }
 // Origines après une modification à la main : un champ changé devient « user », un champ vidé perd son origine.
 // aiGen : valeurs que le bouton « Générer la fiche (IA) » a écrites dans le formulaire ; tant que l'utilisateur ne les change pas, leur origine reste « ai » (elles ne deviennent pas une saisie).
