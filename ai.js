@@ -309,7 +309,7 @@ async function callOnce(s, prompt, images, signal, out) {
   } catch (e) {
     // La recherche web est un plus : si le service la refuse (panne, ou limite propre à cet outil), on refait la demande sans elle.
     if (!(search && e && (e.code === 'server' || (e.code === 'rate_limited' && !s.gratuit)))) throw e;
-    search = false; if (out) out.fallback = true;
+    search = false; if (out) { out.fallback = true; out.fallbackWhy = String((e && e.message) || (e && e.code) || '').replace(/\s+/g, ' ').slice(0, 160); }
     j = await call(false);
   }
   if (out) { out.searched = search; out.sources = []; }
@@ -465,7 +465,7 @@ async function ficheAvecRecherche(w, opts = {}) {
   f.conf = sources.length && /^v[ée]rifi/i.test(String(d.conf || d.c || '')) ? 'vérifiée' : 'estimée';
   f.sources = sources;
   f.searched = !!out.searched;
-  f.fallback = !!out.fallback;
+  f.fallback = !!out.fallback; f.fallbackWhy = out.fallbackWhy || '';
   return f;
 }
 
@@ -556,7 +556,7 @@ export async function makeFichesWeb(list, opts = {}) {
     f.conf = sources.length && /^v[ée]rifi/i.test(String(x.c || '')) ? 'vérifiée' : 'estimée';
     f.sources = sources;
     f.searched = !!out.searched;
-    f.fallback = !!out.fallback;
+    f.fallback = !!out.fallback; f.fallbackWhy = out.fallbackWhy || '';
     res.set(String(x.id), f);
   }
   return res;

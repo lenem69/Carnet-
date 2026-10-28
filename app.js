@@ -792,7 +792,7 @@ async function onCardAction(e) {
 
 function ficheMsg(d) {
   if (d.conf === 'vérifiée') return `Fiche vérifiée sur le web (${d.sources.length} source${d.sources.length > 1 ? 's' : ''}).`;
-  if (d.fallback) return 'Recherche web indisponible : fiche estimée, à vérifier.';
+  if (d.fallback) return 'Recherche web indisponible : fiche estimée, à vérifier.' + (d.fallbackWhy ? ' Détail du service : ' + d.fallbackWhy : '');
   if (d.searched) return 'Rien de sûr trouvé sur le web : fiche estimée, à vérifier.';
   return 'Fiche estimée (sans recherche web) : à vérifier.';
 }

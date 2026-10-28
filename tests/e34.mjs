@@ -32,6 +32,9 @@ await prep('gemini-choisi-a-la-main');
 mode='tout429';n0=calls.length;x=await run({});cs=calls.slice(n0);
 T('modèle choisi à la main : jamais remplacé',!x.ok&&cs.length>0&&cs.every(c=>nm(c.url)==='gemini-choisi-a-la-main'),cs.map(c=>nm(c.url)).join());
 
+mode='recherche429';await prep();
+const f=await page.evaluate(async()=>{const m=await import('./ai.js');const out={wantSearch:true};await m.callJson('p',{out});return {fb:out.fallback,why:out.fallbackWhy}});
+T('recherche refusée : la raison du service est conservée pour le message',f.fb===true&&f.why==='search quota',JSON.stringify(f));
 T('aucune erreur de page',errs.length===0,errs.join(' | '));
 await b.close();srv.close();
 console.log(S.out.join('\n'));
