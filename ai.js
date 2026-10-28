@@ -16,6 +16,12 @@ export const cfg = { retryDelay: 20000, retries: 2, timeout: 90000 };
 const MODELE_TACHE = { label: { gemini: 'gemini-3.8-flash' } };
 const modelFor = (prov, task, model) => (model !== PROVIDERS[prov].model ? model : (MODELE_TACHE[task] && MODELE_TACHE[task][prov]) || model);
 
+// Recherche web de Gemini (outil Google Search) : EN PAUSE depuis la 1.39.3 (28 octobre 2026), décision de Jeff.
+// Google ne la propose pas par clé API gratuite sur les modèles Gemini 3.x : chaque tentative était refusée et gaspillait une requête.
+// Pour la réactiver : passer à true ici ET dans fond.js (même valeur), puis relire claude/recherche-web-gemini.md.
+// `self.__RECHERCHE_WEB` n'est utilisé que par les tests (comme `__AUTO_DELAY`).
+export const RECHERCHE_WEB = (typeof self !== 'undefined' && self.__RECHERCHE_WEB !== undefined) ? !!self.__RECHERCHE_WEB : false;
+
 const KEY = 'cave-ai';
 const COOL = 'cave-ai-cool';
 // Ordre de préférence : le gratuit d’abord, puis le moins cher.
@@ -298,7 +304,7 @@ async function callOnce(s, prompt, images, signal, out) {
       ? { contents: [{ role: 'user', parts }], tools: [{ google_search: {} }], generationConfig: gen(think) }
       : { contents: [{ role: 'user', parts }], generationConfig: { ...gen(think), responseMimeType: 'application/json' } }),
   });
-  let search = !!(out && out.wantSearch);
+  let search = RECHERCHE_WEB && !!(out && out.wantSearch);
   let j;
   try {
     try { j = await call(search); }
@@ -449,7 +455,7 @@ export async function scanLabel(file, opts) {
 async function ficheAvecRecherche(w, opts = {}) {
   const year = new Date().getFullYear();
   // Recherche web seulement chez Gemini ; chez un autre fournisseur, la fiche reste une estimation.
-  const ask = s => { const web = s.provider === 'gemini'; return `${EXPERT} ${web ? 'Utilise la recherche web et croise plusieurs sources fiables : site du domaine, guides et revues (RVF, Bettane+Desseauve, Parker, Decanter), forums spécialisés (La Passion du Vin, CellarTracker…), sites de vente en ligne avec fiches produit (Vinatis, V and B, Millésima, Idealwine…), cavistes et notes de dégustation. Compare les fenêtres de garde données par ces sources puis complète la fiche' : 'Complète la fiche de ce vin avec tes connaissances (estime si la cuvée t’est inconnue, sans inventer de faits précis)'} : ${JSON.stringify({ name: w.name, dom: w.dom, year: w.year, color: w.color, region: w.region, a: w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? w.from : undefined, b: w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? w.to : undefined })}.${w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? ' a et b sont la fenêtre de garde actuelle de l’appli : si elle te paraît juste à un an près, renvoie les mêmes années dans from et to, sinon donne ta propre fenêtre.' : ''} Nous sommes en ${year}. Ne donne jamais une date de garde précise sans base : en cas de doute, élargis la fourchette et mets conf à « estimée » ; ne retiens « vérifiée » que si au moins deux sources concordent ou si la source est le domaine lui-même. Réponds uniquement par un objet JSON de ce format : ${SCHEMA_FICHE}.`; };
+  const ask = s => { const web = RECHERCHE_WEB && s.provider === 'gemini'; return `${EXPERT} ${web ? 'Utilise la recherche web et croise plusieurs sources fiables : site du domaine, guides et revues (RVF, Bettane+Desseauve, Parker, Decanter), forums spécialisés (La Passion du Vin, CellarTracker…), sites de vente en ligne avec fiches produit (Vinatis, V and B, Millésima, Idealwine…), cavistes et notes de dégustation. Compare les fenêtres de garde données par ces sources puis complète la fiche' : 'Complète la fiche de ce vin avec tes connaissances (estime si la cuvée t’est inconnue, sans inventer de faits précis)'} : ${JSON.stringify({ name: w.name, dom: w.dom, year: w.year, color: w.color, region: w.region, a: w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? w.from : undefined, b: w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? w.to : undefined })}.${w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? ' a et b sont la fenêtre de garde actuelle de l’appli : si elle te paraît juste à un an près, renvoie les mêmes années dans from et to, sinon donne ta propre fenêtre.' : ''} Nous sommes en ${year}. Ne donne jamais une date de garde précise sans base : en cas de doute, élargis la fourchette et mets conf à « estimée » ; ne retiens « vérifiée » que si au moins deux sources concordent ou si la source est le domaine lui-même. Réponds uniquement par un objet JSON de ce format : ${SCHEMA_FICHE}.`; };
   const out = { wantSearch: true };
   let d = await callJson(ask, { ...opts, out });
   if (!d || typeof d !== 'object' || Array.isArray(d)) throw { code: 'invalid_json' };
@@ -473,7 +479,7 @@ async function ficheAvecRecherche(w, opts = {}) {
 // Retourne { region, from, to, searched, provider } ; lève invalid_json si la réponse est inutilisable.
 export async function chercherGarde(w, opts = {}) {
   const year = new Date().getFullYear();
-  const ask = s => { const web = s.provider === 'gemini'; return `${EXPERT} ${web ? 'Utilise la recherche web (site du domaine, guides, revues, sites de vente) pour' : 'Avec tes connaissances, sans inventer de faits précis, pour'} ce vin, indique le pays et la région viticole, puis la fenêtre de garde habituelle (années civiles de début et de fin de la période de dégustation conseillée) : ${JSON.stringify({ name: w.name, dom: w.dom, year: w.year, color: w.color, region: w.region })}. Nous sommes en ${year}. En cas de doute, élargis la fourchette. Réponds uniquement par un objet JSON : {"region":"Région (Pays)","from":année,"to":année}.`; };
+  const ask = s => { const web = RECHERCHE_WEB && s.provider === 'gemini'; return `${EXPERT} ${web ? 'Utilise la recherche web (site du domaine, guides, revues, sites de vente) pour' : 'Avec tes connaissances, sans inventer de faits précis, pour'} ce vin, indique le pays et la région viticole, puis la fenêtre de garde habituelle (années civiles de début et de fin de la période de dégustation conseillée) : ${JSON.stringify({ name: w.name, dom: w.dom, year: w.year, color: w.color, region: w.region })}. Nous sommes en ${year}. En cas de doute, élargis la fourchette. Réponds uniquement par un objet JSON : {"region":"Région (Pays)","from":année,"to":année}.`; };
   const out = { wantSearch: true };
   const d = await callJson(ask, { ...opts, out });
   if (!d || typeof d !== 'object' || Array.isArray(d)) throw { code: 'invalid_json' };

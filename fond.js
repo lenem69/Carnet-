@@ -1,6 +1,6 @@
 // Passe de fond, exécutée par le service worker (script classique, chargé par sw.js).
-// Elle fonctionne appli fermée (tâche de fond Chrome Android). Règle : la bible d'abord (sans jeton), puis une recherche web
-// par vin avec Gemini, un vin à la fois. Elle lit la clé et les vins dans IndexedDB, partage les quotas avec la page
+// Elle fonctionne appli fermée (tâche de fond Chrome Android). Règle : la bible d'abord (sans jeton), puis l'IA par lots
+// (la recherche web Gemini, par lots de 5, est en pause depuis la 1.39.3). Elle lit la clé et les vins dans IndexedDB, partage les quotas avec la page
 // (meta « autoFill ») et ne réécrit un vin qu'après l'avoir relu.
 // La logique (appliquer, bibleGarde) doit rester identique à logic.js : voir tests/unit.mjs.
 (function () {
@@ -9,6 +9,8 @@
   const MAX_PASSE = 10;       // appels par passe de fond
   const LOT = 10;             // vins par appel sans recherche
   const RECH = 5;             // vins par appel de recherche web
+  // Recherche web Gemini EN PAUSE depuis la 1.39.3 (même valeur que RECHERCHE_WEB dans ai.js : testé dans unit.mjs). `self.__RECHERCHE_WEB` : tests seulement.
+  const RECHERCHE_WEB = (typeof self !== 'undefined' && self.__RECHERCHE_WEB !== undefined) ? !!self.__RECHERCHE_WEB : false;
   const ESSAIS = 2, VERROU_MS = 5 * 60e3;
   const PROXY = 'https://cave-ia.m-jeanfrancois-morin.workers.dev';   // clé gratuite partagée (sous limite par appareil)
   const LIMITE_GRATUITE = 1;  // vin par jour et par appareil, en mode gratuit
@@ -439,8 +441,8 @@
         }
       }
 
-      // 3) Recherche web par lots de RECH vins, seulement pour les champs restés vides ou incertains.
-      if (!erreur) {
+      // 3) Recherche web par lots de RECH vins, seulement pour les champs restés vides ou incertains (en pause : voir RECHERCHE_WEB).
+      if (!erreur && RECHERCHE_WEB) {
         cave = await lireVins(db);
         const aChercher = cave.filter(w => w.aiPass && !w.aiSearch && w.qty > 0 && doutesOf(w).length && (q.tries[w.id] || 0) < ESSAIS)
           .sort((a, b) => (b.qty > 0) - (a.qty > 0));

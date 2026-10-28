@@ -356,6 +356,15 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   const manquantes = appels.filter(f => !new RegExp('(function ' + f + '\\(|const ' + f + ' =)').test(code) && !['fetch', 'http', 'extraire', 'lireVins', 'lireMeta', 'ecrireMeta', 'lireBible', 'ouvrir', 'fin', 'appliquer', 'bibleGarde', 'prochaineRemise'].includes(f) );
   T('fond.js : toutes les fonctions appelées sont définies', manquantes.length === 0, manquantes.join(', '));
 }
+// Recherche web Gemini (1.39.3) : l'interrupteur de la page (ai.js) et celui de la passe de fond (fond.js) doivent avoir la même valeur.
+// En pause = false. Pour réactiver : passer les DEUX à true, puis adapter le test « en pause » ci-dessous (voir claude/recherche-web-gemini.md).
+{
+  const re = /const RECHERCHE_WEB = \(typeof self !== 'undefined' && self\.__RECHERCHE_WEB !== undefined\) \? !!self\.__RECHERCHE_WEB : (true|false);/;
+  const a = fs.readFileSync(new URL('../ai.js', import.meta.url), 'utf8').match(re);
+  const f = fs.readFileSync(new URL('../fond.js', import.meta.url), 'utf8').match(re);
+  T('recherche web : ai.js et fond.js ont la même valeur', !!a && !!f && a[1] === f[1], JSON.stringify([a && a[1], f && f[1]]));
+  T('recherche web : en pause (false) dans les deux fichiers', !!a && !!f && a[1] === 'false' && f[1] === 'false');
+}
 // Valeur reprise par la fiche (logic.js et fond.js de la même façon)
 {
   const w = { name: 'V', dom: 'D', year: 2019, src: {}, qty: 1, conf: '' };

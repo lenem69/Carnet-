@@ -790,11 +790,10 @@ async function onCardAction(e) {
   }
 }
 
+// Un seul message (demande de Jeff, 28 octobre 2026). Recherche web en pause : « vérifiée » n'arrive que si on la réactive.
 function ficheMsg(d) {
   if (d.conf === 'vérifiée') return `Fiche vérifiée sur le web (${d.sources.length} source${d.sources.length > 1 ? 's' : ''}).`;
-  if (d.fallback) return 'Recherche web indisponible : fiche estimée, à vérifier.' + (d.fallbackWhy ? ' Détail du service : ' + d.fallbackWhy : '');
-  if (d.searched) return 'Rien de sûr trouvé sur le web : fiche estimée, à vérifier.';
-  return 'Fiche estimée (sans recherche web) : à vérifier.';
+  return 'Fiche mise à jour par l’assistant.';
 }
 
 // L'IA met à jour une copie du vin (jamais l'objet partagé), puis la copie remplace l'original une fois enregistrée.
@@ -1793,10 +1792,11 @@ let autoPrio = null;
 const AUTO_DELAY = self.__AUTO_DELAY ?? 20000, AUTO_EVERY = self.__AUTO_EVERY ?? 180000;
 let auto = { on: true, day: '', calls: 0, pauseUntil: 0, pauseWhy: '', tries: {} };
 let autoBusy = false;
-// Appellation non reconnue, sans ligne de la bible ni rang : la garde est cherchée sur le web (si une clé Gemini est saisie), jamais pour une garde saisie par l'utilisateur.
+// Appellation non reconnue, sans ligne de la bible ni rang : la garde est cherchée sur le web (si une clé Gemini est saisie et si la recherche web n'est pas en pause), jamais pour une garde saisie par l'utilisateur.
 const gardeInconnue = w => !!(w.aiPass && w.year && w.name && !(w.src && (w.src.from === 'user' || w.src.to === 'user' || w.src.from === 'bible' || w.src.from === 'calc')) && !L.bibleEntry(w, S.bible) && apogee(w, YEAR).connue === false);
-// À faire : les vins jamais passés (IA sans recherche, avec leur valeur), puis ceux à compléter (recherche web, valeur seule).
-const autoTodo = () => S.wines.filter(w => w.qty > 0 && (auto.tries[w.id] || 0) < AUTO_TRIES && (!w.aiPass || (!w.aiSearch && (L.doutesEffectifs(w).length || gardeInconnue(w))) || !w.estim))
+// À faire : les vins jamais passés (IA sans recherche, avec leur valeur), puis ceux à compléter (recherche web si elle n'est pas en pause, valeur seule).
+const aChercherWeb = w => AI.RECHERCHE_WEB && !w.aiSearch && (L.doutesEffectifs(w).length || gardeInconnue(w));
+const autoTodo = () => S.wines.filter(w => w.qty > 0 && (auto.tries[w.id] || 0) < AUTO_TRIES && (!w.aiPass || aChercherWeb(w) || !w.estim))
   .sort((a, b) => (!a.aiPass ? 0 : 1) - (!b.aiPass ? 0 : 1) || (b.qty > 0) - (a.qty > 0));
 function nextQuotaReset(now = Date.now()) {
   const d = new Date(now); d.setUTCHours(9, 0, 0, 0);
@@ -1871,7 +1871,7 @@ async function autoStep() {
   autoPrio = null;
   if (!premier) return gardeStep(now);
   // Un lot de même nature : fiche sans recherche (10 vins, avec la valeur), recherche web (5 vins) ou valeur seule (10 vins).
-  const genre = w => (!w.aiPass ? 'fiche' : (!w.aiSearch && (L.doutesEffectifs(w).length || gardeInconnue(w))) ? 'web' : 'valeur');
+  const genre = w => (!w.aiPass ? 'fiche' : aChercherWeb(w) ? 'web' : 'valeur');
   const g = genre(premier);
   const lot = [premier, ...todo.filter(x => x.id !== premier.id && genre(x) === g)].slice(0, g === 'web' ? AUTO_LOT_WEB : AUTO_LOT);
   autoBusy = true; auto.calls++;

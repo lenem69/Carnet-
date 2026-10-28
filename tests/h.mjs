@@ -9,7 +9,7 @@ export function deploy(version){fs.rmSync(SITE,{recursive:true,force:true});fs.m
   if(version)fs.writeFileSync(path.join(SITE,'cave','version.js'),`self.APP_VERSION = '${version}';\n`)}
 async function exe(){if(process.env.CHROME_PATH)return {p:process.env.CHROME_PATH,args:[]};if(fs.existsSync('/opt/pw-browsers/chromium'))return {p:'/opt/pw-browsers/chromium',args:[]};const c=(await import('@sparticuz/chromium')).default;return {p:await c.executablePath(),args:c.args}}
 export async function browser(){const e=await exe();return puppeteer.launch({executablePath:e.p,args:[...e.args,'--no-sandbox'],headless:true})}
-export async function newPage(b,{ai,width=390,height=780}={}){
+export async function newPage(b,{ai,width=390,height=780,web=true}={}){
   const ctx=null;const page=await b.newPage();
   await page.setViewport({width,height,isMobile:true,hasTouch:true,deviceScaleFactor:2});
   const errs=[];page.on('pageerror',e=>errs.push('PAGEERR '+e.message));page.on('console',m=>{if(m.type()==='error'&&!/Failed to load resource/.test(m.text()))errs.push('CONSOLE '+m.text())});
@@ -17,6 +17,8 @@ export async function newPage(b,{ai,width=390,height=780}={}){
   const calls=[];
   await page.exposeFunction('__aiMock',async(url,headers,body)=>{const c={url,headers,body:body?JSON.parse(body):null};calls.push(c);const r=ai?await ai(c):{status:500,json:{}};return {status:r.status||200,body:JSON.stringify(r.json??{}),delay:r.delay||0}});
   await page.evaluateOnNewDocument(()=>{window.__AUTO_DELAY=1e9;window.__AUTO_EVERY=1e9});
+  // Recherche web Gemini : en pause en production depuis la 1.39.3. Les anciens tests la réactivent (web=true) pour garder couverte la voie « réactivée » ; web=null = comportement réel (e35).
+  if(web!==null)await page.evaluateOnNewDocument(w=>{window.__RECHERCHE_WEB=w},web);
   // Clé gratuite partagée désactivée par défaut dans les tests (sauf e20) : les anciens tests gardent leur comportement.
   await page.evaluateOnNewDocument(()=>{try{if(localStorage.getItem('cave-gratuit')===null)localStorage.setItem('cave-gratuit','off')}catch(e){}});
   await page.evaluateOnNewDocument(()=>{

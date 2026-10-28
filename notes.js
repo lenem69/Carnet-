@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.39.3': ['La recherche web de Gemini est mise en pause : Google ne la propose pas avec une clé gratuite, et chaque essai gaspillait une requête. Les fiches sont rédigées directement par l’assistant, plus vite, et le message est simplement « Fiche mise à jour par l’assistant. ».'],
   '1.39.2': ['Quand la recherche web est refusée par Google, le message de la fiche indique maintenant la raison donnée par le service (« Détail du service »), pour pouvoir corriger la cause.'],
   '1.39.1': ['Les boutons et messages de l’appli parlent désormais de « l’assistant » (fiche par l’assistant, proposition de l’assistant, choix de l’assistant). Le mot « IA » reste dans les réglages, les limites et les explications sur les données envoyées.'],
   '1.39.0': ['Statistiques anonymes plus justes : une ouverture compte une fois par jour (et non à chaque rechargement de la page).'],

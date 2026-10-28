@@ -65,9 +65,9 @@ T('carte : sources cliquables (https, sans doublon, sans http)',lk.length===2&&l
 mode='nosrc';await page.evaluate(()=>document.querySelector('#list .w [data-a="e"]').click());await H.sl(300);
 await page.evaluate(()=>{const f=document.querySelector('#f-story');f.value='';const p=document.querySelector('#f-pairings');p.value=''});
 await H.click(page,'#f-gen');await H.sl(500);
-T('fiche sans source web : estimée (jamais vérifiée sans sources)',(await H.txt(page,'#toasts')).includes('fiche estimée'),await H.txt(page,'#toasts'));
+T('fiche sans source web : message unique « Fiche mise à jour par l’assistant. » (jamais vérifiée sans sources)',(await H.txt(page,'#toasts')).includes('Fiche mise à jour par l’assistant.')&&!(await H.txt(page,'#toasts')).includes('Rien de sûr trouvé'),await H.txt(page,'#toasts'));
 mode='notools';await H.click(page,'#f-gen');await H.sl(600);
-T('recherche refusée par le service : repli sans recherche + message',(await H.txt(page,'#toasts')).includes('Recherche web indisponible'),await H.txt(page,'#toasts'));
+T('recherche refusée par le service : repli sans recherche, même message unique (plus de « Recherche web indisponible »)',(await H.txt(page,'#toasts')).includes('Fiche mise à jour par l’assistant.')&&!(await H.txt(page,'#toasts')).includes('Recherche web indisponible')&&!(await H.txt(page,'#toasts')).includes('Détail du service'),await H.txt(page,'#toasts'));
 mode='ok';await page.evaluate(()=>document.querySelector('#f-cancel').click());await H.sl(300);
 // lot de 3 photos : nouveau douteux, doublon, nouveau
 n=1;await scan(['fixtures/lab.png','fixtures/lab.png','fixtures/lab.png'],'Importer des photos');await H.sl(800);

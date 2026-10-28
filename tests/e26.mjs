@@ -46,8 +46,8 @@ T('rien n’est envoyé avant la réponse',posts.length===0);
 // 4. réponse : Oui
 await H.tapText(page,'#dlgB button','Oui');await H.sl(1500);
 T('« Oui » : fenêtre fermée',!(await dlg()).show);
-T('« Oui » : un seul envoi, par formulaire POST, anonyme (sat|oui|version|semaine d’installation)',posts.length===1&&posts[0].m==='POST'&&/^entry\.42=sat\|oui\|1\.39\.2\|\d{4}-\d\d-\d\d$/.test(posts[0].body),JSON.stringify(posts));
-T('envoi sans identifiant d’appareil',posts.length===1&&!/[0-9a-f]{10}/.test(posts[0].body.replace(/\d{4}-\d\d-\d\d/,'').replace('1.39.2','')),JSON.stringify(posts));
+T('« Oui » : un seul envoi, par formulaire POST, anonyme (sat|oui|version|semaine d’installation)',posts.length===1&&posts[0].m==='POST'&&/^entry\.42=sat\|oui\|1\.39\.3\|\d{4}-\d\d-\d\d$/.test(posts[0].body),JSON.stringify(posts));
+T('envoi sans identifiant d’appareil',posts.length===1&&!/[0-9a-f]{10}/.test(posts[0].body.replace(/\d{4}-\d\d-\d\d/,'').replace('1.39.3','')),JSON.stringify(posts));
 let m=await meta('satisfaction');
 T('réponse mémorisée, marquée envoyée par formulaire',m&&m.rep==='oui'&&m.sent===true&&m.via==='form',JSON.stringify(m));
 T('aucun cadre ni formulaire laissé dans la page',await page.evaluate(()=>new Promise(r=>setTimeout(()=>r(!document.querySelector('iframe[name^="cave-envoi"]')&&!document.querySelector('form[target^="cave-envoi"]')),900))));
@@ -68,14 +68,14 @@ T('hors connexion : réponse gardée, pas envoyée',m&&m.rep==='non'&&m.sent===f
 await page.setOfflineMode(false);
 await page.reload();await H.sl(2200);
 m=await meta('satisfaction');
-T('connexion revenue : envoyée une fois, sans reposer la question',!(await dlg()).show&&posts.length===1&&/sat\|non\|1\.39\.2/.test(posts[0].body)&&m.sent===true&&m.via==='form',JSON.stringify([posts,m]));
+T('connexion revenue : envoyée une fois, sans reposer la question',!(await dlg()).show&&posts.length===1&&/sat\|non\|1\.39\.3/.test(posts[0].body)&&m.sent===true&&m.via==='form',JSON.stringify([posts,m]));
 posts.length=0;await page.reload();await H.sl(1500);
 T('puis plus rien à renvoyer',posts.length===0);
 // 8. réponse donnée avec la 1.32.0 (envoi non confirmé) : renvoyée une fois par la nouvelle méthode
 await setmeta('satisfaction',{rep:'oui',date:Date.now()-36e5,sent:true});
 posts.length=0;await page.reload();await H.sl(2200);
 m=await meta('satisfaction');
-T('ancienne réponse « envoyée » sans confirmation : renvoyée une fois par formulaire',posts.length===1&&/sat\|oui\|1\.39\.2/.test(posts[0].body)&&m.via==='form',JSON.stringify([posts,m]));
+T('ancienne réponse « envoyée » sans confirmation : renvoyée une fois par formulaire',posts.length===1&&/sat\|oui\|1\.39\.3/.test(posts[0].body)&&m.via==='form',JSON.stringify([posts,m]));
 // 9. valeur invalide refusée
 const bad=await page.evaluate(async()=>{const S=await import('./stats.js');return S.avisRepondre('peut-être')});
 T('réponse autre que oui/non refusée',bad===false);
