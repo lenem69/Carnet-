@@ -8,7 +8,7 @@ src=src.replace(/const STATS_POST = '[^']*';/,"const STATS_POST = 'https://docs.
 fs.writeFileSync(ap,src);
 const srv=await start(8123);const b=await H.browser();
 const {T,out}=H.suite('Statistiques');
-const RE=/^v1\|[0-9a-f]{10}\|\d{4}-\d\d-\d\d|1.40.0|\d{4}-\d\d-\d\d\|(-?\d+\|){23}-?\d+$/;
+const RE=/^v1\|[0-9a-f]{10}\|\d{4}-\d\d-\d\d|1.41.0|\d{4}-\d\d-\d\d\|(-?\d+\|){23}-?\d+$/;
 async function mk(){const r=await H.newPage(b);
   await H.simulerFormulaires(r.page);
   return r}
@@ -20,7 +20,7 @@ const past={weeks:{'2020-01-06':{n:{ouvertures:3,add_scan:2,conso:1,ia_ok:4},d:[
 let {page,errs}=await mk();
 await page.goto(H.URL0);await H.sl(1500);
 T('accord demandé à la première ouverture',(await H.shown(page,'#sDlg'))&&(await H.txt(page,'#dlgT')).includes('Aider'));
-T('texte : pas de nom de vin, photos ni clés',/Jamais le nom de vos vins/.test(await H.txt(page,'#dlgX')));
+T('texte : pas de nom de vin, photos ni clés, adresse non enregistrée, envoi quotidien annoncé',(t=>/jamais le nom de vos vins/i.test(t)&&/adresse n’est pas enregistrée/.test(t)&&/Chaque jour/.test(t))(await H.txt(page,'#dlgX')));
 await H.tapText(page,'#dlgB button','Non merci');await H.sl(300);
 T('refus enregistré',(await meta(page,'statsConsent'))==='non');
 T('refus : aucun identifiant',!(await meta(page,'statsId')));

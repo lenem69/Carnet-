@@ -22,6 +22,7 @@ const FEEDBACK_POST = 'https://docs.google.com/forms/d/e/1FAIpQLSfOirVg2Xykiv6Dv
 // Statistiques anonymes (facultatives) : formulaire Google dédié, à renseigner une fois créé.
 const STATS_POST = 'https://docs.google.com/forms/d/e/1FAIpQLScChmXM2fHOgYVgWUAmyNOrbO26o7RonBQoJ8EgzHIfYh9RUA/formResponse';
 const STATS_ENTRY = 'entry.1453674659';
+const STATS_RELAIS = 'https://cave-stats.m-jeanfrancois-morin.workers.dev/v1/jour';
 const FEEDBACK_ENTRY = 'entry.1804718778'; // identifiant du champ « Votre message » du formulaire (entry.NNN)
 const YEAR = new Date().getFullYear();
 const PAGE = 100;
@@ -1421,7 +1422,7 @@ async function doRestore(file) {
   if (c === 'replace') {
     const before = S.wines;
     if (!await persist(() => store.replaceAll(parsed.wines))) return;
-    S.wines = parsed.wines; S.limit = PAGE; render();
+    S.wines = parsed.wines; S.limit = PAGE; render(); Stats.noteOrigine('sauvegarde');
     toast(`✅ Cave restaurée : ${parsed.wines.length} vin(s).`, { action: before.length ? { label: 'Annuler', fn: async () => {
       if (await persist(() => store.replaceAll(before))) { S.wines = before; render(); toast('Restauration annulée.'); }
     } } : null });
@@ -1430,7 +1431,7 @@ async function doRestore(file) {
     const add = parsed.wines.filter(w => !keys.has(L.keyOf(w))).map(w => ids.has(w.id) ? { ...w, id: uid() } : w);
     if (!add.length) { toast('Tous les vins de la sauvegarde sont déjà dans votre cave.'); return; }
     if (!await persist(() => store.putWines(add))) return;
-    S.wines = S.wines.concat(add); render();
+    S.wines = S.wines.concat(add); render(); Stats.noteOrigine('sauvegarde');
     toast(`✅ ${add.length} vin(s) ajouté(s) depuis la sauvegarde.`);
   }
 }
@@ -2006,7 +2007,7 @@ const statsExtra = () => ({
   daysSinceBackup: S.lastBackup ? Math.floor((Date.now() - S.lastBackup) / 864e5) : -1,
 });
 async function initStats() {
-  Stats.cfg.post = STATS_POST; Stats.cfg.entry = STATS_ENTRY; Stats.cfg.version = VERSION;
+  Stats.cfg.post = STATS_POST; Stats.cfg.entry = STATS_ENTRY; Stats.cfg.version = VERSION; Stats.cfg.relais = STATS_RELAIS;
   AI.hooks.onStat = k => Stats.track(k);
   try {
     await Stats.init(S.wines.length);
@@ -2014,17 +2015,35 @@ async function initStats() {
     Stats.track('ouvertures');
     if (!store.persistent) Stats.track('err_stockage');
     await Stats.flush(statsExtra());
+    await askJourConsent();
+    await Stats.sendDays(statsExtra());
   } catch (e) { console.error('stats', e); }
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) Stats.flush(statsExtra()).catch(() => {}); });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) Stats.flush(statsExtra()).catch(() => {});
+    else Stats.sendDays(statsExtra()).catch(() => {});   // en quittant l'appli : les gestes du jour partent
+  });
 }
 async function askStatsConsent() {
   await whenFree();
   const c = await ask('Aider à améliorer l’appli ?',
-    'Une fois par semaine, l’appli peut envoyer à son auteur un petit récapitulatif anonyme : combien de fois vous l’avez ouverte, quelles fonctions vous utilisez, et les erreurs rencontrées. Jamais le nom de vos vins, jamais vos photos ni vos clés. Vous pouvez changer d’avis dans ⚙ Réglages et voir exactement ce qui est envoyé.',
+    'Chaque jour, l’appli peut envoyer à son auteur un petit récapitulatif anonyme : si vous l’avez ouverte, quelles fonctions vous utilisez, et les erreurs rencontrées. Rien que des nombres : jamais le nom de vos vins, jamais vos photos ni vos clés, et votre adresse n’est pas enregistrée. Vous pouvez changer d’avis dans ⚙ Réglages et voir exactement ce qui est envoyé.',
     [{ label: 'Oui, aider', value: 'oui' }, { label: 'Non merci', value: 'non', kind: 'o' }]);
   if (c !== 'oui' && c !== 'non') return; // fenêtre remplacée par une autre : on redemandera à la prochaine ouverture
   await Stats.setConsent(c === 'oui');
   toast(c === 'oui' ? 'Merci ! Vous pouvez arrêter à tout moment dans ⚙ Réglages.' : 'Rien ne sera envoyé.');
+}
+// Les appareils qui avaient accepté l'envoi hebdomadaire sont interrogés une fois : le récapitulatif quotidien va vers un autre serveur (celui de l'auteur).
+async function askJourConsent() {
+  if (Stats.consentState() !== 'oui' || Stats.jourState() !== null || !Stats.relaisConfigured()) return;
+  if (navigator.webdriver && !window.__JOUR) return; // les tests automatisés ne voient pas cette fenêtre, sauf s'ils la demandent
+  await whenFree();
+  const c = await ask('Un récapitulatif chaque jour ?',
+    'Vous aidez déjà l’appli avec des statistiques anonymes envoyées une fois par semaine. Pour mieux repérer les erreurs, l’auteur propose un envoi par jour, vers son propre serveur : toujours des nombres seulement, aucun nom de vin, aucune photo, aucune clé, et votre adresse n’est pas enregistrée. Vous pouvez voir exactement ce qui part dans ⚙ Réglages.',
+    [{ label: 'Oui, chaque jour', value: 'oui' }, { label: 'Non, rester hebdomadaire', value: 'non', kind: 'o' }]);
+  if (c !== 'oui' && c !== 'non') return;
+  await Stats.setJour(c === 'oui');
+  toast(c === 'oui' ? 'Merci ! Envoi quotidien activé.' : 'D’accord, l’envoi reste hebdomadaire.');
+  if (c === 'oui') Stats.sendDays(statsExtra()).catch(() => {});
 }
 // « Appréciez-vous l'application ? » : une fois, réponse obligatoire, envoyée anonymement (la fenêtre le dit). Réponse gardée et renvoyée plus tard si le réseau manquait.
 async function askAvis() {
@@ -2053,7 +2072,17 @@ async function askAvis() {
 }
 async function showStatsPreview() {
   const t = await Stats.preview(statsExtra());
-  await ask('Ce qui est envoyé', t ? `Voici la ligne de cette semaine (elle part la semaine prochaine). Ce sont uniquement des nombres : 1) version 2) identifiant aléatoire de cette installation 3) semaines 4) compteurs d’usage.\n\n${t}` : 'Rien : les statistiques sont désactivées.', [{ label: 'Fermer', value: null, kind: 'o' }]);
+  const j = await Stats.previewJour(statsExtra());
+  const etat = await Stats.jourEtat();
+  let txt = 'Rien : les statistiques sont désactivées.';
+  if (t) {
+    txt = `Chaque semaine (elle part la semaine suivante) : uniquement des nombres : 1) version 2) identifiant aléatoire de cette installation 3) semaines 4) compteurs d’usage.\n\n${t}`;
+    if (j) {
+      const dernier = etat && etat.ts ? (etat.ok ? `Dernier envoi réussi : ${new Date(etat.ts).toLocaleString('fr-FR')}.` : `Dernier essai du ${new Date(etat.ts).toLocaleString('fr-FR')} : pas de réponse du serveur, nouvel essai à la prochaine ouverture.`) : 'Pas encore d’envoi.';
+      txt += `\n\nChaque jour, vers le serveur de l’auteur (adresse non enregistrée) :\n\n${j}\n\n${dernier}`;
+    } else if (Stats.relaisConfigured()) txt += '\n\nL’envoi quotidien est désactivé.';
+  }
+  await ask('Ce qui est envoyé', txt, [{ label: 'Fermer', value: null, kind: 'o' }]);
 }
 
 /* ============ Installation ============ */

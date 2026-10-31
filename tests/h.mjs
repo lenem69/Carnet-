@@ -24,7 +24,15 @@ export async function newPage(b,{ai,width=390,height=780,web=true}={}){
   await page.evaluateOnNewDocument(()=>{
     window.__dl=[];
     const of=window.fetch.bind(window);
+    window.__jours=[];
     window.fetch=async(input,init={})=>{const url=typeof input==='string'?input:input.url;
+      // Serveur de statistiques quotidiennes de l'auteur : jamais appelé pour de vrai ; chaque envoi est noté dans window.__jours.
+      if(/cave-stats\.m-jeanfrancois-morin\.workers\.dev/.test(url)){
+        window.__jours.push({url,method:init.method||'GET',body:init.body||null,headers:init.headers||{}});
+        const mode=window.__JOUR_MODE||'ok';
+        if(mode==='reseau')throw new TypeError('Failed to fetch');
+        if(mode==='erreur')return new Response(JSON.stringify({ok:false,erreur:'base_indisponible'}),{status:500,headers:{'content-type':'application/json'}});
+        return new Response(JSON.stringify({ok:true}),{status:200,headers:{'content-type':'application/json'}})}
       if(/googleapis\.com|anthropic\.com|api\.example-ai\.com|cave-ia\.m-jeanfrancois-morin\.workers\.dev|cave-groq\.m-jeanfrancois-morin\.workers\.dev/.test(url)){
         const sig=init.signal;if(sig&&sig.aborted)throw new DOMException('aborted','AbortError');
         const r=await window.__aiMock(url,init.headers||{},init.body||null);
