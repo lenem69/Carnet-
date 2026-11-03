@@ -1471,11 +1471,22 @@ function renderAiChoices(selected) {
     : on.length === 1 ? 'Une seule IA configurée. Ajoutez-en une autre (choisissez-la dans la liste) : l’appli passera seule de l’une à l’autre si crédits ou limites sont épuisés.'
     : 'Aucune IA configurée.';
 }
+// Mesure locale des jetons Gemini (1.42.0) : rien n'est envoyé, le texte reste sur ce téléphone.
+const NOM_JETONS = { fiche: 'Fiches', garde: 'Contrôle de garde', valeur: 'Valeur estimée', plat: 'Choix de plat', avis: 'Avis de Magic', labelRapide: 'Étiquette (lecture légère)', label: 'Étiquette (lecture précise)' };
+async function renderJetons() {
+  const el = $('#ai-jetons'); if (!el) return;
+  const m = await AI.jetonsLus();
+  const ks = m && m.t ? Object.keys(m.t).filter(k => m.t[k] && m.t[k].n) : [];
+  if (!ks.length) { el.textContent = 'Aucun appel mesuré pour l’instant.'; return; }
+  const f = n => Math.round(n).toLocaleString('fr-FR');
+  el.textContent = ks.map(k => { const x = m.t[k]; return `${NOM_JETONS[k] || k} : ${x.n} appel${x.n > 1 ? 's' : ''}, en moyenne ${f(x.ent / x.n)} jetons envoyés, ${f(x.sor / x.n)} reçus${x.ref ? ` et ${f(x.ref / x.n)} de réflexion` : ''}.`; }).join(' ') + (m.depuis ? ` Depuis le ${m.depuis}.` : '');
+}
 async function openSettings() {
   closeSheet('sMenu');
   const s = AI.getSettings();
   renderAiChoices(s.provider);
   fillAiFields(s.provider);
+  renderJetons();
   $('#ai-key').type = 'password'; $('#ai-show').textContent = 'Voir';
   majGuideCle();
   $('#st-ver').textContent = VERSION;

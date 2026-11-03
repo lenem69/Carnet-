@@ -295,22 +295,30 @@ async function callOnce(s, prompt, images, signal, out) {
   // Gemini ; avec `wantSearch`, il consulte le web (Google Search) avant de répondre.
   const parts = [{ text: prompt }, ...b64.map(d => ({ inline_data: { mime_type: 'image/jpeg', data: d } }))];
   // Réflexion réduite (« low ») pour les tâches de lecture : bien plus rapide, même résultat. Refusée par un modèle ou le relais : on refait sans.
-  const gen = think => { const g = { temperature: 0.2 }; if (think) g.thinkingConfig = { thinkingLevel: think }; return g; };
+  // 1.42.0 : plafond de sortie (`maxOutG`) et schéma de réponse (`schema`) quand la tâche les fournit. Si le service les refuse, on refait sans
+  // (comme pour la réflexion) : une demande ne doit jamais échouer à cause d'une économie.
+  const gen = (think, eco) => {
+    const g = { temperature: 0.2 };
+    if (think) g.thinkingConfig = { thinkingLevel: think };
+    if (eco && out && out.maxOutG) g.maxOutputTokens = out.maxOutG;
+    return g;
+  };
   let think = (out && out.think) || '';
+  let eco = !!(out && (out.maxOutG || out.schema));
   const call = search => httpJson((s.gratuit ? PROXY : 'https://generativelanguage.googleapis.com') + '/v1beta/models/' + encodeURIComponent(s.model) + ':generateContent', {
     method: 'POST', signal,
     headers: s.gratuit ? { 'Content-Type': 'application/json', 'x-appareil': appareil, 'x-unites': String(s.unites || 1) } : { 'Content-Type': 'application/json', 'x-goog-api-key': s.key },
     body: JSON.stringify(search
-      ? { contents: [{ role: 'user', parts }], tools: [{ google_search: {} }], generationConfig: gen(think) }
-      : { contents: [{ role: 'user', parts }], generationConfig: { ...gen(think), responseMimeType: 'application/json' } }),
+      ? { contents: [{ role: 'user', parts }], tools: [{ google_search: {} }], generationConfig: gen(think, eco) }
+      : { contents: [{ role: 'user', parts }], generationConfig: { ...gen(think, eco), responseMimeType: 'application/json', ...(eco && out && out.schema ? { responseSchema: out.schema } : {}) } }),
   });
   let search = RECHERCHE_WEB && !!(out && out.wantSearch);
   let j;
   try {
     try { j = await call(search); }
     catch (e) {
-      if (!(think && e && (e.code === 'server' || e.code === 'bad_model'))) throw e;
-      think = ''; j = await call(search);
+      if (!((think || eco) && e && (e.code === 'server' || e.code === 'bad_model'))) throw e;
+      think = ''; eco = false; if (out) out.ecoRefusee = true; j = await call(search);
     }
   } catch (e) {
     // La recherche web est un plus : si le service la refuse (panne, ou limite propre à cet outil), on refait la demande sans elle.
@@ -318,7 +326,11 @@ async function callOnce(s, prompt, images, signal, out) {
     search = false; if (out) { out.fallback = true; out.fallbackWhy = String((e && e.message) || (e && e.code) || '').replace(/\s+/g, ' ').slice(0, 160); }
     j = await call(false);
   }
-  if (out) { out.searched = search; out.sources = []; }
+  if (out) {
+    out.searched = search; out.sources = [];
+    const u = j.usageMetadata;
+    if (u) out.usage = { ent: Number(u.promptTokenCount) || 0, sor: Number(u.candidatesTokenCount) || 0, ref: Number(u.thoughtsTokenCount) || 0 };
+  }
   const c = j.candidates && j.candidates[0];
   if (search && out) out.sources = webSources(c);
   const t = c && c.content && c.content.parts ? c.content.parts.map(p => p.text || '').join('') : '';
@@ -353,7 +365,21 @@ async function callProvider(s, prompt, { images = [], signal, onWait, out } = {}
 // Choix automatique de l’IA : on prend la première disponible (gratuit d’abord) ; si elle est épuisée ou en panne,
 // on passe tout de suite à la suivante. Le délai d’attente n’est utilisé que s’il ne reste plus d’autre choix.
 // `only` force un fournisseur (test de connexion).
+// Mesure locale des jetons (1.42.0) : entrée, sortie et réflexion par type d'appel, gardées sur ce téléphone seulement (aucun envoi).
+export async function noterJetons(kind, u) {
+  if (!kind || !u) return;
+  try {
+    const m = (await store.getMeta('iaJetons')) || {};
+    const t = { ...(m.t || {}) }; const x = { n: 0, ent: 0, sor: 0, ref: 0, ...(t[kind] || {}) };
+    t[kind] = { n: x.n + 1, ent: x.ent + u.ent, sor: x.sor + u.sor, ref: x.ref + u.ref };
+    await store.setMeta('iaJetons', { depuis: m.depuis || aujourdhui(), t });
+  } catch (e) { /* la mesure ne doit jamais gêner */ }
+}
+export async function jetonsLus() { try { return (await store.getMeta('iaJetons')) || null; } catch (e) { return null; } }
+export async function jetonsRaz() { try { await store.setMeta('iaJetons', null); } catch (e) { /* sans effet */ } }
+
 export async function callJson(prompt, opts = {}) {
+  if (!opts.out) opts = { ...opts, out: {} };
   // Le relais offert sert aussi de secours à une clé Gemini personnelle (sauf passe automatique et test de clé : noRelais).
   let list = opts.only ? configured().filter(p => p === opts.only || (p === 'groq' && opts.only === 'gemini')) : usable();
   // Le relais n'a pas de modèle d'image (la lecture d'étiquette reste à Gemini) : il ne sert qu'au texte.
@@ -375,7 +401,7 @@ export async function callJson(prompt, opts = {}) {
       // (celui des étiquettes) avant d'attendre ou de passer au relais. Un modèle choisi à la main n'est jamais remplacé.
       const retries = last && !opts.noRetry && !s.relais && !s.gratuit ? cfg.retries : 0;
       const autreModele = prov === 'gemini' && !s.gratuit && s.model === PROVIDERS.gemini.model ? MODELE_TACHE.label.gemini : '';
-      let r;
+      let r; opts.out.usage = null;
       try { r = await callProvider(s, prompt, opts, autreModele ? 0 : retries); }
       catch (e0) {
         if (!(autreModele && e0 && e0.code === 'rate_limited')) throw e0;
@@ -385,6 +411,7 @@ export async function callJson(prompt, opts = {}) {
       if (s.gratuit) await compter(s.unites);
       if (s.relais) await compterRelais(s.unites);
       if (opts.out) opts.out.provider = prov;
+      if (prov === 'gemini') await noterJetons(opts.kind || opts.task, opts.out.usage);
       return r;
     } catch (e) {
       if (e && e.name === 'AbortError') throw e;
@@ -416,6 +443,15 @@ export async function callJson(prompt, opts = {}) {
 }
 
 /* ---------- Demandes métier ---------- */
+// Schémas de réponse (1.42.0) : réponse bornée et valide du premier coup, sans texte autour. Types en majuscules (format de l'API Gemini).
+const T_STR = { type: 'STRING' }, T_INT = { type: 'INTEGER' }, T_NUM = { type: 'NUMBER' };
+const T_LISTE = it => ({ type: 'ARRAY', items: it });
+const T_ITEMS = (props, req) => ({ type: 'OBJECT', properties: { items: T_LISTE({ type: 'OBJECT', properties: props, required: req }) }, required: ['items'] });
+const SCH_FICHES = T_ITEMS({ id: T_STR, g: T_STR, s: T_STR, f: T_INT, t: T_INT, p: T_LISTE(T_STR), u: T_LISTE(T_STR), v: T_LISTE(T_NUM), c: T_STR }, ['id']);
+const SCH_GARDE = T_ITEMS({ id: T_STR, f: T_INT, t: T_INT }, ['id', 'f', 't']);
+const SCH_VALEUR = T_ITEMS({ id: T_STR, min: T_NUM, max: T_NUM }, ['id', 'min', 'max']);
+const SCH_PLAT = T_ITEMS({ id: T_STR, why: T_STR }, ['id']);
+
 const SCHEMA_LABEL = '{"name":"cuvée","dom":"domaine/château","year":2019,"color":"Rouge|Blanc|Rosé|Pétillant|Autre","region":"appellation","grape":"cépages","lecture":"haute si tout est lisible, moyenne si tu as dû deviner une partie, faible sinon"}';
 const SCHEMA_FICHE = '{"grape":"cépages","story":"2-3 phrases sur la cuvée, le domaine et le millésime","from":année de début de garde,"to":année de fin de garde,"pairings":["4 à 6 plats précis"],"conf":"vérifiée si les pages web consultées confirment cette cuvée, ce millésime et la fenêtre de garde, sinon estimée"}';
 const EXPERT = 'Tu es un sommelier expert de 30 ans d’expérience, qui connaît les grands guides (RVF, Bettane+Desseauve, Parker, Decanter). Quand tu complètes une fiche de vin, ne la laisse jamais vide : si la cuvée exacte est introuvable, déduis la fiche du domaine, de l’appellation, du millésime et de la couleur (cépages de l’appellation, style, histoire du domaine ou de la région, accords classiques, garde habituelle), et signale l’incertitude plutôt que de te taire. Écris les pourcentages avec le symbole % (par exemple 21 %), jamais en toutes lettres.';
@@ -538,7 +574,7 @@ function ficheFrom(d) {
 export async function makeFiches(list, opts) {
   list = capGratuit(list); opts = { ...(opts || {}), unites: list.length };
   const year = new Date().getFullYear();
-  const d = await callJson(`${EXPERT} Pour chaque vin de la liste, complète ou corrige si besoin : g=cépages, s=histoire de la cuvée et du millésime en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ${year}), p=4 accords mets courts, u=liste des champs que tu ne connais pas sûrement parmi "cépage", "histoire", "garde", "accords" (liste vide si tu es sûr), v=[min,max] fourchette indicative du prix en euros d’une bouteille de 75 cl (sans recherche), c="estimée". a et b, quand ils existent, sont la fenêtre de garde actuelle de l’appli : si elle te paraît juste à un an près, renvoie les mêmes années dans f et t, sinon donne ta propre fenêtre. Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region, a: w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? w.from : undefined, b: w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? w.to : undefined })))}. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"u":[],"v":[20,40],"c":"estimée"}]} avec une entrée par vin.`, opts);
+  const d = await callJson(`${EXPERT} Pour chaque vin de la liste, complète ou corrige si besoin : g=cépages, s=histoire de la cuvée et du millésime en 1 à 2 phrases, f=année de début de garde, t=année de fin de garde (nous sommes en ${year}), p=4 accords mets courts, u=liste des champs que tu ne connais pas sûrement parmi "cépage", "histoire", "garde", "accords" (liste vide si tu es sûr), v=[min,max] fourchette indicative du prix en euros d’une bouteille de 75 cl (sans recherche), c="estimée". a et b, quand ils existent, sont la fenêtre de garde actuelle de l’appli : si elle te paraît juste à un an près, renvoie les mêmes années dans f et t, sinon donne ta propre fenêtre. Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region, a: w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? w.from : undefined, b: w.from && w.to && !(w.src && (w.src.from === 'user' || w.src.to === 'user')) ? w.to : undefined })))}. Réponds uniquement par un objet JSON {"items":[{"id":"…","g":"…","s":"…","f":2026,"t":2030,"p":["…"],"u":[],"v":[20,40],"c":"estimée"}]} avec une entrée par vin.`, { ...opts, kind: 'fiche', out: { think: 'low', maxOutG: 1200 + 500 * list.length, schema: SCH_FICHES } });
   const items = Array.isArray(d) ? d : d && Array.isArray(d.items) ? d.items : null;
   if (!items) throw { code: 'invalid_json' };
   const out = new Map();
@@ -572,7 +608,7 @@ export async function makeFichesWeb(list, opts = {}) {
 export async function pickForDish(dish, candidates, opts) {
   const year = new Date().getFullYear();
   const cat = candidates.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, g: w.grape, r: w.region, de: w.from, a: w.to, acc: w.pairings.join(', ') }));
-  const d = await callJson(`Tu es sommelier. Plat prévu : « ${dish} ». Année en cours : ${year}. Voici des vins de ma cave (id, nom, domaine, millésime, couleur, cépage, région, début et fin de garde, accords) : ${JSON.stringify(cat)}. Choisis les 3 à 5 meilleurs vins pour ce plat, en privilégiant ceux qui sont dans leur fenêtre de dégustation et à boire en priorité (fin de garde proche) à qualité d’accord comparable. Réponds uniquement par un objet JSON {"items":[{"id":"…","why":"une phrase : pourquoi cet accord et ce moment"}]}.`, opts);
+  const d = await callJson(`Tu es sommelier. Plat prévu : « ${dish} ». Année en cours : ${year}. Voici des vins de ma cave (id, nom, domaine, millésime, couleur, cépage, région, début et fin de garde, accords) : ${JSON.stringify(cat)}. Choisis les 3 à 5 meilleurs vins pour ce plat, en privilégiant ceux qui sont dans leur fenêtre de dégustation et à boire en priorité (fin de garde proche) à qualité d’accord comparable. Réponds uniquement par un objet JSON {"items":[{"id":"…","why":"une phrase : pourquoi cet accord et ce moment"}]}.`, { ...opts, kind: 'plat', out: { think: 'low', maxOutG: 1500, schema: SCH_PLAT } });
   const items = Array.isArray(d) ? d : d && Array.isArray(d.items) ? d.items : null;
   if (!items) throw { code: 'invalid_json' };
   return items.filter(x => x && x.id != null).map(x => ({ id: String(x.id), why: String(x.why || '') }));
@@ -583,7 +619,7 @@ export async function pickForDish(dish, candidates, opts) {
 // points solides, manques, priorités, et une analyse détaillée. Les anciens avis (court + complet) restent lisibles.
 const liste = (v, n, len) => (Array.isArray(v) ? v.map(x => symPct(String(x == null ? '' : x).trim()).slice(0, len)).filter(Boolean).slice(0, n) : []);
 export async function avisCave(resume, opts = {}) {
-  const meta = { effort: 'medium' };
+  const meta = { effort: 'medium' }; opts = { ...opts, kind: 'avis' };
   const d = await callJson(`${EXPERT}
 
 RÔLE
@@ -625,7 +661,7 @@ Ce sont des impressions fondées sur des chiffres, pas des faits vérifiés.`, {
 export async function verifGarde(list, opts = {}) {
   list = capGratuit(list); opts = { ...opts, unites: list.length };
   const year = new Date().getFullYear();
-  const d = await callJson(`${EXPERT} Contrôle de la fenêtre de garde (nous sommes en ${year}). Pour chaque vin de la liste, a et b sont la fenêtre de garde actuelle de l’appli : si elle te paraît juste à un an près, renvoie les mêmes années dans f et t, sinon donne ta propre fenêtre (f=année de début de garde, t=année de fin de garde). Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region, a: w.from, b: w.to })))}. Réponds uniquement par {"items":[{"id":"…","f":2026,"t":2030}]} avec une entrée par vin.`, opts);
+  const d = await callJson(`${EXPERT} Contrôle de la fenêtre de garde (nous sommes en ${year}). Pour chaque vin de la liste, a et b sont la fenêtre de garde actuelle de l’appli : si elle te paraît juste à un an près, renvoie les mêmes années dans f et t, sinon donne ta propre fenêtre (f=année de début de garde, t=année de fin de garde). Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region, a: w.from, b: w.to })))}. Réponds uniquement par {"items":[{"id":"…","f":2026,"t":2030}]} avec une entrée par vin.`, { ...opts, kind: 'garde', out: { think: 'minimal', maxOutG: 800 + 60 * list.length, schema: SCH_GARDE } });
   const items = Array.isArray(d) ? d : d && Array.isArray(d.items) ? d.items : null;
   if (!items) throw { code: 'invalid_json' };
   const out = new Map();
@@ -639,7 +675,7 @@ export async function verifGarde(list, opts = {}) {
 // Valeur indicative : fourchette de prix d'une bouteille de 75 cl par vin, sans recherche web, par lot.
 export async function estimeValeur(list, opts = {}) {
   list = capGratuit(list); opts = { ...opts, unites: list.length };
-  const d = await callJson(`${EXPERT} Pour chaque vin de la liste, donne une fourchette indicative du prix de marché en euros d'une bouteille de 75 cl (min et max), à partir de tes connaissances, sans recherche. Si tu ne connais pas la cuvée, donne une fourchette large et prudente. Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region })))}. Réponds uniquement par {"items":[{"id":"…","min":0,"max":0}]} avec une entrée par vin.`, opts);
+  const d = await callJson(`${EXPERT} Pour chaque vin de la liste, donne une fourchette indicative du prix de marché en euros d'une bouteille de 75 cl (min et max), à partir de tes connaissances, sans recherche. Si tu ne connais pas la cuvée, donne une fourchette large et prudente. Vins : ${JSON.stringify(list.map(w => ({ id: w.id, n: w.name, d: w.dom, y: w.year, c: w.color, r: w.region })))}. Réponds uniquement par {"items":[{"id":"…","min":0,"max":0}]} avec une entrée par vin.`, { ...opts, kind: 'valeur', out: { think: 'minimal', maxOutG: 800 + 60 * list.length, schema: SCH_VALEUR } });
   const items = Array.isArray(d) ? d : d && Array.isArray(d.items) ? d.items : null;
   if (!items) throw { code: 'invalid_json' };
   const out = new Map();
