@@ -4,6 +4,7 @@ import XLSX from 'xlsx';
 import fs from 'fs';
 import * as A from '../apogee.js';
 import * as PR from '../profils.js';
+import { REPERES } from '../reperes.js';
 const out=[];const T=(n,c,x='')=>out.push((c?'PASS ':'FAIL ')+n+(c?'':' → '+x));
 // Température de service et repères d'appellation (1.26.0)
 {const sv=(color,region,name='X')=>A.service({name,color,region});const tx=o=>o&&o.min+'-'+o.max;
@@ -1056,5 +1057,15 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   T('consigne : aucune autre donnée de la fiche (prix, emplacement, notes)', !/99|Casier|secret/.test(L.consigneHistoire({ dom: 'D', name: 'N', price: 99, loc: 'Casier B', note: 'secret' })));
   const u = L.urlRechercheIA(c);
   T('adresse Google : mode IA, consigne encodée', u.startsWith('https://www.google.com/search?udm=50&q=') && decodeURIComponent(u.split('&q=')[1]) === c);
+  console.log(out.slice(o0).join('\n'));
+}
+// Repères générés : garde-fou sur les températures de service (issue #2)
+// anomalie = blanc servi à 14 °C ou plus, rouge servi à 12 °C ou moins.
+{
+  const o0 = out.length;
+  const aberrants = Object.entries(REPERES).filter(([k, e]) => e.s && ((k.endsWith('|B') && e.s[0] >= 14) || (k.endsWith('|R') && e.s[1] <= 12)));
+  T('reperes: aucune température aberrante (blanc ≥ 14 °C, rouge ≤ 12 °C)', aberrants.length === 0, JSON.stringify(aberrants));
+  T('reperes: Chassagne-Montrachet village blanc servi frais (11-13)', JSON.stringify(REPERES['chassagne montrachet|v|B'].s) === '[11,13]', JSON.stringify(REPERES['chassagne montrachet|v|B'].s));
+  T('reperes: Côtes du Jura rouge servi chambré (14-16, comme profils.js)', JSON.stringify(REPERES['cotes du jura|v|R'].s) === '[14,16]', JSON.stringify(REPERES['cotes du jura|v|R'].s));
   console.log(out.slice(o0).join('\n'));
 }

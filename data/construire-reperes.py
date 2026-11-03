@@ -18,6 +18,14 @@ BLANCS = {'chardonnay', 'sauvignon', 'sauvignon blanc', 'chenin', 'riesling', 'a
 ALIAS = {'sauvignon blanc': 'sauvignon', 'chenin blanc': 'chenin', 'melon': 'melon de bourgogne', 'gamay noir': 'gamay', 'pinot noir': 'pinot noir', 'grenache noir': 'grenache', 'syrah shiraz': 'syrah', 'riesling renano': 'riesling'}
 LIBELLE = {'sauvignon': 'Sauvignon blanc', 'chenin': 'Chenin blanc'}
 
+# Corrections manuelles validées par le mainteneur (issue #2) : anomalies du fichier de référence
+# (valeur de rouge sur une ligne blanc, ou inversement). S'appliquent après agrégation,
+# jusqu'à correction du fichier source ; retirées quand le fichier de référence est corrigé.
+CORRECTIONS = {
+    ('chassagne montrachet', 'v', 'B'): {'s': [11, 13]},
+    ('cotes du jura', 'v', 'R'): {'s': [14, 16]},
+}
+
 def cepages(txt):
     t = n(txt)
     t = re.sub(r'\d+\s*(,\d+)?\s*%', ' ', t)
@@ -97,6 +105,8 @@ def main(path):
             mil = (lo + max(lo, hi)) / 2
             if sum(1 for x in s if abs((x[0] + x[1]) / 2 - mil) <= 1) / len(s) >= 0.6:  # repère seulement si le fichier est cohérent
                 e['s'] = [lo, max(lo, hi)]
+                if (c == 'B' and e['s'][0] >= 14) or (c == 'R' and e['s'][1] <= 12):  # garde-fou : valeur de rouge sur une ligne blanc, ou inversement
+                    sys.stderr.write(f'avertissement : service {e["s"][0]}-{e["s"][1]} °C inattendu pour {b}|{nv}|{c} (garde-fou : blanc ≥ 14 °C, rouge ≤ 12 °C) — vérifier le fichier de référence\n')
         cf = [x for x in (carafe(r['conseil_service']) for r in v) if x]
         if len(cf) >= 4:
             k, m = collections.Counter(cf).most_common(1)[0]
@@ -117,7 +127,10 @@ def main(path):
                     if re.search(rx, t): cnt[k] += 1
             top = [k for k, m in cnt.most_common(3) if m / len(v) >= 0.3]
             if top: e['a'] = top
-        if len(e) > 1: out[f'{b}|{nv}|{c}'] = e
+        if len(e) > 1:
+            corr = CORRECTIONS.get((b, nv, c))
+            if corr and corr.get('s'): e['s'] = corr['s']  # correction validée par le mainteneur, jusqu'à correction du fichier de référence
+            out[f'{b}|{nv}|{c}'] = e
     libelles = {k: l for k, _, l in FAM}
     sys.stdout.write('// GÉNÉRÉ par data/construire-reperes.py à partir d\'un fichier de référence de l\'utilisateur (non versionné). Ne pas éditer à la main.\n'
                      '// Repères PAR APPELLATION (fiabilité B : une source commerciale, médianes et majorités). Jamais une donnée de cuvée, jamais un texte recopié.\n'
