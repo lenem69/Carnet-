@@ -6,12 +6,13 @@ import * as AI from './ai.js';
 import * as Cle from './cle.js';
 import * as IMP from './importer.js';
 import { saveFile, readText } from './files.js';
+import { qrSvg } from './qr.js';
 import * as Stats from './stats.js';
 import * as Notes from './notes.js';
 import { demoWines, isDemo } from './demo.js';
 import { apogee, apogeeTexte, serviceTexte, carafageTexte, fenetreRang, repereVin } from './apogee.js';
 import { profil, accordsRepere } from './profils.js';
-import { chiffres, statutOf } from './chiffres.js';
+import { chiffres, statutOf, regionDeVin } from './chiffres.js';
 import { fenetreMaturite, phase, pastilleHtml, friseSvg, fiabilite, fiabiliteHtml } from './maturite.js';
 const STATUT_LIBELLE = { pret: 'Prêt à boire', garder: 'À garder', urgence: 'Urgence' };
 import { QUOTES } from './quotes.js';
@@ -28,7 +29,7 @@ const YEAR = new Date().getFullYear();
 const PAGE = 100;
 const BACKUP_DAYS = 60;
 const S = {
-  wines: [], tab: 'cave', filt: 'Tous', sort: 'name', q: '', limit: PAGE, bmode: 'year',
+  wines: [], tab: 'cave', filt: 'Tous', sort: 'name', q: '', limit: PAGE, bmode: 'year', reg: '', site: '', spk: '', bsort: 'prio',
   editId: null, formExtra: {}, lastBackup: 0, update: null, ready: false, highlight: null, lastTab: null, ouvert: new Set(), title: 'Ma cave', bible: null,
 };
 const DEFAULT_TITLE = 'Ma cave';
@@ -204,6 +205,7 @@ window.addEventListener('popstate', () => {
     requestClose(id);
     return;
   }
+  if (id === 'sSet' && setVue !== 'home' && setVue !== 'flat') { try { history.pushState({ modal: 1 }, ''); } catch (e) { /* */ } setVueTo('home'); return; }
   hideSheet(id);
   if (stack.length) { try { history.pushState({ modal: 1 }, ''); } catch (e) { /* */ } }
 });
@@ -248,12 +250,14 @@ const fmtPrice = v => (Math.round(v * 100) / 100).toLocaleString('fr-FR', { mini
 
 function card(w, mode, why) {
   const st = L.status(w, YEAR);
-  const meta = [w.color, w.grape, w.price !== '' ? fmtPrice(w.price) : '', w.loc ? '📍 ' + w.loc : ''].filter(Boolean).map(esc).join(' · ');
+  const sk = L.sparkKind(w);
+  const meta = [L.colorLabel(w.color), sk && (sk !== 'Autre' || w.spk) ? sk : '', w.grape, w.price !== '' ? fmtPrice(w.price) : '', w.site ? '🏠 ' + w.site : '', w.loc ? '📍 ' + w.loc : ''].filter(Boolean).map(esc).join(' · ');
   // Maturité (frise, pastille, fiabilité) : seulement pour un vin avec millésime et une fenêtre exploitable.
   const apoM = w.name && w.year ? apogee(w, YEAR, L.bibleQuality(w, S.bible)) : null;
   const mat = apoM ? fenetreMaturite(w, apoM) : null;
   const tags = [
     w.check ? '<span class="tag bad">à vérifier</span>' : '',
+    mode === 'boire' && w.qty > 0 ? `<span class="tag nb">${w.qty} bouteille${w.qty > 1 ? 's' : ''}</span>` : '',
     mat ? pastilleHtml(mat, YEAR) : st ? `<span class="tag stp ${st.cls}">${st.label}${w.from || w.to ? ' (' + (w.from || '…') + '–' + (w.to || '…') + ')' : ''}</span>` : '',
     w.qty <= 0 ? '<span class="tag">plus en cave</span>' : '',
   ].filter(Boolean).join(' ');
@@ -391,16 +395,44 @@ function renderBanners() {
 
 function filtered() {
   return S.wines.filter(w => (S.filt === 'Tous' || (S.filt === 'À vérifier' ? w.check : w.color === S.filt)) && L.matchesQuery(w, S.q)
+    && (!S.spk || S.filt !== 'Pétillant' || L.sparkKind(w) === S.spk)
+    && (!S.reg || regionDeVin(w) === S.reg)
+    && (!S.site || (w.site || '') === S.site)
     && (!S.statut || (w.qty > 0 && statutOf(w, YEAR) === S.statut)));
 }
+
+// Remplit une liste déroulante en gardant le choix courant ; renvoie le choix retenu ('' si le choix n'existe plus).
+function remplirSelect(sel, premier, options, valeur) {
+  const ok = options.some(o => o[0] === valeur);
+  const v = ok ? valeur : '';
+  sel.innerHTML = `<option value="">${esc(premier)}</option>` + options.map(([k, lib]) => `<option value="${esc(k)}">${esc(lib)}</option>`).join('');
+  sel.value = v;
+  return v;
+}
+// Couleurs toujours proposées sur l'accueil (1.44.0) : rouge, blanc, rosé, effervescent. « Autre » seulement s'il y en a.
+const COULEURS_FIXES = ['Rouge', 'Blanc', 'Rosé', 'Pétillant'];
 
 function renderList() {
   const counts = { Tous: S.wines.length, 'À vérifier': S.wines.filter(w => w.check).length };
   for (const c of L.COLORS) counts[c] = S.wines.filter(w => w.color === c).length;
-  const chips = ['Tous', ...(counts['À vérifier'] || S.filt === 'À vérifier' ? ['À vérifier'] : []), ...L.COLORS.filter(c => counts[c] || S.filt === c)];
+  const chips = ['Tous', ...(counts['À vérifier'] || S.filt === 'À vérifier' ? ['À vérifier'] : []), ...L.COLORS.filter(c => COULEURS_FIXES.includes(c) || counts[c] || S.filt === c)];
   // Filtre par statut (depuis Magic) : une pastille pour le retirer.
   const pastille = S.statut ? `<button class="chip on" data-stat="">✕ ${STATUT_LIBELLE[S.statut]}</button>` : '';
-  $('#chips').innerHTML = pastille + chips.map(c => `<button class="chip${c === S.filt ? ' on' : ''}" data-c="${c}">${c} <span class="n">${counts[c] || 0}</span></button>`).join('');
+  $('#chips').innerHTML = pastille + chips.map(c => `<button class="chip${c === S.filt ? ' on' : ''}" data-c="${c}">${esc(L.colorLabel(c))} <span class="n">${counts[c] || 0}</span></button>`).join('');
+  // Type d'effervescent : une seconde rangée de puces, seulement quand « Effervescent » est choisi.
+  const bulles = S.wines.filter(w => w.color === 'Pétillant');
+  const parType = {}; for (const w of bulles) { const k = L.sparkKind(w); parType[k] = (parType[k] || 0) + 1; }
+  if (S.filt !== 'Pétillant') S.spk = '';
+  $('#chips2').hidden = S.filt !== 'Pétillant' || !bulles.length;
+  $('#chips2').innerHTML = ['', ...L.SPARK_TYPES.filter(k => parType[k] || S.spk === k)].map(k => `<button class="chip${k === S.spk ? ' on' : ''}" data-k="${k}">${k || 'Tous'} <span class="n">${k ? (parType[k] || 0) : bulles.length}</span></button>`).join('');
+  // Région (grandes régions, comme Magic) et lieu : listes déroulantes avec le nombre de vins.
+  const parReg = new Map(); for (const w of S.wines) { const r = regionDeVin(w); parReg.set(r, (parReg.get(r) || 0) + 1); }
+  S.reg = remplirSelect($('#fReg'), 'Toutes les régions', [...parReg].sort((a, b) => a[0].localeCompare(b[0], 'fr')).map(([k, n]) => [k, `${k} (${n})`]), S.reg);
+  const parSite = new Map(); for (const w of S.wines) if (w.site) parSite.set(w.site, (parSite.get(w.site) || 0) + 1);
+  $('#fSite').hidden = parSite.size < 2 && !S.site;
+  S.site = remplirSelect($('#fSite'), 'Tous les lieux', [...parSite].sort((a, b) => a[0].localeCompare(b[0], 'fr')).map(([k, n]) => [k, `${k} (${n})`]), S.site);
+  $('#fReg').hidden = parReg.size < 2 && !S.reg;
+  $('#sort').value = S.sort;
   if (!S.ready) { $('#list').innerHTML = '<p class="empty">Chargement de votre cave…</p>'; return; }
   if (!S.wines.length) {
     $('#list').innerHTML = `<div class="empty vide"><p class="vt"><b>Bienvenue dans votre cave.</b></p><p>Pour voir tout de suite comment ça marche (tri, recherche, accords, dates de garde), essayez avec 15 bouteilles fictives. Vous les effacez d’un geste.</p><div class="stack">
@@ -438,6 +470,7 @@ function renderBoire() {
   const modes = [['year', 'Cette année'], ['soon', 'À boire vite'], ['dish', 'Avec un plat'], ['apogee', 'Apogée']];
   $('#bchips').innerHTML = modes.map(([k, l]) => `<button class="chip${k === S.bmode ? ' on' : ''}${k === 'apogee' ? ' sec' : ''}" data-b="${k}">${l}</button>`).join('');
   $('#plat').hidden = S.bmode !== 'dish';
+  $('#bsort-w').hidden = S.bmode === 'dish'; $('#bsort').value = S.bsort;
   if (S.bmode === 'dish') return; // résultats rendus par la recherche
   const stock = S.wines.filter(w => w.qty > 0);
   let items;
@@ -445,15 +478,18 @@ function renderBoire() {
     // Vins dont la fenêtre d'apogée contient l'année en cours, du pic le plus proche au plus lointain.
     items = stock.map(w => ({ w, a: apogee(w, YEAR, L.bibleQuality(w, S.bible)) }))
       .filter(x => !x.a.sansMillesime && x.a.from <= YEAR && YEAR <= x.a.to)
-      .sort((x, y) => x.a.pic - y.a.pic || (x.w.name || '').localeCompare(y.w.name || '', 'fr'));
+      .sort((x, y) => x.a.pic - y.a.pic || y.w.qty - x.w.qty || (x.w.name || '').localeCompare(y.w.name || '', 'fr'));
   } else {
     items = stock.map(w => ({ w, f: fenetreDe(w) }))
       .filter(x => {
         if (S.bmode === 'year') return x.f ? (!x.f.from || x.f.from <= YEAR) && (!x.f.to || x.f.to >= YEAR) : true; // sans millésime : prêt à boire
         return !!(x.f && x.f.to && x.f.to <= YEAR + 1);
       })
-      .sort((x, y) => ((x.f && x.f.to) || 9999) - ((y.f && y.f.to) || 9999));
+      .sort((x, y) => ((x.f && x.f.to) || 9999) - ((y.f && y.f.to) || 9999) || y.w.qty - x.w.qty);   // à égalité de fin de garde : le plus de bouteilles d'abord (1.44.0)
   }
+  // Tri choisi par l'utilisateur : le tri est stable, l'ordre de priorité reste le départage.
+  if (S.bsort === 'qty') items.sort((x, y) => y.w.qty - x.w.qty);
+  else if (S.bsort === 'year') items.sort((x, y) => (x.w.year || 9999) - (y.w.year || 9999));
   // Pourquoi ce vin : chiffres déjà calculés par les règles de l’appli, rien d’inventé.
   const pourquoi = x => {
     if (S.bmode === 'apogee') return x.a && x.a.pic ? `Apogée estimée vers ${x.a.pic} (fenêtre ${x.a.from}–${x.a.to}).` : '';
@@ -472,7 +508,7 @@ function renderDatalists() {
     const vals = [...new Set(S.wines.map(w => w[key]).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), 'fr')).slice(0, 400);
     $('#' + id).innerHTML = vals.map(v => `<option value="${esc(v)}">`).join('');
   };
-  fill('dl-name', 'name'); fill('dl-dom', 'dom'); fill('dl-region', 'region'); fill('dl-loc', 'loc');
+  fill('dl-name', 'name'); fill('dl-dom', 'dom'); fill('dl-region', 'region'); fill('dl-loc', 'loc'); fill('dl-site', 'site');
 }
 
 function render() {
@@ -582,6 +618,7 @@ function openForm(w, title) {
   F('region').value = v.region || ''; F('grape').value = v.grape || '';
   F('qty').value = v.qty ?? 1; F('price').value = v.price !== undefined && v.price !== '' ? String(v.price).replace('.', ',') : '';
   F('from').value = v.from || ''; F('to').value = v.to || ''; F('loc').value = v.loc || '';
+  F('site').value = v.site || ''; F('spk').value = L.SPARK_TYPES.includes(v.spk) ? v.spk : ''; majSpk();
   F('story').value = v.story || ''; F('pairings').value = (v.pairings || []).join(', '); F('note').value = v.note || '';
   F('gen').hidden = S.editId ? L.generationFaite(w) : false; // une seule génération par vin
   majRelecture();
@@ -620,9 +657,19 @@ async function webHistoire() {
   if (old) { old.histWeb = X.web; await persist(() => store.putWines([old])); }
 }
 
+// Type d'effervescent : le choix n'apparaît que pour la couleur « Effervescent » ; « Automatique » montre ce que l'appli déduit.
+function majSpk() {
+  const bulles = F('color').value === 'Pétillant';
+  $('#f-spk-w').hidden = !bulles;
+  if (!bulles) return;
+  const auto = L.sparkKind({ color: 'Pétillant', region: F('region').value, name: F('name').value, dom: F('dom').value });
+  $('#f-spk-n').textContent = F('spk').value ? 'Choisi par vous.' : `Déduit de l’appellation et du nom : ${auto}. Corrigez-le ici si besoin.`;
+}
+
 function readForm() {
   const yr = v => { const n = num(v); return n === '' ? '' : n; };
   return {
+    site: F('site').value.trim(), spk: F('color').value === 'Pétillant' ? F('spk').value : '',
     name: F('name').value.trim(), dom: F('dom').value.trim(), year: yr(F('year').value), color: F('color').value,
     region: F('region').value.trim(), grape: F('grape').value.trim(), qty: num(F('qty').value), price: price(F('price').value),
     priceRaw: F('price').value.trim(), from: yr(F('from').value), to: yr(F('to').value), loc: F('loc').value.trim(),
@@ -1481,8 +1528,53 @@ async function renderJetons() {
   const f = n => Math.round(n).toLocaleString('fr-FR');
   el.textContent = ks.map(k => { const x = m.t[k]; return `${NOM_JETONS[k] || k} : ${x.n} appel${x.n > 1 ? 's' : ''}, en moyenne ${f(x.ent / x.n)} jetons envoyés, ${f(x.sor / x.n)} reçus${x.ref ? ` et ${f(x.ref / x.n)} de réflexion` : ''}.`; }).join(' ') + (m.depuis ? ` Depuis le ${m.depuis}.` : '');
 }
+/* Réglages en liste (1.44.0) : une vue « accueil » avec des lignes-résumés, puis un volet par rubrique. */
+let setVue = 'home';
+const TITRES_VUES = { ia: 'IA (optionnelle)', auto: 'Fiches automatiques', data: 'Données', stats: 'Statistiques anonymes', app: 'Application' };
+function setVueTo(v) {
+  setVue = window.__SET_FLAT ? 'flat' : v;
+  const sh = $('#sSet .sheet');
+  sh.dataset.view = setVue;
+  $('#set-back').hidden = setVue === 'home' || setVue === 'flat';
+  $('#stT').textContent = TITRES_VUES[setVue] || 'Réglages';
+  const sc = sh.querySelector('.sb') || sh; sc.scrollTop = 0;
+}
+function lienAppli() {
+  try { const u = new URL(location.href); u.hash = ''; u.search = ''; u.pathname = u.pathname.replace(/index\.html$/, ''); return u.href; } catch (e) { return location.href; }
+}
+function majResumesReglages() {
+  const on = AI.configuredKeys();
+  $('#rs-ia').textContent = on.includes('gemini') ? 'Clé Gemini personnelle active' : on.length ? 'Clé personnelle : ' + AI.PROVIDERS[on[0]].label.split(' ')[0] : 'Aide offerte, sans clé';
+  $('#rs-auto').textContent = auto.on ? 'Activées : fiches complétées en arrière-plan' : 'Désactivées';
+  $('#rs-data').textContent = `${S.wines.length} vin${S.wines.length > 1 ? 's' : ''} enregistré${S.wines.length > 1 ? 's' : ''} sur ce téléphone`;
+  const stOk = Stats.configured();
+  $('#row-stats').hidden = !stOk;
+  if (stOk) $('#rs-stats').textContent = Stats.consentState() === 'oui' ? 'Activées' : 'Désactivées';
+  $('#rs-app').textContent = 'Version ' + VERSION;
+}
+function initPartage() {
+  const url = lienAppli();
+  $('#qr-mini').innerHTML = qrSvg(url, { label: 'QR code pour ouvrir Ma cave' }) || '';
+  $('#set-share').dataset.url = url;
+}
+async function copierLien() {
+  const url = lienAppli();
+  try { await navigator.clipboard.writeText(url); toast('Lien copié. Collez-le dans un message.'); return true; }
+  catch (e) { errToast('Copie impossible. Le lien est : ' + url); return false; }
+}
+async function envoyerLien() {
+  const url = lienAppli();
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Ma cave', text: 'Je te recommande Ma cave, une appli gratuite pour suivre sa cave à vin :', url }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  await copierLien();
+}
 async function openSettings() {
   closeSheet('sMenu');
+  setVueTo('home');
+  majResumesReglages();
+  initPartage();
   const s = AI.getSettings();
   renderAiChoices(s.provider);
   fillAiFields(s.provider);
@@ -1641,6 +1733,12 @@ function bind() {
   $('#st-auto').onchange = () => { auto.on = $('#st-auto').checked; if (auto.on) auto.pauseUntil = 0; autoSave(); $('#st-auto-info').textContent = autoStatus(); if (auto.on) setTimeout(autoStep, 500); };
   $('#st-help').onclick = openContact;
   $('#st-esprit').onclick = () => openSheet('sEsprit');
+  $('#row-esprit').onclick = () => openSheet('sEsprit');
+  $$('#set-list [data-go]').forEach(b => { b.onclick = () => { setVueTo(b.dataset.go); }; });
+  $('#set-back').onclick = () => { setVueTo('home'); };
+  $('#sh-send').onclick = envoyerLien;
+  $('#sh-copy').onclick = copierLien;
+  $('#sh-qr').onclick = () => { const u = lienAppli(); $('#qr-big').innerHTML = qrSvg(u, { label: 'QR code pour ouvrir Ma cave' }); $('#qr-url').textContent = u; openSheet('sQr'); };
   $$('#sAct [data-x]').forEach(b => { b.onclick = () => runAction(b.dataset.x); });
   $('#st-news').onclick = () => { const l = Notes.since('0.0.0', VERSION); ask('Nouveautés', l.length ? l.map(x => '• ' + x).join('\n') : 'Aucune nouveauté à afficher.', [{ label: 'Fermer', value: 'ok' }]); };
   $('#ct-share').onclick = sendContact;
@@ -1688,6 +1786,12 @@ function bind() {
   let qt;
   $('#q').addEventListener('input', () => { clearTimeout(qt); qt = setTimeout(() => { S.q = $('#q').value; S.limit = PAGE; renderList(); }, 150); });
   $('#sort').onchange = () => { S.sort = $('#sort').value; S.limit = PAGE; renderList(); };
+  ['color', 'region', 'name', 'dom'].forEach(k => F(k).addEventListener('input', majSpk));
+  F('color').addEventListener('change', majSpk); F('spk').addEventListener('change', majSpk);
+  $('#fReg').onchange = () => { S.reg = $('#fReg').value; S.limit = PAGE; renderList(); };
+  $('#fSite').onchange = () => { S.site = $('#fSite').value; S.limit = PAGE; renderList(); };
+  $('#bsort').onchange = () => { S.bsort = $('#bsort').value; renderBoire(); };
+  $('#chips2').onclick = e => { const b = e.target.closest('[data-k]'); if (b) { S.spk = b.dataset.k; S.limit = PAGE; renderList(); } };
   $('#list').addEventListener('click', onCardAction);
   $('#blist').addEventListener('click', onCardAction);
   $('#updBar').addEventListener('click', e => { const b = e.target.closest('[data-b="upd"]'); if (b) applyUpdate(); });

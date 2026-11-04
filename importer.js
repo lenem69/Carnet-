@@ -12,6 +12,8 @@ export const FIELDS = [
   ['region', /appellation|aoc|aop|region/],
   ['grape', /cepage|grape/],
   ['qty', /quant|qte|^nb|nombre|stock|bouteilles|^q( |$)|dispo/],
+  ['spk', /type d ?effervescent|type effervescent/],
+  ['site', /^lieu|^site$|residence|domicile/],
   ['effervescent', /effervescent|bulle|petillant/],
   ['format', /^format|contenance|taille/],
   ['price', /prix|price|cout|tarif/],

@@ -864,7 +864,7 @@ console.log([['montra',true],['jou mont',true],['12',false],['2012',true],['xyz'
   T('verdict : valeur invalide ignorée', L.normalizeWine({ name: 'Bad', dom: 'D', gv: { from: 'x', to: 3, k: 'z' } }).gv === null);
   const bk = L.parseBackup ? L.parseBackup(JSON.stringify({ app: 'cave-a-vin', schema: 11, wines: [{ name: 'Old', dom: 'D', year: 2010, from: 2015, to: 2025 }] })) : null;
   T('sauvegarde de schéma 11 : encore lisible, sans verdict', !bk || (bk.wines && bk.wines.length === 1 && bk.wines[0].gv === null), JSON.stringify(bk).slice(0, 200));
-  T('schéma de fiche : 13', L.SCHEMA_VERSION === 13);
+  T('schéma de fiche : 14', L.SCHEMA_VERSION === 14);
   console.log(out.slice(o0).join('\n'));
 }
 

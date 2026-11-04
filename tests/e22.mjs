@@ -35,7 +35,7 @@ await page.evaluate(()=>document.querySelectorAll('.modal.show').forEach(m=>m.cl
 /* Réglages : À propos en haut, rubriques, esprit */
 await page.evaluate(()=>document.querySelector('#bSet').click());await H.sl(500);
 const heads=await page.evaluate(()=>[...document.querySelectorAll('#sSet h3')].filter(h=>h.offsetParent).map(h=>h.textContent.trim()));
-T('réglages : « À propos » est la première rubrique',heads[0]==='À propos',heads.join(' | '));
+T('réglages : « À propos » est la première rubrique',heads[1]==='À propos',heads.join(' | '));
 T('réglages : rubriques IA, Données, Application présentes',['IA (optionnelle)','Données','Application'].every(x=>heads.includes(x)),heads.join(' | '));
 T('réglages : champs IA toujours utilisables',await page.evaluate(()=>{const e=document.querySelector('#ai-key');return !!e&&e.offsetParent!==null;}));
 T('réglages : info hors connexion',(await H.txt(page,'#sSet')).includes('Hors connexion'));

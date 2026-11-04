@@ -1,5 +1,11 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.44.0': ['Accueil refait : recherche sur toute la largeur, puces Tous / À vérifier / Rouge / Blanc / Rosé / Effervescent, et filtres par région et par lieu.',
+    'Effervescents : une seule puce, et un type (Champagne, Crémant, Mousseux, Autre) déduit tout seul de l’appellation, que vous pouvez corriger dans la fiche.',
+    'Deux lieux : un champ « Lieu » (résidence principale, secondaire…) sur chaque fiche, avec filtre sur l’accueil dès qu’il y en a deux.',
+    'Que boire ? : à apogée égale, le vin dont vous avez le plus de bouteilles passe devant ; le nombre de bouteilles est affiché, et un menu permet de trier par priorité, nombre ou millésime.',
+    'Réglages en liste claire, rubrique par rubrique, avec un résumé sur chaque ligne.',
+    'Partager Ma cave : envoi par message, copie du lien ou QR code à scanner (fabriqué sur votre téléphone, sans service extérieur).'],
   '1.43.1': ['Le tirage vers le bas ne recharge plus l’appli : l’écran « Ma cave » de démarrage de Chrome n’apparaît plus par accident. Vos données ne sont pas touchées.'],
   '1.43.0': ['IA offerte plus généreuse : sans clé à vous, 15 lectures gratuites par jour (étiquettes et avis de Magic, lus par Gemini) et 20 vins par jour pour les fiches, la valeur et les accords (lus par Groq).','Avis de Magic : sans clé personnelle, il est maintenant rédigé par Gemini comme avec une clé (une fois par jour au plus), Groq ne servant qu’en secours.','Si votre clé Gemini est limitée, l’appli essaie d’abord le modèle Gemini 3.1 Flash-Lite avant d’attendre.'],
   '1.42.0': ['Assistant plus économe : les fiches, le contrôle de garde, la valeur et le choix de plat demandent à Google une réflexion plus courte et une réponse plus brève, pour ménager le quota gratuit. Le contenu des fiches ne change pas.','⚙ Réglages › IA › Fonctionnement : une ligne indique, sur ce téléphone seulement, les jetons moyens utilisés par type d’appel. Rien n’est envoyé.'],

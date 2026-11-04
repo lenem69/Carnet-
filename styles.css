@@ -420,3 +420,30 @@ details.adv[open] summary { margin-bottom: 6px; }
 .rlr .lnk { font-size: 13px; padding: 4px 0; min-height: 32px; }
 #f-web { margin-top: 8px; }
 #f-web-n { margin-top: 6px; }
+
+/* ===== 1.44.0 : accueil (filtres), effervescents, Réglages en liste, partage ===== */
+.filtres { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; }
+.filtres select { flex: 1 1 140px; min-width: 0; width: auto; }
+.tools { display: block; }
+.tools input#q { width: 100%; }
+.tag.nb { color: var(--ac); border: 1px solid var(--ac); border-radius: 99px; padding: 1px 8px; }
+#sSet .sheet:not([data-view="flat"]) [data-pane] { display: none; }
+#sSet .sheet[data-view="ia"] [data-pane="ia"], #sSet .sheet[data-view="auto"] [data-pane="auto"], #sSet .sheet[data-view="data"] [data-pane="data"],
+#sSet .sheet[data-view="stats"] [data-pane="stats"], #sSet .sheet[data-view="app"] [data-pane="app"] { display: block; }
+#sSet .sheet:not([data-view="home"]):not([data-view="flat"]) [data-home] { display: none; }
+#sSet .sheet[data-view="flat"] #set-list { display: none; }
+.lnk.back { padding: 4px 0 10px; font-weight: 600; }
+.partage { background: var(--ac); color: var(--acx); border-radius: 16px; padding: 14px 16px 16px; margin: 4px 0 14px; box-shadow: 0 6px 18px rgba(0, 0, 0, .15); }
+.partage h3 { color: var(--acx); margin: 0 0 4px; }
+.partage .small { color: var(--acx); opacity: .9; margin: 0 0 10px; }
+.partage .btn { background: var(--card); color: var(--ac); border: 0; }
+.partage .btn.o { background: transparent; color: var(--acx); border: 1px solid var(--acx); }
+.qrmini { width: 128px; height: 128px; margin: 0 auto 6px; background: #fff; border-radius: 10px; overflow: hidden; }
+.qrmini svg, .qrbig svg { display: block; width: 100%; height: 100%; }
+.qrbig { width: min(100%, 360px); aspect-ratio: 1; margin: 8px auto; background: #fff; border-radius: 12px; border: 1px solid var(--bd); overflow: hidden; }
+.setlist { border: 1px solid var(--bd); border-radius: 14px; background: var(--card); overflow: hidden; }
+.setrow { display: block; position: relative; width: 100%; text-align: left; background: none; border: 0; border-top: 1px solid var(--bd); padding: 13px 34px 13px 14px; color: var(--tx); font: inherit; min-height: 56px; }
+.setrow:first-child { border-top: 0; }
+.setrow::after { content: '›'; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--mu); font-size: 24px; }
+.setrow .rt { display: block; font-weight: 600; }
+.setrow .rs { display: block; color: var(--mu); font-size: 13px; margin-top: 2px; }

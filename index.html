@@ -86,14 +86,20 @@
   <section id="vCave">
     <div class="tools">
       <input id="q" type="search" placeholder="Nom, domaine…" aria-label="Rechercher" autocomplete="off">
+    </div>
+    <div class="filtres">
       <select id="sort" aria-label="Trier">
-        <option value="name">Nom</option>
+        <option value="name">Trier : nom</option>
         <option value="urgent">À boire en priorité</option>
-        <option value="year">Millésime</option>
+        <option value="year">Millésime (plus anciens d’abord)</option>
+        <option value="qty">Nombre de bouteilles</option>
         <option value="recent">Ajouts récents</option>
       </select>
+      <select id="fReg" aria-label="Filtrer par région"><option value="">Toutes les régions</option></select>
+      <select id="fSite" aria-label="Filtrer par lieu" hidden><option value="">Tous les lieux</option></select>
     </div>
     <div class="chips" id="chips"></div>
+    <div class="chips" id="chips2" hidden></div>
     <div id="list"></div>
   </section>
 
@@ -101,6 +107,13 @@
 
   <section id="vBoire" hidden>
     <div class="chips" id="bchips"></div>
+    <div class="filtres" id="bsort-w">
+      <select id="bsort" aria-label="Trier les suggestions">
+        <option value="prio">Trier : priorité</option>
+        <option value="qty">Nombre de bouteilles</option>
+        <option value="year">Millésime (plus anciens d’abord)</option>
+      </select>
+    </div>
     <div id="plat" hidden>
       <label for="dish" class="lbl">Plat prévu</label>
       <textarea id="dish" rows="2" placeholder="Ex. magret de canard aux cerises"></textarea>
@@ -152,7 +165,12 @@
     <label for="f-dom">Domaine / producteur</label><input id="f-dom" autocomplete="off" list="dl-dom">
     <div class="g2">
       <div><label for="f-year">Millésime</label><input id="f-year" type="number" inputmode="numeric" min="1800" max="2100"></div>
-      <div><label for="f-color">Couleur</label><select id="f-color"><option>Rouge</option><option>Blanc</option><option>Rosé</option><option>Pétillant</option><option>Autre</option></select></div>
+      <div><label for="f-color">Couleur</label><select id="f-color"><option>Rouge</option><option>Blanc</option><option>Rosé</option><option value="Pétillant">Effervescent</option><option>Autre</option></select></div>
+    </div>
+    <div id="f-spk-w" hidden>
+      <label for="f-spk">Type d’effervescent</label>
+      <select id="f-spk"><option value="">Automatique</option><option>Champagne</option><option>Crémant</option><option>Mousseux</option><option>Autre</option></select>
+      <p class="mu small" id="f-spk-n"></p>
     </div>
     <label for="f-region">Région / appellation</label><input id="f-region" autocomplete="off" list="dl-region">
     <button class="btn o" id="f-gen" type="button">✨ Générer la fiche avec l’assistant</button>
@@ -165,6 +183,7 @@
       <div><label for="f-from">À boire à partir de</label><input id="f-from" type="number" inputmode="numeric" min="1800" max="2200"></div>
       <div><label for="f-to">À boire jusqu’à</label><input id="f-to" type="number" inputmode="numeric" min="1800" max="2200"></div>
     </div>
+    <label for="f-site">Lieu</label><input id="f-site" placeholder="Ex. Résidence principale" autocomplete="off" list="dl-site">
     <label for="f-loc">Emplacement</label><input id="f-loc" placeholder="Ex. Casier B, rang 3" autocomplete="off" list="dl-loc">
     <label for="f-story">Histoire de la cuvée et du millésime</label><textarea id="f-story" rows="3"></textarea>
     <div class="rlr" id="f-rl" hidden><span id="f-rl-t">À relire</span><button class="lnk" id="f-rl-ok" type="button">J’ai relu</button></div>
@@ -175,7 +194,7 @@
   </div>
   <div class="ft"><button class="btn o" id="f-cancel" type="button">Annuler</button><button class="btn" id="f-save" type="button">Enregistrer</button></div>
 </div></div>
-<datalist id="dl-name"></datalist><datalist id="dl-dom"></datalist><datalist id="dl-region"></datalist><datalist id="dl-loc"></datalist>
+<datalist id="dl-name"></datalist><datalist id="dl-dom"></datalist><datalist id="dl-region"></datalist><datalist id="dl-loc"></datalist><datalist id="dl-site"></datalist>
 
 <!-- Suivi des traitements longs -->
 <div class="modal" id="sTasting" role="dialog" aria-modal="true" aria-labelledby="tgT"><div class="sheet">
@@ -219,7 +238,26 @@
 <!-- Réglages -->
 <div class="modal" id="sSet" role="dialog" aria-modal="true" aria-labelledby="stT"><div class="sheet">
   <h2 id="stT">Réglages</h2>
-  <section class="rub apropos">
+  <button class="lnk back" id="set-back" type="button" hidden>‹ Retour aux réglages</button>
+  <section class="partage" id="set-share" data-home>
+    <h3>Partager Ma cave</h3>
+    <p class="small">Recommandez l’appli à un ami : il l’ouvre depuis le lien ou en scannant le code, sans compte. Aucun de vos vins n’est envoyé.</p>
+    <div class="qrmini" id="qr-mini"></div>
+    <div class="stack">
+      <button class="btn" id="sh-send" type="button">Envoyer par message</button>
+      <button class="btn o" id="sh-copy" type="button">Copier le lien</button>
+      <button class="btn o" id="sh-qr" type="button">Afficher le QR code en grand</button>
+    </div>
+  </section>
+  <div class="setlist" id="set-list" data-home>
+    <button class="setrow" type="button" data-go="ia"><span class="rt">IA (optionnelle)</span><span class="rs" id="rs-ia"></span></button>
+    <button class="setrow" type="button" data-go="auto"><span class="rt">Fiches automatiques</span><span class="rs" id="rs-auto"></span></button>
+    <button class="setrow" type="button" data-go="data"><span class="rt">Données</span><span class="rs" id="rs-data"></span></button>
+    <button class="setrow" type="button" data-go="stats" id="row-stats"><span class="rt">Statistiques anonymes</span><span class="rs" id="rs-stats"></span></button>
+    <button class="setrow" type="button" data-go="app"><span class="rt">Application</span><span class="rs" id="rs-app"></span></button>
+    <button class="setrow" type="button" id="row-esprit"><span class="rt">L’esprit de Ma cave</span><span class="rs">Votre cave. Vos choix. Votre plaisir.</span></button>
+  </div>
+  <section class="rub apropos" data-pane="esprit">
     <h3>À propos</h3>
     <div class="aboutcard">
       <p class="wm">L’esprit de Ma cave</p>
@@ -228,7 +266,7 @@
       <div class="stack"><button class="btn" id="st-esprit" type="button">Lire L’esprit de Ma cave</button></div>
     </div>
   </section>
-  <section class="rub">
+  <section class="rub" data-pane="ia">
   <h3>IA (optionnelle)</h3>
   <p class="mu small">L’IA lit les étiquettes, rédige les fiches, estime la valeur et rédige l’avis de Magic. Tout le reste fonctionne sans IA, même hors connexion.</p>
   <div id="ai-guide" class="guide" hidden>
@@ -292,7 +330,7 @@
     <button class="btn o" id="ai-test">Tester la connexion</button>
   </div>
   </section>
-  <section class="rub">
+  <section class="rub" data-pane="auto">
   <h3>Fiches automatiques</h3>
   <label class="chk"><input type="checkbox" id="st-auto"> Compléter les fiches toute seule</label>
   <ul class="mu small notes">
@@ -303,20 +341,20 @@
   <p id="st-auto-info" class="mu small"></p>
   <button class="btn o" id="st-maj">Mettre à jour les fiches maintenant</button>
   </section>
-  <section class="rub">
+  <section class="rub" data-pane="data">
   <h3>Données</h3>
   <p id="st-info" class="mu small"></p>
   <div class="stack">
     <button class="btn o" id="st-erase">Effacer toutes les données</button>
   </div>
   </section>
-  <div id="st-stats-w" class="rub" hidden>
+  <div id="st-stats-w" class="rub" data-pane="stats" hidden>
     <h3>Statistiques anonymes</h3>
     <label class="chk"><input type="checkbox" id="st-stats"> Aider à améliorer l’appli</label>
     <p class="mu small">Un récapitulatif de nombres (ouvertures, fonctions utilisées, erreurs) est envoyé à l’auteur, chaque jour si vous l’avez accepté, sinon chaque semaine. Jamais de nom de vin, de photo ni de clé, et votre adresse n’est pas enregistrée.</p>
     <div class="stack"><button class="btn o" id="st-stats-show" type="button">Voir ce qui est envoyé</button></div>
   </div>
-  <section class="rub">
+  <section class="rub" data-pane="app">
   <h3>Application</h3>
   <p class="mu small">Version <b id="st-ver"></b></p>
   <p class="mu small">© Copyright appartenant à Jean-François Morin 2026</p>
@@ -327,6 +365,15 @@
   <div class="stack"><button class="btn o" id="st-news" type="button">Voir les nouveautés</button><button class="btn o" id="st-upd">Vérifier les mises à jour</button><button class="btn o" id="st-help" type="button">Aide et contact</button></div>
   </section>
   <button class="lnk close" data-close="sSet">Fermer</button>
+</div></div>
+
+<!-- QR code en grand -->
+<div class="modal" id="sQr" role="dialog" aria-modal="true" aria-labelledby="qrT"><div class="sheet">
+  <h2 id="qrT">QR code de Ma cave</h2>
+  <p class="mu small">Demandez à votre ami de scanner ce code avec l’appareil photo de son téléphone.</p>
+  <div class="qrbig" id="qr-big"></div>
+  <p class="mu small" id="qr-url" style="word-break:break-all"></p>
+  <button class="lnk close" data-close="sQr">Fermer</button>
 </div></div>
 
 <!-- Actions d'une carte -->

@@ -2,7 +2,20 @@
 import { norm, num, price, uid } from './util.js';
 
 export const COLORS = ['Rouge', 'Blanc', 'Rosé', 'Pétillant', 'Autre'];
-export const SCHEMA_VERSION = 13;
+export const SCHEMA_VERSION = 14;
+// 1.44.0 : le mot affiché pour « Pétillant » est « Effervescent » (la valeur enregistrée ne change pas).
+export const colorLabel = c => (c === 'Pétillant' ? 'Effervescent' : c);
+// Type d'effervescent : choisi à la main (champ spk) ou déduit de l'appellation, du nom et du domaine. Seulement pour la couleur Pétillant.
+export const SPARK_TYPES = ['Champagne', 'Crémant', 'Mousseux', 'Autre'];
+export function sparkKind(w) {
+  if (!w || w.color !== 'Pétillant') return '';
+  if (SPARK_TYPES.includes(w.spk)) return w.spk;
+  const t = norm([w.region, w.name, w.dom].join(' '));
+  if (/\bchampagne\b/.test(t)) return 'Champagne';
+  if (/\bcremants?\b/.test(t)) return 'Crémant';
+  if (/\b(mousseux|petillant naturel|pet nat|methode (traditionnelle|ancestrale)|blanquette|clairette de die|prosecco|cava|asti|franciacorta|sekt|lambrusco|spumante|cap classique)\b/.test(t)) return 'Mousseux';
+  return 'Autre';
+}
 
 export function normColor(v) {
   const s = norm(v);
@@ -61,6 +74,9 @@ export function normalizeWine(raw) {
     qty: q === '' ? 1 : Math.max(0, q),
     price: price(raw.price),
     loc: str(raw.loc),
+    // v14 : lieu de la cave (ex. résidence principale / secondaire, deux noms libres) ; type d'effervescent choisi à la main ('' = déduit).
+    site: str(raw.site),
+    spk: SPARK_TYPES.includes(raw.spk) ? raw.spk : '',
     from: num(raw.from),
     to: num(raw.to),
     story: str(raw.story),
@@ -386,7 +402,8 @@ export function prefillReperes(w, repere, libelles) {
   return change;
 }
 
-export const keyOf = w => norm([w.name, w.dom, w.year].join('|'));
+// Deux lieux : le même vin dans deux lieux reste deux fiches (le lieu ne compte que s'il est renseigné).
+export const keyOf = w => norm([w.name, w.dom, w.year].join('|')) + (w.site ? '#' + norm(w.site) : '');
 
 export function status(w, year) {
   if (!w.from && !w.to) return null;
@@ -446,6 +463,7 @@ export function sortWines(list, key, year) {
   if (key === 'urgent') a.sort((x, y) => stock(x, y) || (x.to || 9999) - (y.to || 9999) || byName(x, y));
   else if (key === 'year') a.sort((x, y) => stock(x, y) || (y.year || 0) - (x.year || 0) || byName(x, y));
   else if (key === 'recent') a.sort((x, y) => y.created - x.created);
+  else if (key === 'qty') a.sort((x, y) => (y.qty || 0) - (x.qty || 0) || byName(x, y));   // 1.44.0 : le plus de bouteilles d'abord
   else a.sort((x, y) => stock(x, y) || byName(x, y));
   return a;
 }
@@ -454,7 +472,7 @@ export function sortWines(list, key, year) {
 export function matchesQuery(w, q) {
   const qs = norm(q).split(/[^a-z0-9]+/).filter(Boolean);
   if (!qs.length) return true;
-  const words = norm([w.name, w.dom, w.region, w.loc, w.year, w.grape, w.color].join(' ')).split(/[^a-z0-9]+/).filter(Boolean);
+  const words = norm([w.name, w.dom, w.region, w.loc, w.site, w.year, w.grape, w.color, colorLabel(w.color), sparkKind(w)].join(' ')).split(/[^a-z0-9]+/).filter(Boolean);
   return qs.every(t => words.some(x => x.startsWith(t)));
 }
 
@@ -512,7 +530,7 @@ export function localPairing(dish, wines, year, limit = 5) {
 /* ---------- CSV ---------- */
 export const CSV_COLS = [
   ['name', 'Cuvée'], ['dom', 'Domaine'], ['year', 'Millésime'], ['color', 'Couleur'], ['region', 'Appellation'],
-  ['grape', 'Cépage'], ['qty', 'Quantité'], ['price', 'Prix'], ['loc', 'Emplacement'], ['from', 'Début garde'],
+  ['grape', 'Cépage'], ['qty', 'Quantité'], ['price', 'Prix'], ['site', 'Lieu'], ['loc', 'Emplacement'], ['spk', 'Type d’effervescent'], ['from', 'Début garde'],
   ['to', 'Fin garde'], ['story', 'Histoire'], ['pairings', 'Accords'], ['note', 'Notes'],
 ];
 

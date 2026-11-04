@@ -84,6 +84,12 @@ export function statutOf(w, year) {
   return 'pret';
 }
 
+// Grande région d'un vin (même regroupement que Magic) : sert au filtre « Région » de l'accueil (1.44.0).
+export function regionDeVin(w) {
+  const t = reconnaitre(w.region);
+  return t ? t[2] : (reperage(w.region) || (estEtranger(w.region) ? ETRANGER : HORS_REFERENTIEL));
+}
+
 export function chiffres(wines, year, horizon = 20) {
   const stock = wines.filter(w => w.qty > 0);
   const bottles = stock.reduce((s, w) => s + w.qty, 0);
