@@ -8,7 +8,7 @@ const ai=async c=>{
   if(!c.url.includes('googleapis'))return G({ok:1});
   const avecRecherche=!!(c.body&&c.body.tools);
   if(mode==='recherche429'&&avecRecherche)return {status:429,json:{error:{message:'search quota'}}};
-  if(mode==='lite429'&&c.url.includes('flash-lite'))return {status:429,json:{error:{message:'lite quota'}}};
+  if(mode==='lite429'&&c.url.includes('gemini-3.5-flash-lite'))return {status:429,json:{error:{message:'lite quota'}}};
   if(mode==='tout429')return {status:429,json:{error:{message:'Resource has been exhausted (e.g. check quota).'}}};
   return G({ok:1});};
 const r=await H.newPage(b,{ai});const page=r.page,calls=r.calls,errs=r.errs;
@@ -22,7 +22,7 @@ mode='recherche429';let n0=calls.length;let x=await run({search:true});let cs=ca
 T('recherche web refusée (429) : la demande est refaite sans recherche et réussit',x.ok&&x.out.searched===false&&cs.length===2&&!!cs[0].body.tools&&!cs[1].body.tools,JSON.stringify([x.ok,cs.length]));
 
 mode='lite429';n0=calls.length;x=await run({});cs=calls.slice(n0);
-T('modèle économique refusé (429) : essai avec le modèle précis, réussite',x.ok&&cs.length===2&&/flash-lite/.test(nm(cs[0].url))&&nm(cs[1].url)==='gemini-3.8-flash',JSON.stringify([x.ok,cs.map(c=>nm(c.url))]));
+T('modèle économique refusé (429) : essai avec le modèle précis, réussite',x.ok&&cs.length===2&&/flash-lite/.test(nm(cs[0].url))&&nm(cs[1].url)==='gemini-3.1-flash-lite',JSON.stringify([x.ok,cs.map(c=>nm(c.url))]));
 
 mode='tout429';n0=calls.length;const t0=Date.now();x=await run({});cs=calls.slice(n0);
 T('tout refusé : erreur de limite avec la phrase du service, sans longue attente',!x.ok&&x.code==='rate_limited'&&x.txt.includes('Limite d’utilisation')&&x.txt.includes('Détail du service : Resource has been exhausted')&&(Date.now()-t0)<5000,JSON.stringify([x.code,x.txt.slice(0,200),Date.now()-t0]));

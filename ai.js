@@ -14,6 +14,8 @@ export const cfg = { retryDelay: 20000, retries: 2, timeout: 90000 };
 // Modèle par tâche, invisible pour l'utilisateur. La lecture d'étiquette prend le modèle le plus précis ;
 // les fiches en lot et les accords restent sur le modèle économique. Un modèle choisi à la main n'est jamais remplacé.
 const MODELE_TACHE = { label: { gemini: 'gemini-3.8-flash' } };
+// Repli (1.43.0) : quand une clé personnelle sur le modèle par défaut est limitée, on essaie ce modèle (quota propre, 500/jour en gratuit) avant d’attendre ou de passer au relais.
+const MODELE_REPLI = 'gemini-3.1-flash-lite';
 const modelFor = (prov, task, model) => (model !== PROVIDERS[prov].model ? model : (MODELE_TACHE[task] && MODELE_TACHE[task][prov]) || model);
 
 // Recherche web de Gemini (outil Google Search) : EN PAUSE depuis la 1.39.3 (28 octobre 2026), décision de Jeff.
@@ -47,15 +49,17 @@ export function getConfig(provider) {
 // Clé gratuite partagée (proxy) : utilisée seulement tant que l’appareil n’a pas atteint sa limite du jour, et seulement
 // si aucune clé personnelle n’est saisie. Hors ligne ou désactivée (cave-gratuit = off, pour les tests), elle n’existe pas.
 export const PROXY = 'https://cave-ia.m-jeanfrancois-morin.workers.dev';
-export const LIMITE_GRATUITE = 1;   // vin par jour et par appareil : une seule action d’IA gratuite par jour, tout le reste est bridé
+// 1.43.0 : 15 appels Gemini gratuits par jour et par appareil, réservés aux deux actions « waouh » : lire une étiquette et l’avis de Magic.
+// Le Worker `cave-ia` applique la même limite côté serveur (variable LIMITE_APPAREIL) : les deux valeurs doivent rester égales.
+export const LIMITE_GRATUITE = 15;
 let gratuit = { jour: '', vins: 0 };
 let appareil = '';
 // Relais Groq : clé gratuite partagée, gardée secrète dans un relais Cloudflare (jamais dans l’appli ni le dépôt).
-// Sans clé personnelle, il prend le relais sans rien afficher (étiquettes après la lecture gratuite du jour, fiches, valeur,
-// accords, avis de Magic une fois par jour) ; avec une clé Gemini personnelle, il ne sert qu’en secours quand elle est épuisée.
+// Sans clé personnelle, il fait le texte sans rien afficher (fiches, valeur, accords, choix de plat) ; l’étiquette et l’avis de Magic restent à Gemini
+// (clé partagée), Groq ne les reprenant qu’en secours pour Magic. Avec une clé Gemini personnelle, il ne sert qu’en secours quand elle est épuisée.
 // Limite : LIMITE_RELAIS vins par jour et par appareil. Même interrupteur que la clé gratuite (cave-gratuit).
 export const RELAIS = 'https://cave-groq.m-jeanfrancois-morin.workers.dev';
-export const LIMITE_RELAIS = 10;
+export const LIMITE_RELAIS = 20;   // 1.43.0 (10 avant) ; le relais applique la même limite côté serveur (LIMITE_JOUR de relais/groq-worker.js)
 let relais = { jour: '', vins: 0 };
 let avisRelaisJour = '';
 const aujourdhui = () => new Date().toISOString().slice(0, 10);
@@ -139,8 +143,8 @@ const enGratuit = () => modeGemini() === 'gratuit';
 export const iaPerso = () => configured().some(p => p !== 'groq' && (p !== 'gemini' || !!getConfig('gemini').key));
 // IA utilisable pour les fiches, la valeur et les accords : clé personnelle, ou relais offert sous sa limite du jour.
 export const iaDispo = () => iaPerso() || relaisDispo();
-// L’avis de Magic se prépare tout seul à chaque changement : avec le relais offert, une seule fois par jour au plus.
-export const avisPossible = () => iaPerso() || (relaisDispo() && avisRelaisJour !== aujourdhui());
+// L’avis de Magic se prépare tout seul à chaque changement : sans clé personnelle, une seule fois par jour au plus (Gemini partagé, ou Groq en secours).
+export const avisPossible = () => iaPerso() || (avisRelaisJour !== aujourdhui() && (modeGemini() === 'gratuit' || relaisDispo()));
 // Clé Gemini personnelle saisie : seule condition pour les fiches automatiques et la recherche web (la clé gratuite partagée n’y sert jamais).
 export const geminiPerso = () => !!getConfig('gemini').key;
 
@@ -400,7 +404,7 @@ export async function callJson(prompt, opts = {}) {
       // Clé Gemini personnelle sur le modèle économique par défaut : si Google le refuse (limite), on essaie une fois le modèle précis
       // (celui des étiquettes) avant d'attendre ou de passer au relais. Un modèle choisi à la main n'est jamais remplacé.
       const retries = last && !opts.noRetry && !s.relais && !s.gratuit ? cfg.retries : 0;
-      const autreModele = prov === 'gemini' && !s.gratuit && s.model === PROVIDERS.gemini.model ? MODELE_TACHE.label.gemini : '';
+      const autreModele = prov === 'gemini' && !s.gratuit && s.model === PROVIDERS.gemini.model ? MODELE_REPLI : '';
       let r; opts.out.usage = null;
       try { r = await callProvider(s, prompt, opts, autreModele ? 0 : retries); }
       catch (e0) {
@@ -619,7 +623,7 @@ export async function pickForDish(dish, candidates, opts) {
 // points solides, manques, priorités, et une analyse détaillée. Les anciens avis (court + complet) restent lisibles.
 const liste = (v, n, len) => (Array.isArray(v) ? v.map(x => symPct(String(x == null ? '' : x).trim()).slice(0, len)).filter(Boolean).slice(0, n) : []);
 export async function avisCave(resume, opts = {}) {
-  const meta = { effort: 'medium' }; opts = { ...opts, kind: 'avis' };
+  const meta = { effort: 'medium' }; opts = { ...opts, kind: 'avis', gratuitOk: true };   // gratuitOk : sans clé perso, Gemini partagé d’abord (effet waouh), Groq en secours
   const d = await callJson(`${EXPERT}
 
 RÔLE
@@ -648,7 +652,7 @@ TON ET COHÉRENCE
 FORMAT
 Réponds en français, uniquement par un objet JSON, avec ces clés dans cet ordre : {"ton":"serein|vigilant|urgent","court":"…","cles":["3 messages clés de 8 mots au maximum"],"solide":["3 à 4 points forts, 2 phrases chacun : constat chiffré avec noms précis, puis ce que cela permet à table ou en cave"],"manque":["3 à 4 manques ou risques, 2 phrases chacun : constat chiffré, conséquence concrète, piste"],"priorite":["3 achats ou actions : appellation ou style précis, pourquoi, pour boire quand, avec quels plats"],"complet":"analyse de 12 à 16 phrases en 4 paragraphes séparés par une ligne vide : (1) lecture de ses goûts à travers ses appellations et cépages, (2) calendrier et stratégie de dégustation année par année sur les 3 prochaines années, (3) équilibre des styles, accords impossibles et achats, (4) un conseil de vieux sommelier que l’on n’attend pas, personnel et mémorable"}
 Ce sont des impressions fondées sur des chiffres, pas des faits vérifiés.`, { ...opts, out: meta });
-  if (meta.provider === 'groq') { avisRelaisJour = aujourdhui(); try { await store.setMeta('avisRelais', avisRelaisJour); } catch (e) { /* sans effet */ } }
+  if (meta.provider === 'groq' || !persoKeys()) { avisRelaisJour = aujourdhui(); try { await store.setMeta('avisRelais', avisRelaisJour); } catch (e) { /* sans effet */ } }
   if (!d || typeof d !== 'object' || typeof d.court !== 'string' || !d.court.trim()) throw { code: 'invalid_json' };
   const out = { court: symPct(d.court.trim()).slice(0, 400), complet: typeof d.complet === 'string' ? symPct(d.complet.trim()).slice(0, 6000) : '' };
   const cles = liste(d.cles, 3, 70), solide = liste(d.solide, 4, 460), manque = liste(d.manque, 4, 460), priorite = liste(d.priorite, 3, 420);

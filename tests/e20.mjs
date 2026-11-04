@@ -34,7 +34,7 @@ T('appel proxy : identifiant d’appareil et nombre de vins, sans clé Google',c
 const cpt=await page.evaluate(async()=>{const s=await import('./store.js');return s.getMeta('gratuit');});
 T('compteur du jour : 1 vin compté',cpt&&cpt.vins===1&&cpt.jour===aujourdhui(),JSON.stringify(cpt));
 const r0=await page.evaluate(async()=>(await import('./ai.js')).gratuitReste());
-T('après un vin : plus d’IA gratuite aujourd’hui',r0===0,r0);
+T('après un vin : 14 lectures gratuites restantes sur 15',r0===14,r0);
 await fermer();
 
 // L'appel gratuit Gemini est réservé au scan ; fiches, valeur et accords passent par le relais Groq (texte seul), sans toucher au compteur Gemini.
@@ -51,23 +51,23 @@ T('fiches sans clé personnelle : lecture gratuite Gemini non consommée, relais
 await fermer();
 const nP2=calls.length;
 await H.sl(4500);
-T('fiches automatiques sans clé personnelle : aucun appel au proxy ni au relais (hors avis de Magic)',!calls.slice(nP2).some(c=>c.url.includes(PROXY)||(c.url.includes(RELAIS)&&!JSON.stringify(c.body).includes('Voici le résumé chiffré'))),calls.slice(nP2).map(c=>c.url).join(' | '));
+T('fiches automatiques sans clé personnelle : aucun appel au proxy ni au relais (hors avis de Magic)',!calls.slice(nP2).some(c=>(c.url.includes(PROXY)||c.url.includes(RELAIS))&&!JSON.stringify(c.body).includes('Voici le résumé chiffré')),calls.slice(nP2).map(c=>c.url).join(' | '));
 
 // Réglages sans clé personnelle, relais disponible : s'ouvrent sans erreur (régression 1.27.0).
 await page.evaluate(()=>document.querySelector('#bSet').click());await H.sl(700);
 const regl=await page.evaluate(()=>({n:document.querySelectorAll('#ai-prov option').length,t:(document.querySelector('#ai-prov')||{}).value}));
 T('Réglages sans clé personnelle (relais disponible) : ouverture sans erreur',errs.length===0&&regl.n>=3&&regl.t!=='groq',JSON.stringify(regl)+' '+errs.join(' / '));
-T('Réglages : « Fonctionnement » explique avec et sans clé personnelle',await page.evaluate(()=>{const d=document.querySelector('#ai-fonct');return !!d&&/Sans clé personnelle/.test(d.textContent)&&/Avec votre clé Gemini/.test(d.textContent)&&/10 vins par jour/.test(d.textContent)&&!/aucune limite/i.test(d.textContent);}));
+T('Réglages : « Fonctionnement » explique avec et sans clé personnelle',await page.evaluate(()=>{const d=document.querySelector('#ai-fonct');return !!d&&/Sans clé personnelle/.test(d.textContent)&&/Avec votre clé Gemini/.test(d.textContent)&&/20 vins par jour/.test(d.textContent)&&!/aucune limite/i.test(d.textContent);}));
 await fermer();
 
 // Relais épuisé (10 vins) : fenêtre d'invitation à saisir sa clé, aucun appel.
-await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('relais',{jour:new Date().toISOString().slice(0,10),vins:10});});
+await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('relais',{jour:new Date().toISOString().slice(0,10),vins:20});});
 await page.reload();await H.sl(1500);await fermer();
 const nR=calls.length;
 await page.evaluate(()=>{document.querySelector('#fab').click();});await H.sl(300);
 await H.tapText(page,'#sMenu button','Mettre à jour les fiches');await H.sl(800);
 const ecrR=await texteEcran();
-T('relais épuisé : aucun appel et fenêtre « Limite du jour atteinte » avec le nombre de vins',calls.length===nR&&ecrR.includes('Limite du jour atteinte')&&/10 vins par jour/.test(ecrR),ecrR.slice(0,250));
+T('relais épuisé : aucun appel et fenêtre « Limite du jour atteinte » avec le nombre de vins',calls.length===nR&&ecrR.includes('Limite du jour atteinte')&&/20 vins par jour/.test(ecrR),ecrR.slice(0,250));
 await fermer();
 await page.evaluate(async()=>{const s=await import('./store.js');await s.setMeta('relais',{jour:new Date().toISOString().slice(0,10),vins:0});});
 
@@ -97,7 +97,7 @@ T('clé personnelle : appel direct, prioritaire',!!c2&&c2.headers['x-goog-api-ke
 T('clé personnelle : aucun appel au proxy',!calls.slice(n0).some(c=>c.url.includes(PROXY)));
 
 // Limite atteinte sans clé personnelle : fenêtre explicative, pas d’appel.
-await page.evaluate(async()=>{localStorage.removeItem('cave-ai');const s=await import('./store.js');await s.setMeta('gratuit',{jour:new Date().toISOString().slice(0,10),vins:5});});
+await page.evaluate(async()=>{localStorage.removeItem('cave-ai');const s=await import('./store.js');await s.setMeta('gratuit',{jour:new Date().toISOString().slice(0,10),vins:15});});
 await page.reload();await H.sl(1500);
 await page.evaluate(()=>document.querySelectorAll('.modal.show').forEach(m=>m.classList.remove('show')));
 const n1=calls.length;
@@ -108,16 +108,16 @@ T('limite atteinte : encart « Plus de photo gratuite aujourd’hui » dans le m
 T('limite atteinte : les deux boutons de photo sont grisés et un message s’affiche au toucher',await page.evaluate(()=>{const b=[...document.querySelectorAll('#sMenu [data-m="cam"],#sMenu [data-m="img"]')];return b.length===2&&b.every(x=>x.classList.contains('indispo')&&x.getAttribute('aria-disabled')==='true')&&/Photo gratuite du jour utilisée/.test(document.body.innerText)}));
 await fermer();
 
-// L'avis de Magic : sans clé personnelle, le relais le prépare une seule fois par jour, sans toucher à la lecture gratuite Gemini.
+// L'avis de Magic (1.43.0) : sans clé personnelle, Gemini (clé partagée) le prépare une seule fois par jour et compte 1 lecture gratuite ; Groq n'est qu'un secours.
 await page.evaluate(async()=>{localStorage.removeItem('cave-ai');const s=await import('./store.js');await s.setMeta('gratuit',{jour:new Date().toISOString().slice(0,10),vins:0});await s.setMeta('relais',{jour:new Date().toISOString().slice(0,10),vins:0});await s.setMeta('avisRelais','');await s.setMeta('avis',null);
   await s.replaceAll([{id:'r',name:'Vin R',year:2016,qty:1,from:2020,to:2035,src:{from:'user',to:'user'},dom:'D',color:'Rouge',region:'M',grape:'x',price:20,created:1,updated:1,story:'x',pairings:['a'],check:false,conf:'',sources:[],note:'',loc:'',tastings:[],aiPass:1,estim:{min:1,max:2,date:1}}]);});
 const avisN=()=>calls.filter(c=>JSON.stringify(c.body).includes('Voici le résumé chiffré'));
 const na=avisN().length;
 await page.reload();await H.sl(5000);
 const nb=avisN().length;
-T('avis de Magic sans clé personnelle : un appel au relais, jamais Gemini',nb-na===1&&avisN().slice(na).every(c=>c.url.includes(RELAIS)),avisN().slice(na).map(c=>c.url).join(' | '));
+T('avis de Magic sans clé personnelle : un appel à Gemini (proxy), pas au relais',nb-na===1&&avisN().slice(na).every(c=>c.url.includes(PROXY)),avisN().slice(na).map(c=>c.url).join(' | '));
 const cptG=await page.evaluate(async()=>(await import('./store.js')).getMeta('gratuit'));
-T('avis de Magic : la lecture gratuite Gemini n’est pas consommée',cptG&&cptG.vins===0,JSON.stringify(cptG));
+T('avis de Magic : 1 lecture gratuite Gemini comptée',cptG&&cptG.vins===1,JSON.stringify(cptG));
 await page.reload();await H.sl(4000);
 T('avis de Magic : pas de second appel le même jour',avisN().length===nb,avisN().length-nb);
 

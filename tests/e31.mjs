@@ -43,7 +43,7 @@ await reset({});
 /* ---------- A : ligne discrète sous les boutons de photo ---------- */
 await H.click(page,'#fab');await H.sl(300);
 const A=await page.evaluate(()=>({t:document.querySelector('#m-enc').innerText,mini:document.querySelector('#m-enc').classList.contains('mini'),vis:!document.querySelector('#m-enc').hidden}));
-T('A : ligne « 1 photo gratuite par jour. Plus avec votre propre clé. » et lien',A.vis&&A.mini&&A.t.includes('1 photo gratuite par jour. Plus avec votre propre clé.')&&A.t.includes('Activer ma clé gratuite'),JSON.stringify(A));
+T('A : ligne « 15 lectures gratuites par jour. Plus avec votre propre clé. » et lien',A.vis&&A.mini&&A.t.includes('15 lectures gratuites par jour. Plus avec votre propre clé.')&&A.t.includes('Activer ma clé gratuite'),JSON.stringify(A));
 T('A : le menu reste utilisable (les boutons de photo sont là)',(await txt('#sMenu')).includes('Scanner une étiquette'));
 const hA=await page.evaluate(()=>document.querySelector('#m-enc .lnk').getBoundingClientRect().height);
 T('A : zone de toucher d’au moins 44 px',hA>=44,hA);
@@ -172,7 +172,7 @@ await page.evaluate(()=>{window.fetch=window.__f});
 T('requête qui échoue (réseau coupé) : même message « Pas de réseau », jamais « clé refusée »',(await txt('#cle-res')).includes('Pas de réseau')&&!(await txt('#cle-res')).includes('refusé'),await txt('#cle-res'));
 
 /* ---------- C1 : photo du jour utilisée, encart dans le menu ---------- */
-await reset({g:1});
+await reset({g:15});
 await H.click(page,'#fab');await H.sl(300);
 const C1=await page.evaluate(()=>({t:document.querySelector('#m-enc').innerText,mini:document.querySelector('#m-enc').classList.contains('mini'),b:[...document.querySelectorAll('#m-enc button')].map(x=>x.textContent)}));
 T('C1 : titre et texte exacts dans le menu',C1.t.includes('Plus de photo gratuite aujourd’hui')&&C1.t.includes('Elle revient demain. Pour continuer maintenant, activez votre clé gratuite (environ 2 minutes), ou saisissez vos vins à la main.')&&!C1.mini,C1.t);
@@ -195,7 +195,7 @@ T('après activation depuis C1 : plus d’encart, la photo est de nouveau possib
 await page.evaluate(()=>document.querySelector('#sMenu [data-close]').click());await H.sl(200);
 
 /* ---------- B : après la 1re photo gratuite du jour ---------- */
-await reset({});
+await reset({g:14});
 await scan();
 T('B : la fiche à vérifier s’ouvre avec l’encart « Votre photo gratuite du jour est utilisée »',await shown('#sForm')&&await vis('#f-enc')&&(await txt('#f-enc')).includes('Votre photo gratuite du jour est utilisée'),await txt('#f-enc'));
 T('B : texte exact et deux sorties (Activer, croix), jamais de fenêtre bloquante',(await txt('#f-enc')).includes('Pour en lire d’autres aujourd’hui, activez votre clé gratuite (environ 2 minutes, sans carte bancaire). Sinon, la saisie à la main fonctionne très bien.')&&await page.evaluate(()=>[...document.querySelectorAll('#f-enc button')].map(b=>b.textContent.trim()).join('|'))==='×|Activer ma clé gratuite'&&!(await shown('#sDlg')));
@@ -213,20 +213,20 @@ await reset({invit:inv1,g:0});
 await scan();
 T('anti-harcèlement : une 2e photo gratuite le même jour (compteur remis à zéro) n’affiche pas B',await shown('#sForm')&&!(await vis('#f-enc')));
 const hier=new Date(Date.now()-864e5).toISOString().slice(0,10);
-await reset({invit:{vus:1,dernier:hier,ferme:0},g:0});await scan();
+await reset({invit:{vus:1,dernier:hier,ferme:0},g:14});await scan();
 T('anti-harcèlement : le lendemain, B revient (2e fois)',await vis('#f-enc')&&JSON.parse(await page.evaluate(()=>localStorage.getItem('cave-cle-invit'))).vus===2);
-await reset({invit:{vus:2,dernier:hier,ferme:0},g:0});await scan();
+await reset({invit:{vus:2,dernier:hier,ferme:0},g:14});await scan();
 T('anti-harcèlement : 3e fois affichée',await vis('#f-enc')&&JSON.parse(await page.evaluate(()=>localStorage.getItem('cave-cle-invit'))).vus===3);
-await reset({invit:{vus:3,dernier:hier,ferme:0},g:0});await scan();
+await reset({invit:{vus:3,dernier:hier,ferme:0},g:14});await scan();
 T('anti-harcèlement : jamais une 4e fois',await shown('#sForm')&&!(await vis('#f-enc')));
-await reset({invit:{vus:1,dernier:hier,ferme:0},g:0});await scan();
+await reset({invit:{vus:1,dernier:hier,ferme:0},g:14});await scan();
 await H.click(page,'#f-enc .x');await H.sl(200);
 const inv2=await page.evaluate(()=>JSON.parse(localStorage.getItem('cave-cle-invit')));
 T('croix : B disparaît tout de suite et la fermeture est mémorisée',!(await vis('#f-enc'))&&inv2.ferme>0&&(await shown('#sForm')),JSON.stringify(inv2));
 const hx=await page.evaluate(()=>{const x=document.createElement('div');return 44});
-await reset({invit:{vus:1,dernier:hier,ferme:Date.now()-5*864e5},g:0});await scan();
+await reset({invit:{vus:1,dernier:hier,ferme:Date.now()-5*864e5},g:14});await scan();
 T('croix il y a 5 jours : pas de B (pause de 14 jours)',await shown('#sForm')&&!(await vis('#f-enc')));
-await reset({invit:{vus:1,dernier:hier,ferme:Date.now()-15*864e5},g:0});await scan();
+await reset({invit:{vus:1,dernier:hier,ferme:Date.now()-15*864e5},g:14});await scan();
 T('croix il y a 15 jours : B peut revenir',await vis('#f-enc'));
 await reset({key:KEY,g:0});await scan();
 T('avec une clé valide : jamais d’encart B',await shown('#sForm')&&!(await vis('#f-enc')));
@@ -258,14 +258,14 @@ await H.tapText(page,'#sLog button','Activer ma clé gratuite');await H.sl(300);
 T('C2 : « Activer ma clé gratuite » ouvre la feuille par-dessus l’analyse',await shown('#sCle'));
 await page.evaluate(()=>document.querySelector('#sCle [data-close]').click());await H.sl(300);
 await page.evaluate(()=>document.querySelector('#lgX').click());await H.sl(300);
-T('C2 : la photo n’est pas consommée quand le service refuse',(await page.evaluate(async()=>(await import('./ai.js')).gratuitReste()))===1);
+T('C2 : la photo n’est pas consommée quand le service refuse',(await page.evaluate(async()=>(await import('./ai.js')).gratuitReste()))===15);
 /* la photo disparaît du formulaire suivant */
 await H.click(page,'#fab');await H.tapText(page,'#sMenu button','Saisie manuelle');await H.sl(400);
 T('formulaire suivant : l’ancienne photo n’y est plus',!(await vis('#f-photo-w'))&&!(await page.$eval('#f-photo',e=>e.hasAttribute('src'))));
 await page.evaluate(()=>document.querySelector('#f-cancel').click());await H.sl(300);
 
 /* ---------- C1 en lot : 2e photo refusée ---------- */
-gen='uneSeule';proxyN=0;await reset({g:0});
+gen='uneSeule';proxyN=0;await reset({g:14});
 await scan(['fixtures/lab.png','fixtures/lab.png']);
 for(let i=0;i<40&&!(await txt('#sLog')).includes('Plus de photo gratuite');i++)await H.sl(250);
 const lot=await txt('#sLog');
@@ -290,7 +290,7 @@ await page.evaluate(()=>document.querySelector('#lgX').click());await H.sl(300);
 gen='ok';
 
 /* ---------- Relais épuisé (fiches) : la fenêtre propose l'activation ---------- */
-await reset({g:0,r:10});
+await reset({g:0,r:20});
 await H.click(page,'#fab');await H.sl(300);await H.tapText(page,'#sMenu button','Mettre à jour les fiches');await H.sl(600);
 const dl=await page.evaluate(()=>({t:document.querySelector('#dlgT').textContent,x:document.querySelector('#dlgX').textContent,b:[...document.querySelectorAll('#sDlg button')].filter(b=>b.getClientRects().length>0).map(b=>b.textContent.trim())}));
 T('IA offerte épuisée : fenêtre « Limite du jour atteinte » avec « Activer ma clé gratuite » et « Plus tard »',dl.t.includes('Limite du jour atteinte')&&dl.x.includes('environ 2 minutes, sans carte bancaire')&&dl.b.includes('Activer ma clé gratuite')&&dl.b.includes('Plus tard'),JSON.stringify(dl));

@@ -879,7 +879,7 @@ function requireAI() {
 async function limiteWindow(scan) {
   await whenFree();
   const c = await ask('Limite du jour atteinte', scan
-    ? 'Vous avez utilisé la lecture d’étiquette gratuite d’aujourd’hui : elle est limitée à une photo par jour et revient demain. Pour lire autant d’étiquettes que vous voulez, activez votre propre clé gratuite Gemini (environ 2 minutes, sans carte bancaire).'
+    ? 'Vous avez utilisé les lectures gratuites d’aujourd’hui : elles sont limitées à ' + AI.LIMITE_GRATUITE + ' par jour (étiquettes et avis de Magic) et reviennent demain. Pour lire autant d’étiquettes que vous voulez, activez votre propre clé gratuite Gemini (environ 2 minutes, sans carte bancaire).'
     : `Vous avez utilisé l’IA offerte d’aujourd’hui : elle est limitée à ${AI.LIMITE_RELAIS} vins par jour et revient demain. Pour l’utiliser sans limite, activez votre propre clé gratuite Gemini (environ 2 minutes, sans carte bancaire).`,
     [{ label: 'Plus tard', value: 'plus', kind: 'o' }, { label: 'Activer ma clé gratuite', value: 'cle' }]);
   if (c === 'cle') openCle();
@@ -921,7 +921,7 @@ function renderMenuEnc() {
   $$('#sMenu [data-m="cam"], #sMenu [data-m="img"]').forEach(b => { b.classList.toggle('indispo', e === 'limite'); b.setAttribute('aria-disabled', e === 'limite' ? 'true' : 'false'); });
   if (e === 'gratuit') {
     el.className = 'enc mini';
-    el.innerHTML = '<p class="mu small">1 photo gratuite par jour. Plus avec votre propre clé.</p><button class="lnk" type="button" data-enc="cle">Activer ma clé gratuite</button>';
+    el.innerHTML = '<p class="mu small">' + AI.LIMITE_GRATUITE + ' lectures gratuites par jour. Plus avec votre propre clé.</p><button class="lnk" type="button" data-enc="cle">Activer ma clé gratuite</button>';
     el.hidden = false;
   } else if (e === 'limite') paintEnc(el, { ...ENC.c1menu, actions: [ACT_CLE, ACT_MAIN] });
   else el.hidden = true;
@@ -1138,7 +1138,7 @@ async function scanFiles(files) {
   let added = 0, dups = 0, fails = 0, single = null;
   // Avec une clé personnelle, la photo suivante est lue pendant que la précédente est enregistrée (2 lectures à la fois au plus).
   // Les résultats sont traités dans l’ordre : la détection des doublons ne change pas. Clé gratuite partagée : une seule à la fois.
-  const prefetch = AI.avisPossible();
+  const prefetch = AI.iaPerso();   // lecture anticipée seulement avec une clé personnelle (clé partagée : une à la fois)
   const lus = [];
   const lire = i => lus[i] || (lus[i] = AI.scanLabel(files[i], { signal: log.signal, onWait: s => log.set(i, 'run', `Limite de l’IA atteinte, nouvel essai dans ${s} s…`) }).then(d => ({ d }), e => ({ e })));
   for (let i = 0; i < files.length; i++) {
@@ -1859,7 +1859,7 @@ async function showNews() {
 }
 
 /* ============ Fiches complétées automatiquement (en arrière-plan) ============ */
-// Économe : 1 appel = 10 vins, 4 appels par jour au plus, jamais pendant une saisie, pause jusqu'à la remise à zéro des quotas
+// Économe : 1 appel = 10 vins, 20 appels par jour au plus, jamais pendant une saisie, pause jusqu'à la remise à zéro des quotas
 // (minuit heure du Pacifique ≈ 9 h UTC) dès que l'IA signale une limite. Le tout sans message : l'état se lit dans Réglages.
 const AUTO_MAX_CALLS = 20, AUTO_TRIES = 2, AUTO_LOT = 10, AUTO_LOT_WEB = 5;
 let autoPrio = null;

@@ -1,10 +1,10 @@
 /* Relais Groq de « Ma cave » : Cloudflare Worker (gratuit).
    La clé Groq n'est JAMAIS dans ce fichier ni dans l'appli : elle est enregistrée comme secret « GROQ_KEY » dans Cloudflare.
    Texte seul (la lecture d'étiquette reste à Gemini). Modèle principal : openai/gpt-oss-120b ; secours : openai/gpt-oss-20b.
-   Facultatif : un espace KV lié sous le nom « LIMITES » applique aussi la limite par appareil côté serveur (10 vins par jour). */
+   Facultatif : un espace KV lié sous le nom « LIMITES » applique aussi la limite par appareil côté serveur (20 vins par jour). */
 const ORIGINE = 'https://lenem69.github.io';
 const MODELES = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
-const LIMITE_JOUR = 10;      // vins par jour et par appareil (même valeur que l'appli)
+const LIMITE_JOUR = 20;      // vins par jour et par appareil (même valeur que l'appli : LIMITE_RELAIS)
 const MAX_SORTIE = 4096;     // jetons de réponse au plus
 const MAX_CORPS = 200000;    // octets de requête au plus
 
