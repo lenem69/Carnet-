@@ -429,7 +429,7 @@ details.adv[open] summary { margin-bottom: 6px; }
 .tag.nb { color: var(--ac); border: 1px solid var(--ac); border-radius: 99px; padding: 1px 8px; }
 #sSet .sheet:not([data-view="flat"]) [data-pane] { display: none; }
 #sSet .sheet[data-view="ia"] [data-pane="ia"], #sSet .sheet[data-view="auto"] [data-pane="auto"], #sSet .sheet[data-view="data"] [data-pane="data"],
-#sSet .sheet[data-view="stats"] [data-pane="stats"], #sSet .sheet[data-view="app"] [data-pane="app"] { display: block; }
+#sSet .sheet[data-view="stats"] [data-pane="stats"], #sSet .sheet[data-view="app"] [data-pane="app"], #sSet .sheet[data-view="partage"] [data-pane="partage"] { display: block; }
 #sSet .sheet:not([data-view="home"]):not([data-view="flat"]) [data-home] { display: none; }
 #sSet .sheet[data-view="flat"] #set-list { display: none; }
 .lnk.back { padding: 4px 0 10px; font-weight: 600; }
