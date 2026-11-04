@@ -122,6 +122,8 @@ const SAISIE_SHEETS = ['sForm', 'sTasting'];
 async function requestClose(id) {
   const m = $('#' + id);
   if (!m || !m.classList.contains('show')) return;
+  // Dans une rubrique des Réglages, la croix et le glissement ramènent à la liste au lieu de tout fermer.
+  if (id === 'sSet' && setVue !== 'home' && setVue !== 'flat') { setVueTo('home'); return; }
   if (id === 'sLog' && logRunning) return;
   if (id === 'sDlg' && dlgForce) return;
   if (SAISIE_SHEETS.includes(id) && m.dataset.dirty === '1') {
@@ -1530,7 +1532,7 @@ async function renderJetons() {
 }
 /* Réglages en liste (1.44.0) : une vue « accueil » avec des lignes-résumés, puis un volet par rubrique. */
 let setVue = 'home';
-const TITRES_VUES = { ia: 'IA (optionnelle)', auto: 'Fiches automatiques', data: 'Données', stats: 'Statistiques anonymes', app: 'Application' };
+const TITRES_VUES = { partage: 'Partager Ma cave', ia: 'IA (optionnelle)', auto: 'Fiches automatiques', data: 'Données', stats: 'Statistiques anonymes', app: 'Application' };
 function setVueTo(v) {
   setVue = window.__SET_FLAT ? 'flat' : v;
   const sh = $('#sSet .sheet');
@@ -1554,7 +1556,6 @@ function majResumesReglages() {
 }
 function initPartage() {
   const url = lienAppli();
-  $('#qr-mini').innerHTML = qrSvg(url, { label: 'QR code pour ouvrir Ma cave' }) || '';
   $('#set-share').dataset.url = url;
 }
 async function copierLien() {
@@ -1733,7 +1734,6 @@ function bind() {
   $('#st-auto').onchange = () => { auto.on = $('#st-auto').checked; if (auto.on) auto.pauseUntil = 0; autoSave(); $('#st-auto-info').textContent = autoStatus(); if (auto.on) setTimeout(autoStep, 500); };
   $('#st-help').onclick = openContact;
   $('#st-esprit').onclick = () => openSheet('sEsprit');
-  $('#row-esprit').onclick = () => openSheet('sEsprit');
   $$('#set-list [data-go]').forEach(b => { b.onclick = () => { setVueTo(b.dataset.go); }; });
   $('#set-back').onclick = () => { setVueTo('home'); };
   $('#sh-send').onclick = envoyerLien;

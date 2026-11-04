@@ -1,7 +1,7 @@
-// 1.44.0 : accueil (filtres région/lieu/couleur), effervescents, deux lieux, Que boire (quantité), Réglages en liste, partage et QR code.
+// 1.44.1 : accueil (filtres région/lieu/couleur), effervescents, deux lieux, Que boire (quantité), Réglages en liste, partage et QR code.
 import {start} from './server.mjs';import * as H from './h.mjs';
 H.deploy();const srv=await start(8123);const b=await H.browser();
-const S=H.suite('1.44.0');const T=S.T;
+const S=H.suite('1.44.1');const T=S.T;
 const {page,errs}=await H.newPage(b,{flat:false});
 await page.goto(H.URL0+'manifest.webmanifest');
 const Y=new Date().getFullYear();
@@ -70,10 +70,10 @@ await page.evaluate(()=>document.querySelector('#sForm .sx').click());await H.sl
 await page.evaluate(()=>{const d=document.querySelector('#sDlg.show');if(d){const bs=[...d.querySelectorAll('button')];(bs.find(x=>/Abandonner/.test(x.textContent))||bs[0]).click()}});await H.sl(400);
 // Réglages en liste
 await page.evaluate(()=>document.querySelector('#bSet').click());await H.sl(500);
-T('Réglages : carte « Partager Ma cave » et lignes de rubriques',await page.evaluate(()=>{const v=e=>{const el=document.querySelector(e);return !!el&&el.getClientRects().length>0};return v('#set-share')&&v('#set-list')&&v('[data-go="ia"]')&&v('#row-esprit')}));
+T('Réglages : « L’esprit » en haut, « Partager » dans la liste',await page.evaluate(()=>{const v=e=>{const el=document.querySelector(e);return !!el&&el.getClientRects().length>0};return v('#st-esprit')&&v('#set-list')&&v('[data-go="partage"]')&&v('[data-go="ia"]')}));
 T('Réglages : les détails sont cachés tant qu’une rubrique n’est pas ouverte',await page.evaluate(()=>document.querySelector('#ai-key').getClientRects().length===0&&document.querySelector('#st-erase').getClientRects().length===0));
 const res=await page.evaluate(()=>[...document.querySelectorAll('.setrow .rs')].map(e=>e.textContent).join('|'));
-T('chaque ligne a un résumé',/Aide offerte/.test(res)&&/Désactivées|Activées/.test(res)&&/6 vins/.test(res)&&/Version 1\.44\.0/.test(res),res);
+T('chaque ligne a un résumé',/Aide offerte/.test(res)&&/Désactivées|Activées/.test(res)&&/6 vins/.test(res)&&/Version 1\.44\.1/.test(res),res);
 await page.evaluate(()=>document.querySelector('[data-go="ia"]').click());await H.sl(250);
 T('rubrique IA : champs visibles, liste masquée, titre de la rubrique, bouton retour',await page.evaluate(()=>document.querySelector('#ai-key').getClientRects().length>0&&document.querySelector('#set-list').getClientRects().length===0&&/IA/.test(document.querySelector('#stT').textContent)&&!document.querySelector('#set-back').hidden));
 await page.evaluate(()=>document.querySelector('#set-back').click());await H.sl(250);
@@ -82,10 +82,12 @@ await page.evaluate(()=>document.querySelector('[data-go="data"]').click());awai
 T('rubrique Données : bouton d’effacement visible',await page.evaluate(()=>document.querySelector('#st-erase').getClientRects().length>0));
 await page.evaluate(()=>history.back());await H.sl(400);
 T('retour Android dans une rubrique : revient à la liste sans fermer les réglages',await H.shown(page,'#sSet')&&await page.evaluate(()=>document.querySelector('#set-list').getClientRects().length>0));
+await page.evaluate(()=>document.querySelector('[data-go="data"]').click());await H.sl(250);
+await page.evaluate(()=>document.querySelector('#sSet .sx').click());await H.sl(300);
+T('croix dans une rubrique : revient à la liste, Réglages restent ouverts',await H.shown(page,'#sSet')&&await page.evaluate(()=>document.querySelector('#set-list').getClientRects().length>0));
 // Partage et QR
 const url=await page.evaluate(()=>document.querySelector('#set-share').dataset.url);
 T('lien de partage = adresse de l’appli',url===H.URL0,url);
-T('QR code affiché dans la carte (SVG local)',await page.evaluate(()=>!!document.querySelector('#qr-mini svg path')));
 await page.evaluate(()=>{window.__shared=null;navigator.share=async d=>{window.__shared=d}});
 await page.evaluate(()=>document.querySelector('#sh-send').click());await H.sl(300);
 const sh=await page.evaluate(()=>window.__shared);

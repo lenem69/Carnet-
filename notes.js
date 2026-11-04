@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.44.1': ['Réglages : « L’esprit de Ma cave » en haut, puis « Partager Ma cave » (lien, copie, QR code) dans une rubrique comme les autres. La croix ou le glissement d’une rubrique ramène à la liste.'],
   '1.44.0': ['Accueil refait : recherche sur toute la largeur, puces Tous / À vérifier / Rouge / Blanc / Rosé / Effervescent, et filtres par région et par lieu.',
     'Effervescents : une seule puce, et un type (Champagne, Crémant, Mousseux, Autre) déduit tout seul de l’appellation, que vous pouvez corriger dans la fiche.',
     'Deux lieux : un champ « Lieu » (résidence principale, secondaire…) sur chaque fiche, avec filtre sur l’accueil dès qu’il y en a deux.',

@@ -239,31 +239,28 @@
 <div class="modal" id="sSet" role="dialog" aria-modal="true" aria-labelledby="stT"><div class="sheet">
   <h2 id="stT">Réglages</h2>
   <button class="lnk back" id="set-back" type="button" hidden>‹ Retour aux réglages</button>
-  <section class="partage" id="set-share" data-home>
-    <h3>Partager Ma cave</h3>
-    <p class="small">Recommandez l’appli à un ami : il l’ouvre depuis le lien ou en scannant le code, sans compte. Aucun de vos vins n’est envoyé.</p>
-    <div class="qrmini" id="qr-mini"></div>
-    <div class="stack">
-      <button class="btn" id="sh-send" type="button">Envoyer par message</button>
-      <button class="btn o" id="sh-copy" type="button">Copier le lien</button>
-      <button class="btn o" id="sh-qr" type="button">Afficher le QR code en grand</button>
-    </div>
+  <section class="rub apropos" data-home>
+    <h3>L’esprit de Ma cave</h3>
+    <p class="slogan">Votre cave. Vos choix. Votre plaisir.</p>
+    <p class="mu small">Gérez vos bouteilles simplement, comprenez leur évolution et choisissez le bon moment pour les ouvrir.</p>
+    <p class="mu small">Une application pensée pour les amateurs de vin : personnelle, autonome et fondée sur la connaissance du vin.</p>
+    <div class="stack"><button class="btn o" id="st-esprit" type="button">En savoir plus</button></div>
   </section>
   <div class="setlist" id="set-list" data-home>
+    <button class="setrow" type="button" data-go="partage"><span class="rt">Partager Ma cave</span><span class="rs">Envoyer le lien ou le QR code à un ami</span></button>
     <button class="setrow" type="button" data-go="ia"><span class="rt">IA (optionnelle)</span><span class="rs" id="rs-ia"></span></button>
     <button class="setrow" type="button" data-go="auto"><span class="rt">Fiches automatiques</span><span class="rs" id="rs-auto"></span></button>
     <button class="setrow" type="button" data-go="data"><span class="rt">Données</span><span class="rs" id="rs-data"></span></button>
     <button class="setrow" type="button" data-go="stats" id="row-stats"><span class="rt">Statistiques anonymes</span><span class="rs" id="rs-stats"></span></button>
     <button class="setrow" type="button" data-go="app"><span class="rt">Application</span><span class="rs" id="rs-app"></span></button>
-    <button class="setrow" type="button" id="row-esprit"><span class="rt">L’esprit de Ma cave</span><span class="rs">Votre cave. Vos choix. Votre plaisir.</span></button>
   </div>
-  <section class="rub apropos" data-pane="esprit">
-    <h3>À propos</h3>
-    <div class="aboutcard">
-      <p class="wm">L’esprit de Ma cave</p>
-      <p class="slogan">Votre cave. Vos choix. Votre plaisir.</p>
-      <p class="small">Six engagements : vos données chez vous, la simplicité, le conseil, la liberté, la connaissance du vin et un outil à votre service.</p>
-      <div class="stack"><button class="btn" id="st-esprit" type="button">Lire L’esprit de Ma cave</button></div>
+  <section class="rub" data-pane="partage" id="set-share">
+    <h3>Partager Ma cave</h3>
+    <p class="mu small">Recommandez l’appli à un ami : il l’ouvre depuis le lien ou en scannant le code, sans compte. Aucun de vos vins n’est envoyé.</p>
+    <div class="stack">
+      <button class="btn" id="sh-send" type="button">Envoyer par message</button>
+      <button class="btn o" id="sh-copy" type="button">Copier le lien</button>
+      <button class="btn o" id="sh-qr" type="button">Afficher le QR code en grand</button>
     </div>
   </section>
   <section class="rub" data-pane="ia">
