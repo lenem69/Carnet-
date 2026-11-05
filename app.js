@@ -1542,7 +1542,8 @@ function setVueTo(v) {
   const sc = sh.querySelector('.sb') || sh; sc.scrollTop = 0;
 }
 function lienAppli() {
-  try { const u = new URL(location.href); u.hash = ''; u.search = ''; u.pathname = u.pathname.replace(/index\.html$/, ''); return u.href; } catch (e) { return location.href; }
+  // Lien de partage et QR : ouvre l'écran d'installation (paramètre « accueil »), jamais l'appli nue.
+  try { const u = new URL(location.href); u.hash = ''; u.search = '?accueil=1'; u.pathname = u.pathname.replace(/index\.html$/, ''); return u.href; } catch (e) { return location.href; }
 }
 function majResumesReglages() {
   const on = AI.configuredKeys();
@@ -2230,8 +2231,11 @@ function renderInstall() {
 // Première visite sur téléphone (navigateur, pas l’appli installée) : écran d’installation avant l’appli.
 function isPhone() { return /Android|iPhone|iPad|iPod/.test(navigator.userAgent || ''); }
 function showLanding() {
-  if (!isPhone() || isStandalone()) return;
-  try { if (localStorage.getItem('cave-landing-ok') === '1') return; } catch (e) { /* stockage bloqué : on montre l’écran */ }
+  const parLien = new URLSearchParams(location.search).has('accueil');
+  if (!parLien) {
+    if (!isPhone() || isStandalone()) return;
+    try { if (localStorage.getItem('cave-landing-ok') === '1') return; } catch (e) { /* stockage bloqué : on montre l’écran */ }
+  }
   const ios = isIphoneSafari();
   $('#landing').hidden = false;
   $('#ld-ios').hidden = !ios;
@@ -2247,6 +2251,8 @@ function updateLandingInstall() {
 function closeLanding() {
   try { localStorage.setItem('cave-landing-ok', '1'); } catch (e) { /* */ }
   $('#landing').hidden = true;
+  // Retire le paramètre du lien pour que l'écran ne revienne pas au rechargement.
+  try { history.replaceState(null, '', lienAppli().replace(/\?accueil=1$/, '')); } catch (e) { /* */ }
 }
 function bindLanding() {
   $('#ld-skip').onclick = closeLanding;

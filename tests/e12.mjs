@@ -19,6 +19,10 @@ const errs=[];
 {const r=await H.newPage(b);const page=r.page;page.on('pageerror',e=>errs.push(e.message));
  await page.goto(H.URL0);await H.sl(1000);
  T('ordinateur : pas d’écran d’accueil',await page.$eval('#landing',e=>e.hidden));
+ await page.goto(H.URL0+'?accueil=1');await H.sl(1000);
+ T('lien ?accueil=1 sur ordinateur : écran d’installation affiché',!(await page.$eval('#landing',e=>e.hidden)));
+ await page.evaluate(()=>document.querySelector('#ld-skip').click());await H.sl(300);
+ T('après « Continuer », le paramètre disparaît de l’adresse',!/accueil=1/.test(await page.evaluate(()=>location.search)));
  await page.close();}
 T('aucune erreur JavaScript',errs.length===0,errs.join('|'));
 console.log(out.join('\n'));await b.close();srv.close();

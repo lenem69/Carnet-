@@ -1,7 +1,7 @@
-// 1.44.2 : accueil (filtres région/lieu/couleur), effervescents, deux lieux, Que boire (quantité), Réglages en liste, partage et QR code.
+// 1.44.3 : accueil (filtres région/lieu/couleur), effervescents, deux lieux, Que boire (quantité), Réglages en liste, partage et QR code.
 import {start} from './server.mjs';import * as H from './h.mjs';
 H.deploy();const srv=await start(8123);const b=await H.browser();
-const S=H.suite('1.44.2');const T=S.T;
+const S=H.suite('1.44.3');const T=S.T;
 const {page,errs}=await H.newPage(b,{flat:false});
 await page.goto(H.URL0+'manifest.webmanifest');
 const Y=new Date().getFullYear();
@@ -73,7 +73,7 @@ await page.evaluate(()=>document.querySelector('#bSet').click());await H.sl(500)
 T('Réglages : « L’esprit » en haut, « Partager » dans la liste',await page.evaluate(()=>{const v=e=>{const el=document.querySelector(e);return !!el&&el.getClientRects().length>0};return v('#st-esprit')&&v('#set-list')&&v('[data-go="partage"]')&&v('[data-go="ia"]')}));
 T('Réglages : les détails sont cachés tant qu’une rubrique n’est pas ouverte',await page.evaluate(()=>document.querySelector('#ai-key').getClientRects().length===0&&document.querySelector('#st-erase').getClientRects().length===0));
 const res=await page.evaluate(()=>[...document.querySelectorAll('.setrow .rs')].map(e=>e.textContent).join('|'));
-T('chaque ligne a un résumé',/Aide offerte/.test(res)&&/Désactivées|Activées/.test(res)&&/6 vins/.test(res)&&/Version 1\.44\.2/.test(res),res);
+T('chaque ligne a un résumé',/Aide offerte/.test(res)&&/Désactivées|Activées/.test(res)&&/6 vins/.test(res)&&/Version 1\.44\.3/.test(res),res);
 await page.evaluate(()=>document.querySelector('[data-go="ia"]').click());await H.sl(250);
 T('rubrique IA : champs visibles, liste masquée, titre de la rubrique, bouton retour',await page.evaluate(()=>document.querySelector('#ai-key').getClientRects().length>0&&document.querySelector('#set-list').getClientRects().length===0&&/IA/.test(document.querySelector('#stT').textContent)&&!document.querySelector('#set-back').hidden));
 await page.evaluate(()=>document.querySelector('#set-back').click());await H.sl(250);
@@ -87,17 +87,17 @@ await page.evaluate(()=>document.querySelector('#sSet .sx').click());await H.sl(
 T('croix dans une rubrique : revient à la liste, Réglages restent ouverts',await H.shown(page,'#sSet')&&await page.evaluate(()=>document.querySelector('#set-list').getClientRects().length>0));
 // Partage et QR
 const url=await page.evaluate(()=>document.querySelector('#set-share').dataset.url);
-T('lien de partage = adresse de l’appli',url===H.URL0,url);
+T('lien de partage = écran d’installation de l’appli (?accueil=1)',url===H.URL0+'?accueil=1',url);
 await page.evaluate(()=>document.querySelector('[data-go="partage"]').click());await H.sl(250);
 T('volet Partager : boutons visibles (contenu, pas seulement le titre)',await page.evaluate(()=>['#sh-send','#sh-copy','#sh-qr'].every(s=>document.querySelector(s).getClientRects().length>0)));
 await page.evaluate(()=>document.querySelector('#set-back').click());await H.sl(250);
 await page.evaluate(()=>{window.__shared=null;navigator.share=async d=>{window.__shared=d}});
 await page.evaluate(()=>document.querySelector('#sh-send').click());await H.sl(300);
 const sh=await page.evaluate(()=>window.__shared);
-T('Envoyer par message : feuille de partage avec le lien',sh&&sh.url===H.URL0&&/Ma cave/.test(sh.text||sh.title),JSON.stringify(sh));
+T('Envoyer par message : feuille de partage avec le lien',sh&&sh.url===H.URL0+'?accueil=1'&&/Ma cave/.test(sh.text||sh.title),JSON.stringify(sh));
 await page.evaluate(()=>{window.__clip=null;Object.defineProperty(navigator,'clipboard',{value:{writeText:async t=>{window.__clip=t}},configurable:true})});
 await page.evaluate(()=>document.querySelector('#sh-copy').click());await H.sl(300);
-T('Copier le lien : le lien est copié',(await page.evaluate(()=>window.__clip))===H.URL0);
+T('Copier le lien : le lien est copié',(await page.evaluate(()=>window.__clip))===H.URL0+'?accueil=1');
 await page.evaluate(()=>document.querySelector('#sh-qr').click());await H.sl(300);
 T('QR en grand affiché avec l’adresse',await H.shown(page,'#sQr')&&await page.evaluate(()=>!!document.querySelector('#qr-big svg path')&&/localhost/.test(document.querySelector('#qr-url').textContent)));
 const svg=await page.evaluate(()=>document.querySelector('#qr-big').innerHTML);
