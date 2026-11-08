@@ -1,5 +1,6 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.44.4': ['L’avis de Magic ne se refait plus à chaque mise à jour : seulement après l’ajout ou le retrait d’au moins 2 vins.'],
   '1.44.3': ['Partager Ma cave : le lien et le QR code ouvrent désormais l’écran « Installer l’appli » (pas l’appli nue).'],
   '1.44.2': ['Partager Ma cave : le contenu du volet (envoi, copie du lien, QR code) s’affiche à nouveau.'],
   '1.44.1': ['Réglages : « L’esprit de Ma cave » en haut, puis « Partager Ma cave » (lien, copie, QR code) dans une rubrique comme les autres. La croix ou le glissement d’une rubrique ramène à la liste.'],

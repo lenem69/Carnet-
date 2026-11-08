@@ -1252,8 +1252,8 @@ function avisSiChange() {
   if (!S.wines.length || !AI.avisPossible()) return;
   const cle = cleCave();
   if (cle === avisCleVue) return;
-  // L'avis ne se refait que si au moins 2 vins ont été ajoutés ou retirés depuis le dernier (même version de l'appli).
-  if (avisMem && avisMem.v === VERSION && Array.isArray(avisMem.ids) && ecartAvis() < 2) return;
+  // L'avis ne se refait que si au moins 2 vins ont été ajoutés ou retirés depuis le dernier (quelle que soit la version de l'appli).
+  if (avisMem && Array.isArray(avisMem.ids) && ecartAvis() < 2) return;
   avisCleVue = cle;
   clearTimeout(avisTimer);
   avisTimer = setTimeout(() => genererAvis(), 2500);
