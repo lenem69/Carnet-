@@ -41,6 +41,7 @@ function toast(msg, opt = {}) {
   const deja = [...box.children].find(c => c.firstChild && c.firstChild.textContent === msg);
   if (deja) return deja;
   if (opt.kind === 'err') [...box.querySelectorAll('.toast.err')].forEach(c => c.remove());
+  else [...box.querySelectorAll('.toast:not(.err)')].forEach(c => { if (!c.querySelector('.tact')) c.remove(); }); // un seul message d'information à la fois (sauf s'il porte une action)
   const el = document.createElement('div');
   el.className = 'toast' + (opt.kind === 'err' ? ' err' : '');
   el.setAttribute('role', opt.kind === 'err' ? 'alert' : 'status');
@@ -53,7 +54,13 @@ function toast(msg, opt = {}) {
   x.onclick = () => el.remove(); el.appendChild(x);
   box.appendChild(el);
   while (box.children.length > 3) box.firstElementChild.remove();
-  if (opt.kind !== 'err') setTimeout(() => el.remove(), opt.action ? 10000 : 5000);
+  // Durée proportionnelle à la longueur du message (lecture à l'aise), et suspendue tant qu'on touche ou survole le message.
+  if (opt.kind !== 'err') {
+    const duree = Math.max(opt.action ? 10000 : 6000, 3500 + msg.length * 55);
+    let t = setTimeout(() => el.remove(), duree);
+    const stop = () => clearTimeout(t), repart = () => { clearTimeout(t); t = setTimeout(() => el.remove(), 3000); };
+    el.addEventListener('pointerenter', stop); el.addEventListener('pointerleave', repart); el.addEventListener('focusin', stop); el.addEventListener('focusout', repart);
+  }
   return el;
 }
 const errToast = msg => toast('⚠️ ' + msg, { kind: 'err' });
@@ -103,17 +110,39 @@ async function persist(op) {
 const stack = [];
 let ignorePop = 0;
 let logRunning = false;
+// Fond rendu inerte tant qu'une feuille est ouverte : ni lecteur d'écran, ni clavier, ni toucher derrière la fenêtre.
+const FOND = ['main', 'header.top', '#fab', '#updBar'];
+const ouvreur = {}; // id de feuille → élément qui avait le focus à l'ouverture
+function majFond() {
+  const top = stack[stack.length - 1];
+  FOND.forEach(sel => { const e = $(sel); if (e) e.inert = !!top; });
+  $$('.modal').forEach(m => { m.inert = !!top && m.id !== top; });
+}
 function openSheet(id) {
-  if (!stack.includes(id)) {
+  const premiere = !stack.includes(id);
+  if (premiere) {
     if (!stack.length && !(history.state && history.state.modal)) { try { history.pushState({ modal: 1 }, ''); } catch (e) { /* sans historique */ } }
+    const a = document.activeElement;
+    ouvreur[id] = a && a !== document.body ? a : null;
     stack.push(id);
     $('#' + id).dataset.dirty = '';
   }
   $('#' + id).classList.add('show');
+  majFond();
+  // Le focus entre dans la feuille (sur son titre) ; un focus donné ensuite par le code (champ à remplir) l'emporte.
+  if (premiere) {
+    const m = $('#' + id);
+    const cible = m.querySelector('h2') || m.querySelector('.sheet');
+    if (cible) { if (!cible.hasAttribute('tabindex')) cible.tabIndex = -1; try { cible.focus({ preventScroll: true }); } catch (e) { /* */ } }
+  }
 }
 function hideSheet(id) {
   const i = stack.indexOf(id); if (i >= 0) stack.splice(i, 1);
   $('#' + id).classList.remove('show');
+  majFond();
+  // Le focus retourne au bouton qui avait ouvert la feuille (s'il existe encore à l'écran).
+  const o = ouvreur[id]; delete ouvreur[id];
+  if (o && o.isConnected && !o.closest('[inert]') && o.getClientRects().length) { try { o.focus({ preventScroll: true }); } catch (e) { /* */ } }
   if (id === 'sDlg') { dlgForce = false; $('#sDlg').classList.remove('force'); settleDlg(null); }
   if (id === 'sCle') apresCle();
 }
@@ -378,6 +407,8 @@ function renderStats() {
   $('#sB').textContent = s.bottles.toLocaleString('fr-FR');
   $('#sV').textContent = cache ? '•••' : v.couverts ? '≈ ' + fmtEur(v.total) : 'à estimer';
   $('#sVbtn').setAttribute('aria-pressed', String(cache));
+  $('#sV').classList.toggle('txt', !cache && !v.couverts);
+  $('#sVbtn').setAttribute('aria-label', cache ? 'Valeur estimée masquée. Toucher pour l’afficher.' : v.couverts ? 'Valeur estimée : environ ' + fmtEur(v.total) + '. Toucher pour la masquer.' : 'Valeur estimée : pas encore estimée. Toucher pour masquer.');
   $('#sD').textContent = s.soon.toLocaleString('fr-FR');
 }
 
@@ -515,7 +546,7 @@ function renderDatalists() {
 
 function render() {
   renderStats(); renderBanners();
-  $$('.tab').forEach(b => { const on = b.dataset.t === S.tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+  $$('.tab').forEach(b => { const on = b.dataset.t === S.tab; b.classList.toggle('on', on); if (on) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current'); });
   $('#vCave').hidden = S.tab !== 'cave'; $('#vBoire').hidden = S.tab !== 'boire'; $('#vChiffres').hidden = S.tab !== 'chiffres'; document.querySelector('.stats').hidden = S.tab === 'chiffres' || (S.ready && !S.wines.length);   // pas de compteurs à zéro sur une cave vide
   if (S.tab === 'cave') renderList(); else if (S.tab === 'boire') renderBoire(); else renderChiffres();
   // Transition douce à chaque changement d'onglet (jamais quand la même vue est simplement redessinée).
@@ -577,9 +608,10 @@ function bilanHtml(c) {
 
 function renderChiffres() {
   const c = chiffres(S.wines, YEAR);
-  const bars = (rows, total, sub) => rows.map(([k, n, s]) => `<div class="bar"><span>${esc(k)}${sub && s ? ` <small class="mu">${esc(s)}</small>` : ''}</span><i style="width:${total ? Math.max(4, Math.round(n / total * 100)) : 0}%"></i><b>${n}</b></div>`).join('') || '<p class="mu small">Rien à afficher.</p>';
+  const bars = (rows, total, sub) => { const mx = Math.max(1, ...rows.map(r => r[1])); return rows.map(([k, n, s]) => `<div class="bar"><span>${esc(k)}${sub && s ? ` <small class="mu">${esc(s)}</small>` : ''}</span><i style="width:${total ? Math.max(4, Math.round(n / mx * 100)) : 0}%"></i><b>${n}</b></div>`).join('') || '<p class="mu small">Rien à afficher.</p>'; };
   const maxF = Math.max(1, ...c.frise.map(x => x[1]));
-  const frise = c.frise.map(([y, n]) => `<div class="fcol" title="${y} : ${n} bouteille${n > 1 ? 's' : ''}"><i style="height:${Math.round(n / maxF * 100)}%"></i><span>${y}</span></div>`).join('');
+  const pas = c.frise.length > 12 ? 2 : 1; // texte de 12 px minimum : une année sur deux quand la frise est dense
+  const frise = c.frise.map(([y, n], i) => `<div class="fcol" title="${y} : ${n} bouteille${n > 1 ? 's' : ''}"><i style="height:${Math.round(n / maxF * 100)}%"></i><span>${i % pas === 0 ? y : ''}</span></div>`).join('');
   const st = c.statuts;
   $('#vChiffres').innerHTML = `
     <p class="portrait">${esc(c.portrait)}</p>
@@ -1766,7 +1798,8 @@ function bind() {
     if (e.key !== 'Escape' || !stack.length) return;
     const id = stack[stack.length - 1];
     if (id === 'sLog' && logRunning) return;
-    closeSheet(id);
+    if (id === 'sDlg' && dlgForce) return;
+    requestClose(id); // comme la croix et Retour : demande confirmation si une saisie n'est pas enregistrée
   });
 
   $$('.tab').forEach(b => { b.onclick = () => { S.tab = b.dataset.t; if (S.tab === 'boire') Stats.track('quoiboire'); render(); }; });
@@ -2146,7 +2179,7 @@ async function askStatsConsent() {
     [{ label: 'Oui, aider', value: 'oui' }, { label: 'Non merci', value: 'non', kind: 'o' }]);
   if (c !== 'oui' && c !== 'non') return; // fenêtre remplacée par une autre : on redemandera à la prochaine ouverture
   await Stats.setConsent(c === 'oui');
-  toast(c === 'oui' ? 'Merci ! Vous pouvez arrêter à tout moment dans ⚙ Réglages.' : 'Rien ne sera envoyé.');
+  toast(c === 'oui' ? 'Merci ! Statistiques anonymes activées. Vous pouvez les désactiver dans Réglages.' : 'Rien ne sera envoyé.');
 }
 // Les appareils qui avaient accepté l'envoi hebdomadaire sont interrogés une fois : le récapitulatif quotidien va vers un autre serveur (celui de l'auteur).
 async function askJourConsent() {

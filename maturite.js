@@ -80,7 +80,7 @@ const rect = (x0, x1, y, h, rl, rr, cls) => {
 export function friseSvg(m, annee) {
   if (!m) return '';
   const { g0, a0, a1, g1 } = m;
-  const s = Math.min(g0, annee), e = Math.max(g1, annee), L = 10, R = 350, by = 24, bh = 14;
+  const s = Math.min(g0, annee), e = Math.max(g1, annee), L = 10, R = 290, by = 24, bh = 14;
   const X = y => L + (y - s) / (e - s) * (R - L);
   let xs = [X(g0), X(a0), X(a1), X(g1)];
   // Apogée d'une seule année : bloc d'au moins 8 unités pour rester visible.
@@ -88,7 +88,7 @@ export function friseSvg(m, annee) {
   if (d[2] - d[1] < 8) { const c = (d[1] + d[2]) / 2; d[1] = Math.max(d[0], c - 4); d[2] = Math.min(d[3], d[1] + 8); d[1] = Math.max(d[0], d[2] - 8); }
   const out = [`<rect class="mf-piste" x="${X(s).toFixed(1)}" y="${by}" width="${(X(e) - X(s)).toFixed(1)}" height="${bh}" rx="${bh / 2}"/>`];
   out.push(rect(d[0], d[1], by, bh, 7, 4, 'mf-j'), rect(d[1], d[2], by, bh, d[1] <= d[0] ? 7 : 4, d[2] >= d[3] ? 7 : 4, 'mf-a'), rect(d[2], d[3], by, bh, d[2] <= d[0] ? 7 : 4, 7, 'mf-d'));
-  const xn = X(annee), cy = by + bh / 2, anc = xn < 46 ? 'start' : xn > 314 ? 'end' : 'middle';
+  const xn = X(annee), cy = by + bh / 2, anc = xn < 46 ? 'start' : xn > 254 ? 'end' : 'middle';
   out.push(`<text class="au" x="${xn.toFixed(1)}" y="${by - 9}" text-anchor="${anc}">aujourd’hui</text><circle class="mf-now" cx="${xn.toFixed(1)}" cy="${cy}" r="8"/>`);
   // Dates sous les frontières ; une même année n'est écrite qu'une fois ; deuxième rangée quand deux dates se chevauchent.
   const bornes = [];
@@ -107,5 +107,5 @@ export function friseSvg(m, annee) {
   }
   const h = by + bh + 26 + maxr * 15;
   const label = `Garde de ${g0} à ${g1}, apogée de ${a0} à ${a1}, aujourd’hui ${annee}`;
-  return `<div class="mat2"><svg viewBox="0 0 360 ${h}" role="img" aria-label="${label}">${out.join('')}</svg></div>`;
+  return `<div class="mat2"><svg viewBox="0 0 300 ${h}" role="img" aria-label="${label}">${out.join('')}</svg></div>`;
 }

@@ -2,7 +2,7 @@
    Polices système uniquement : aucune dépendance externe, fonctionne hors connexion. */
 :root {
   --bg: #f8f4f3; --card: #ffffff; --tx: #2a1d20; --mu: #6f5f63; --ac: #7b1e3a; --acx: #ffffff;
-  --bd: #e6dadd; --soft: #f1e8ea; --or: #d9a94f; --orf: #f7eccf; --ortx: #5c1428; --orbr: #f2d487; --ok: #2e7d4f; --wa: #a35f00; --bad: #a3282d;
+  --bd: #e6dadd; --bdi: #857579; --soft: #f1e8ea; --or: #d9a94f; --orf: #f7eccf; --ortx: #5c1428; --orbr: #f2d487; --ok: #2e7d4f; --wa: #a35f00; --bad: #a3282d;
   --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --vvt: 0px; --vvh: 100%;
@@ -36,6 +36,7 @@ p { margin: 4px 0; }
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .stat { background: var(--card); border: 1px solid var(--bd); border-radius: 12px; padding: 10px 6px; text-align: center; min-width: 0; }
 .stat b { display: block; font-size: 20px; color: var(--ac); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.stat b.txt { font-size: 15px; white-space: nowrap; }
 .stat span { font-size: 12px; color: var(--mu); }
 
 .banner { background: var(--card); border: 1px solid var(--bd); border-left: 4px solid var(--wa); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
@@ -58,7 +59,7 @@ p { margin: 4px 0; }
 .tools { display: flex; gap: 8px; }
 .tools input { flex: 1; min-width: 0; }
 .tools select { flex: 0 0 auto; width: auto; max-width: 40%; }
-input, select, textarea { width: 100%; min-height: 44px; padding: 10px 11px; border: 1px solid var(--bd); border-radius: 10px; background: var(--card); }
+input, select, textarea { width: 100%; min-height: 44px; padding: 10px 11px; border: 1px solid var(--bdi); border-radius: 10px; background: var(--card); }
 textarea { resize: vertical; }
 
 .chips { display: flex; gap: 8px; overflow-x: auto; margin: 10px 0; padding-bottom: 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
@@ -68,7 +69,9 @@ textarea { resize: vertical; }
 .chip .n { opacity: .75; font-variant-numeric: tabular-nums; }
 
 .w { background: var(--card); border: 1px solid var(--bd); border-radius: 12px; padding: 12px; margin-bottom: 8px; }
-.w.out { opacity: .6; }
+.w.out { background: var(--soft); }
+.w.out h4 { color: var(--mu); font-weight: 600; }
+.w.out .pc { background: var(--card); }
 .w.hl { outline: 2px solid var(--ac); }
 .w h4 { margin: 0; font-size: 17px; font-weight: 700; color: var(--tx); overflow-wrap: anywhere; }
 .w p { margin: 2px 0; color: var(--mu); font-size: 14px; overflow-wrap: anywhere; }
@@ -133,7 +136,7 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 .toast { pointer-events: auto; width: 100%; max-width: 640px; background: var(--ac); color: var(--acx); border-radius: 12px; padding: 10px 8px 10px 14px; font-size: 14px; display: flex; gap: 8px; align-items: center; box-shadow: 0 6px 16px rgb(0 0 0 / .25); }
 .toast.err { background: var(--bad); color: #fff; }
 .toast span { flex: 1; overflow-wrap: anywhere; }
-.toast button { background: none; border: 0; color: inherit; min-height: 36px; padding: 4px 8px; font-weight: 700; }
+.toast button { background: none; border: 0; color: inherit; min-height: 44px; min-width: 44px; padding: 4px 8px; font-weight: 700; }
 .toast .tact { text-decoration: underline; }
 
 .steps { padding-left: 20px; margin: 6px 0 12px; display: flex; flex-direction: column; gap: 8px; font-size: 15px; }
@@ -153,7 +156,7 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 .src { font-size: 13px; color: var(--mu, inherit); overflow-wrap: anywhere; }
 .src a { color: var(--ac); }
 
-.credit .lnk { margin-top: 6px; }
+.credit .lnk { margin-top: 6px; min-height: 44px; }
 
 /* Bandeau de mise à jour : plein écran, collé en haut */
 #updBar { margin: 0 -16px; }
@@ -183,7 +186,7 @@ summary { color: var(--ac); cursor: pointer; padding: 4px 0; }
 .chiffres .frise { display: flex; align-items: flex-end; gap: 2px; height: 120px; border-bottom: 1px solid var(--bd); }
 .chiffres .fcol { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; min-width: 0; }
 .chiffres .fcol i { display: block; background: var(--ac); border-radius: 2px 2px 0 0; min-height: 2px; }
-.chiffres .fcol span { font-size: 10px; height: 36px; writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; text-align: center; }
+.chiffres .fcol span { font-size: 12px; line-height: 1; height: 36px; writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; text-align: center; }
 
 .quote { position: relative; margin: 2px 0 14px; padding: 20px 20px 18px 22px; border-radius: 16px; background: var(--ac); color: var(--acx); box-shadow: 0 6px 18px rgba(0, 0, 0, .18); overflow: hidden; }
 .quote .qm { position: absolute; top: -14px; left: 10px; font: 700 96px/1 Georgia, "Times New Roman", serif; opacity: .22; pointer-events: none; }
@@ -258,7 +261,7 @@ details.adv[open] summary { margin-bottom: 6px; }
 @media (min-width: 560px) { .tab { flex-direction: row; gap: 8px; padding-right: 22px; } .tab .chev { display: block; } }
 .tools input#q { padding-left: 38px; background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236f5f63' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6'/%3E%3Cpath d='M15 15l5 5'/%3E%3C/svg%3E") no-repeat 11px 50% / 18px 18px; }
 .slogan { display: block; font-size: 12px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--ac); margin: 2px 0 10px; }
-.credit .slogan { margin: 0 0 8px; font-size: 11px; opacity: .85; }
+.credit .slogan { margin: 0 0 8px; font-size: 12px; }
 .wm { font-family: Georgia, 'Times New Roman', serif; font-size: 22px; }
 .cv { border-top: 1px solid var(--bd); padding: 12px 0 6px; }
 .cv p { margin: 0 0 4px; font-size: 15px; }
@@ -388,7 +391,7 @@ details.adv[open] summary { margin-bottom: 6px; }
 /* Activation de la clé gratuite : encarts discrets, jamais bloquants */
 .enc { position: relative; background: var(--card); border: 1px solid var(--bd); border-left: 4px solid var(--or); border-radius: 12px; padding: 10px 12px 8px; margin: 10px 0; }
 .enc.cx { padding-right: 44px; }
-.enc:focus { outline: none; }
+.enc:focus, .sheet [tabindex="-1"]:focus { outline: none; }
 .enc b { display: block; font-family: Georgia, 'Times New Roman', serif; font-size: 16px; margin-bottom: 2px; }
 .enc p { margin: 0 0 6px; font-size: 14px; }
 .enc .stack { margin-top: 6px; }
