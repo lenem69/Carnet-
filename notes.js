@@ -1,5 +1,8 @@
 // Nouveautés affichées une fois, après une mise à jour. Une ligne courte par changement, du point de vue de l'utilisateur.
 export const NOTES = {
+  '1.44.5': ['Lisibilité : champs de saisie plus nets, vins « plus en cave » lisibles, graphique des cépages et frises plus clairs.',
+    'Fenêtres plus sûres : la touche Échap demande confirmation avant d’abandonner une saisie, et le clavier reste dans la fenêtre ouverte.',
+    'Messages à l’écran : ils restent affichés plus longtemps quand ils sont longs, et un seul message d’information à la fois.'],
   '1.44.4': ['L’avis de Magic ne se refait plus à chaque mise à jour : seulement après l’ajout ou le retrait d’au moins 2 vins.'],
   '1.44.3': ['Partager Ma cave : le lien et le QR code ouvrent désormais l’écran « Installer l’appli » (pas l’appli nue).'],
   '1.44.2': ['Partager Ma cave : le contenu du volet (envoi, copie du lien, QR code) s’affiche à nouveau.'],
