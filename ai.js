@@ -203,6 +203,7 @@ const toB64 = blob => new Promise((resolve, reject) => {
 });
 
 // Réduit la photo (768 px, JPEG : une seule tuile d’image chez Gemini, 4 fois moins de jetons qu’à 800 px) : lecture identique, coût bien moindre.
+// Réduit la photo et retourne directement la partie base64 (gain de temps significatif sur mobile en évitant FileReader)
 export async function shrinkImage(file) {
   try {
     const bm = await createImageBitmap(file);
@@ -211,9 +212,11 @@ export async function shrinkImage(file) {
     c.width = Math.max(1, Math.round(bm.width * s)); c.height = Math.max(1, Math.round(bm.height * s));
     c.getContext('2d').drawImage(bm, 0, 0, c.width, c.height);
     if (bm.close) bm.close();
-    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.7));
-    if (!blob) throw new Error('toBlob');
-    return blob;
+    // toDataURL retourne 'data:image/jpeg;base64,...' - on extrait la partie base64
+    const dataUrl = c.toDataURL('image/jpeg', 0.7);
+    const base64 = dataUrl.split(',')[1];
+    if (!base64) throw new Error('toDataURL');
+    return base64;
   } catch (e) { throw { code: 'bad_image' }; }
 }
 
@@ -259,7 +262,14 @@ export function webSources(cand) {
 async function callOnce(s, prompt, images, signal, out) {
   if (!s.key && !s.gratuit && !s.relais) throw { code: 'no_key' };
   const b64 = [];
-  for (const im of images) b64.push(await toB64(im));
+  for (const im of images) {
+    // Si im est déjà une chaîne base64 (venant de shrinkImage optimisé), on l'utilise directement
+    if (typeof im === 'string') {
+      b64.push(im);
+    } else {
+      b64.push(await toB64(im));
+    }
+  }
   if (s.provider === 'anthropic') {
     const content = b64.map(d => ({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: d } }));
     content.push({ type: 'text', text: prompt });
@@ -462,13 +472,13 @@ const EXPERT = 'Tu es un sommelier expert de 30 ans d’expérience, qui connaî
 
 export async function scanLabel(file, opts) {
   const t0 = performance.now();
-  const blob = await shrinkImage(file);
+  const base64 = await shrinkImage(file);
   const prep = performance.now() - t0;
   // Lecture simple : réflexion minimale et réponse courte, pour la rapidité.
   const prompt = `Image : photo d’une étiquette de vin. Lis-la sans rien inventer. JSON : ${SCHEMA_LABEL}. Si ce n’est pas une étiquette lisible : {"error":true}.`;
   const lire = async (task, think) => {
     const out = { think, maxOut: 500 };
-    const d = await callJson(prompt, { ...opts, images: [blob], task, out, gratuitOk: true });
+    const d = await callJson(prompt, { ...opts, images: [base64], task, out, gratuitOk: true });
     return { d, prov: out.provider };
   };
   const ok = d => d && typeof d === 'object' && !d.error && (d.name || d.dom);
