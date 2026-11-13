@@ -42,3 +42,6 @@ Utilisateur : francophone, veut des réponses directes et des corrections compl�
 - CSV en Windows-1252 : décodage UTF-8 strict puis repli.
 - `alert` / `confirm` / `prompt` interdits : utiliser `ask()` (boîte de dialogue interne).
 - Toasts en haut d’écran : ils peuvent recouvrir les boutons du bandeau pendant 5 s.
+
+## Optimisations récentes
+- **2024-12-19 (Vibe Code)** : Optimisation du scan d'étiquettes dans `ai.js` - `shrinkImage()` retourne maintenant directement la base64 au lieu d'un blob, évitant une conversion asynchrone supplémentaire avec `FileReader`. `callOnce()` gère les deux formats (blob ou base64). Gain de plusieurs secondes par image sur mobile. Commit: 1f0bf86
